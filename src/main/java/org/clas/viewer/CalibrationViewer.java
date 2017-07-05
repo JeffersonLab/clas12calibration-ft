@@ -72,7 +72,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         // create module viewer
         moduleView = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        canvas = new EmbeddedCanvas();        
+        canvas = new EmbeddedCanvas(); 
+        canvas.initTimer(2000);
         ccview = new CalibrationConstantsView();
         ccview.addConstants(ce.getCalibrationConstants().get(0),this);
         moduleView.setTopComponent(canvas);
@@ -129,7 +130,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     }
 
     public void resetEventListener() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.ce.resetEventListener();
     }
 
     public void actionPerformed(ActionEvent e) {
