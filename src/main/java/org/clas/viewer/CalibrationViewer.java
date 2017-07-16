@@ -37,6 +37,7 @@ import org.jlab.utils.groups.IndexedList;
 public final class CalibrationViewer implements IDataEventListener, ActionListener, CalibrationConstantsListener, DetectorListener {
     
     private final int[] npaddles = new int[]{23,62,5};
+    public int i = 0;
 
 //    CalibrationEngineView view = null;
     FTCalibrationModule        ce     = null;
@@ -107,20 +108,19 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     public void dataEventAction(DataEvent de) {
 
         if (de.getType()==DataEventType.EVENT_START) {
-                this.ce.resetEventListener();
-                this.ce.processEvent(de);
-
+                //System.out.println(" EVENT_START");
         }
         else if (de.getType()==DataEventType.EVENT_ACCUMULATE) {
-                this.ce.processEvent(de);
+               // System.out.println(" EVENT_ACCUMULATE" + i);
+        }
+        else if (de.getType()==DataEventType.EVENT_SINGLE) {
+             //   System.out.println("EVENT_SINGLE from CalibrationViewer");
         }
         else if (de.getType()==DataEventType.EVENT_STOP) {
-                this.ce.analyze();
+               // System.out.println(" EVENT_STOP else");
+               // System.out.println(" Analyzed");
         } 
-
-        if (de.getType()==DataEventType.EVENT_STOP) {
-
-        }
+        this.ce.dataEventAction(de);
         this.detectorView.repaint();
 
     }
