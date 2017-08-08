@@ -36,12 +36,11 @@ public class FTCalibrationModule extends CalibrationEngine {
     //private final int[] npaddles = new int[]{23,62,5};
     private FTDetector                           ft = null;
     private CalibrationConstants              calib = null;
-    private final IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>(3);;
-    
+    private final IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>(3);
     
     public FTCalibrationModule(FTDetector d) {
-        this.ft    = d;
-        this.calib = new CalibrationConstants(3,"a");
+        this.ft    = d; 
+        this.calib = new CalibrationConstants(3,"c0:c1:c2:c3:c4");
         this.calib.setName("myConstants");
 	this.calib.setPrecision(3);
         this.resetEventListener();
@@ -70,17 +69,22 @@ public class FTCalibrationModule extends CalibrationEngine {
             h4.setTitleX("#Delta#phi (deg)");
             h4.setTitleY("counts");
             h4.setTitle("Component " + key);
-            H2F h5 = new H2F("h5_"+key, 10, 0., 11., 25, -0.1, 0.8);//x,y
+            H2F h5 = new H2F("h5_"+key, 100, 0., 11., 50, 0.0, 1.2);//x,y
             h5.setTitleX("E_{rec}( GeV)");
             h5.setTitleY("E_{gen}-E_{rec} ( GeV)");
             h5.setTitle("Component " + key);
             GraphErrors h6 = new GraphErrors("h6_"+key);
             h6.setTitle("Component " + key);
+            h6.setTitleX("E_{rec}( GeV)");
+            h6.setTitleY("E_{gen}-E_{rec} ( GeV)");
             h6.setMarkerSize(1);
            // h6=h5.getProfileX();
             double q = 0.;
-            double m = 0;
-            F1D f2 = new F1D("f2_"+key,"[q]+x*[m]", 0, 11.0);
+            double m = 0.;
+            double c1 = 0.;
+            double c2 = 0.;
+            double c3 = 0.;
+            F1D f2 = new F1D("f2_"+key,"[q]+x*[m]+x*x*[c1]+x*x*x*[c2]+x*x*x*x*[c3]", 0, 10.0);
             f2.setLineColor(2);
             f2.setLineStyle(1);
             DataGroup dg = new DataGroup(2,3);
@@ -148,7 +152,7 @@ public class FTCalibrationModule extends CalibrationEngine {
                                         genBank.getFloat("vx", loop),
                                         genBank.getFloat("vy", loop),
                                         genBank.getFloat("vz", loop));
-                if(genPart.pid()==11) {
+                if(genPart.pid()==22) {
                     if(partGen == null) {
                         partGen = genPart;
                     }
@@ -157,9 +161,10 @@ public class FTCalibrationModule extends CalibrationEngine {
         }
         // loop over FTCAL reconstructed cluster
         if(event.hasBank("FTCAL::clusters") && partGen!=null) {
-            DataBank recFTCAL = event.getBank("FTCAL::clusters");
+            DataBank recFTCAL = event.getBank("FTCAL::clusters");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             for(int loop=0; loop<recFTCAL.rows(); loop++) {
                 int      key      = ft.getComponent(recFTCAL.getFloat("x",loop), recFTCAL.getFloat("y",loop));
+                //if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.getFloat("x",loop)+" "+recFTCAL.getFloat("y",loop));//Only seed is included
                 double   energy   = recFTCAL.getFloat("energy",loop);
                 double   energyR  = recFTCAL.getFloat("recEnergy",loop);
                 Vector3D cluster = new Vector3D(recFTCAL.getFloat("x",loop),recFTCAL.getFloat("y",loop),recFTCAL.getFloat("z",loop));  
@@ -172,7 +177,7 @@ public class FTCalibrationModule extends CalibrationEngine {
                // double x = Ran.nextDouble()*6;
                // this.dataGroups.getItem(1,1,key).getH2F("h5_"+key).fill(x,0.02*x-0.08+Ran.nextDouble()*0.04);//System.out.println("x " + x);
              // }         
-              this.dataGroups.getItem(1,1,key).getH2F("h5_"+key).fill(energy,partGen.p()-energyR);System.out.println(" Analyzed 1");
+              this.dataGroups.getItem(1,1,key).getH2F("h5_"+key).fill(energyR,partGen.p()-energyR);//System.out.println(" Analyzed 1");
               
       }
    }
@@ -200,12 +205,20 @@ public class FTCalibrationModule extends CalibrationEngine {
             f1.setParameter(1, mean);
             f1.setParameter(2, 0.01);
             DataFitter.fit(f1, hslice_1.get(i), "Q"); //No options uses error for sigma 
-            if(amp>1) this.dataGroups.getItem(1,1,key).getGraph("h6_"+key).addPoint(x, f1.getParameter(1), ex, f1.parameter(1).error());
+            if(amp>1 && f1.parameter(1).error()<1.0 && f1.getParameter(1)>-1.0) this.dataGroups.getItem(1,1,key).getGraph("h6_"+key).addPoint(x, f1.getParameter(1), ex, f1.parameter(1).error());
             //System.out.println(" Added point "+x+" "+f1.getParameter(1)+" "+ex+" "+f1.parameter(1).error());
              
         }
        DataFitter.fit(this.dataGroups.getItem(1,1,key).getF1D("f2_"+key), this.dataGroups.getItem(1,1,key).getGraph("h6_"+key), "Q");
-            calib.setDoubleValue(this.dataGroups.getItem(1,1,key).getF1D("f2_"+key).getParameter(1),"a",1, 1, key); 
+      // consts=(" a "+1 + " b "+2);
+       
+      // calib.setStringValue(consts,"a",1, 1, key); 
+     
+           calib.setDoubleValue(this.dataGroups.getItem(1,1,key).getF1D("f2_"+key).getParameter(0),"c0",1, 1, key); 
+           calib.setDoubleValue(this.dataGroups.getItem(1,1,key).getF1D("f2_"+key).getParameter(1),"c1",1, 1, key); 
+           calib.setDoubleValue(this.dataGroups.getItem(1,1,key).getF1D("f2_"+key).getParameter(2),"c2",1, 1, key); 
+           calib.setDoubleValue(this.dataGroups.getItem(1,1,key).getF1D("f2_"+key).getParameter(3),"c3",1, 1, key); 
+           calib.setDoubleValue(this.dataGroups.getItem(1,1,key).getF1D("f2_"+key).getParameter(4),"c4",1, 1, key); 
         
         
         }
