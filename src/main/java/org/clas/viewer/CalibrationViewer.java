@@ -5,24 +5,35 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
-import org.jlab.detector.base.DetectorType;
-import org.jlab.detector.calib.utils.CalibrationConstants;
-import org.jlab.detector.calib.utils.CalibrationConstantsListener;
-import org.jlab.detector.calib.utils.CalibrationConstantsView;
-import org.jlab.detector.view.DetectorListener;
-import org.jlab.detector.view.DetectorPane2D;
-import org.jlab.detector.view.DetectorShape2D;
-import org.jlab.groot.base.ColorPalette;
-import org.jlab.groot.graphics.EmbeddedCanvas;
-import org.jlab.groot.group.DataGroup;
+import javax.swing.JTabbedPane;
+import javax.swing.KeyStroke;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import org.clas.modules.FTEnergyCalibration;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.base.DataEventType;
 import org.jlab.io.task.DataSourceProcessorPane;
 import org.jlab.io.task.IDataEventListener;
-import org.jlab.utils.groups.IndexedList;
+import org.clas.modules.FTEnergyCorrection;
+import org.clas.modules.FTTimeCalibration;
+import org.clas.view.DetectorListener;
+import org.clas.view.DetectorShape2D;
+import org.jlab.groot.data.TDirectory;
+import org.jlab.io.base.DataBank;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -34,24 +45,25 @@ import org.jlab.utils.groups.IndexedList;
  *
  * @author devita
  */
-public final class CalibrationViewer implements IDataEventListener, ActionListener, CalibrationConstantsListener, DetectorListener {
+public final class CalibrationViewer implements IDataEventListener, ActionListener, DetectorListener, ChangeListener {
     
-    private final int[] npaddles = new int[]{23,62,5};
     public int i = 0;
 
-//    CalibrationEngineView view = null;
-    FTCalibrationModule        ce     = null;
-
     JPanel                   mainPanel 	   = null;
+    JMenuBar                 menuBar       = null;
     DataSourceProcessorPane  processorPane = null;
     JSplitPane               splitPanel    = null;
     JPanel                   detectorPanel = null;
     FTCalDetector            detectorView  = null;
-    JSplitPane               moduleView    = null;
-    EmbeddedCanvas           canvas        = null;
-    CalibrationConstantsView ccview        = null;
+    JTabbedPane               modulePanel  = null;
+    String                    moduleSelect = null;
     
-    
+    private int canvasUpdateTime   = 2000;
+    private int analysisUpdateTime = 10000;
+    private int runNumber  = 0;
+    private String workDir = "/Users/devita";
+
+    ArrayList<FTCalibrationModule> modules = new ArrayList();
 
     public CalibrationViewer() {
        
@@ -59,6 +71,50 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         mainPanel = new JPanel();	
 	mainPanel.setLayout(new BorderLayout());
         
+	// create menu bar
+        menuBar = new JMenuBar();
+        JMenuItem menuItem;
+        JMenu constants = new JMenu("Constants");
+        menuItem = new JMenuItem("Load...", KeyEvent.VK_L);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
+        menuItem.getAccessibleContext().setAccessibleDescription("Load constants from file");
+        menuItem.addActionListener(this);
+        constants.add(menuItem);        
+        menuItem = new JMenuItem("Save...", KeyEvent.VK_S);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+        menuItem.getAccessibleContext().setAccessibleDescription("Save constants to file");
+        menuItem.addActionListener(this);
+        constants.add(menuItem);
+        menuBar.add(constants);         
+        JMenu file = new JMenu("Histograms");
+        file.setMnemonic(KeyEvent.VK_A);
+        file.getAccessibleContext().setAccessibleDescription("File options");
+        menuItem = new JMenuItem("Open histograms file...", KeyEvent.VK_O);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+        menuItem.getAccessibleContext().setAccessibleDescription("Open histograms file");
+        menuItem.addActionListener(this);
+        file.add(menuItem);
+        menuItem = new JMenuItem("Print histograms to file...", KeyEvent.VK_P);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.CTRL_MASK));
+        menuItem.getAccessibleContext().setAccessibleDescription("Print histograms to file");
+        menuItem.addActionListener(this);
+        file.add(menuItem);
+        menuItem = new JMenuItem("Save histograms...", KeyEvent.VK_H);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
+        menuItem.getAccessibleContext().setAccessibleDescription("Save histograms to file");
+        menuItem.addActionListener(this);
+        file.add(menuItem);
+        menuBar.add(file);
+        JMenu settings = new JMenu("Settings");
+        settings.setMnemonic(KeyEvent.VK_A);
+        settings.getAccessibleContext().setAccessibleDescription("Choose monitoring parameters");
+        menuItem = new JMenuItem("Set analysis update interval...", KeyEvent.VK_T);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
+        menuItem.getAccessibleContext().setAccessibleDescription("Set analysis update interval");
+        menuItem.addActionListener(this);
+        settings.add(menuItem);
+        menuBar.add(settings);
+
         // create detector panel
         detectorPanel = new JPanel();
         detectorPanel.setLayout(new BorderLayout());
@@ -66,47 +122,168 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         initDetector();
         detectorPanel.add(detectorView);
         
-        // create calibration module
-        ce     = new FTCalibrationModule(detectorView);        
-        ccview = new CalibrationConstantsView();
-        ccview.addConstants(ce.getCalibrationConstants().get(0));
-        
         // create module viewer
-        moduleView = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        canvas = new EmbeddedCanvas(); 
-        canvas.initTimer(2000);
-        ccview = new CalibrationConstantsView();
-        ccview.addConstants(ce.getCalibrationConstants().get(0),this);
-        moduleView.setTopComponent(canvas);
-        moduleView.setBottomComponent(ccview);
-        moduleView.setDividerLocation(0.5);        
-        moduleView.setResizeWeight(0.6);
- 
+        modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration"));
+        modules.add(new FTTimeCalibration(detectorView,"TimeCalibration"));
+        modules.add(new FTEnergyCorrection(detectorView,"EnergyCorrection"));
+        modulePanel = new JTabbedPane();
+        for(int k=0; k<modules.size(); k++) {
+            modulePanel.add(modules.get(k).getName(),modules.get(k).getView());
+            if(moduleSelect == null) moduleSelect = modules.get(k).getName();
+        }
+        modulePanel.addChangeListener(this);
+        
         // create split panel to host detector view and canvas+constants view
         splitPanel = new JSplitPane();
         splitPanel.setLeftComponent(detectorPanel);
-        splitPanel.setRightComponent(moduleView);
+        splitPanel.setRightComponent(modulePanel);
+        splitPanel.setDividerLocation(0.3);        
+        splitPanel.setResizeWeight(0.3);
+
 
         // create data processor panel
         processorPane = new DataSourceProcessorPane();
-        processorPane.setUpdateRate(10000);
+        processorPane.setUpdateRate(analysisUpdateTime);
         processorPane.addEventListener(this);
     
         // compose main panel
         mainPanel.add(splitPanel);
         mainPanel.add(processorPane,BorderLayout.PAGE_END);
-
+        
+        this.setCanvasUpdate(canvasUpdateTime);
     }
     
+    public void actionPerformed(ActionEvent e) {
+        System.out.println(e.getActionCommand());
+        if(e.getActionCommand()=="Set analysis update interval...") {
+            this.chooseUpdateInterval();
+        }
+        if(e.getActionCommand()=="Open histograms file...") {
+            String fileName = null;
+            JFileChooser fc = new JFileChooser();
+            fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            File workingDirectory = new File(this.workDir + "/FTCalCalib-histos");
+            fc.setCurrentDirectory(workingDirectory);
+            int option = fc.showOpenDialog(null);
+            if (option == JFileChooser.APPROVE_OPTION) {
+                fileName = fc.getSelectedFile().getAbsolutePath();            
+            }
+            if(fileName != null) this.loadHistosFromFile(fileName);
+        }        
+        if(e.getActionCommand()=="Print histograms to file...") {
+            this.printHistosToFile();
+        }
+        if(e.getActionCommand()=="Save histograms...") {
+            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
+            String fileName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date()) + ".hipo";
+            JFileChooser fc = new JFileChooser();
+            File workingDirectory = new File(this.workDir + "/FTCalCalib-histos");
+            fc.setCurrentDirectory(workingDirectory);
+            File file = new File(fileName);
+            fc.setSelectedFile(file);
+            int returnValue = fc.showSaveDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+               fileName = fc.getSelectedFile().getAbsolutePath();            
+            }
+            this.saveHistosToFile(fileName);
+        }
+        if(e.getActionCommand()=="Load...") {
+            String filePath = null;
+            JFileChooser fc = new JFileChooser();
+            fc.setDialogTitle("Choose Constants Folder...");
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fc.setAcceptAllFileFilterUsed(false);
+            File workingDirectory = new File(this.workDir);
+            fc.setCurrentDirectory(workingDirectory);
+            int returnValue = fc.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+               filePath = fc.getSelectedFile().getAbsolutePath();            
+            }
+            for(int k=0; k<this.modules.size(); k++) {
+                this.modules.get(k).loadConstants(filePath);
+            }
+        }
+        if(e.getActionCommand()=="Save...") {
+            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
+            String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
+            JFileChooser fc = new JFileChooser();
+            File workingDirectory = new File(this.workDir);
+            fc.setCurrentDirectory(workingDirectory);
+            File file = new File(dirName);
+            fc.setSelectedFile(file);
+            int returnValue = fc.showSaveDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+               dirName = fc.getSelectedFile().getAbsolutePath();            
+            }
+            File theDir = new File(dirName);
+            // if the directory does not exist, create it
+            if (!theDir.exists()) {
+                boolean result = false;
+                try{
+                    theDir.mkdir();
+                    result = true;
+                } 
+                catch(SecurityException se){
+                    //handle it
+                }        
+                if(result) {    
+                System.out.println("Created directory: " + dirName);
+                }
+            }
+            for(int k=0; k<this.modules.size(); k++) {
+                this.modules.get(k).saveConstants(dirName);
+            }
+        }
+    }
+
+    public void chooseUpdateInterval() {
+        String s = (String)JOptionPane.showInputDialog(
+                    null,
+                    "GUI update interval (ms)",
+                    " ",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    null,
+                    "1000");
+        if(s!=null){
+            int time = 1000;
+            try { 
+                time= Integer.parseInt(s);
+            } catch(NumberFormatException e) { 
+                JOptionPane.showMessageDialog(null, "Value must be a positive integer!");
+            }
+            if(time>0) {
+                this.setCanvasUpdate(time);
+            }
+            else {
+                JOptionPane.showMessageDialog(null, "Value must be a positive integer!");
+            }
+        }
+    }
+
+        
+    private int getRunNumber(DataEvent event) {
+        int rNum = this.runNumber;
+        DataBank bank = event.getBank("RUN::config");
+        if(bank!=null) {
+            rNum = bank.getInt("run", 0);
+        }
+        return rNum;
+    }
+
     public void initDetector() {
         detectorView.setThresholds(0);
         detectorView.getView().addDetectorListener(this);
+        for(String layer : detectorView.getView().getLayerNames()){
+            detectorView.getView().setDetectorListener(layer,this);
+         }
         detectorView.updateBox();
     }
      
     @Override
     public void dataEventAction(DataEvent de) {
-
+        
+        if(de!=null) this.runNumber = this.getRunNumber(de);
         if (de.getType()==DataEventType.EVENT_START) {
                 //System.out.println(" EVENT_START");
         }
@@ -120,88 +297,113 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                // System.out.println(" EVENT_STOP else");
                // System.out.println(" Analyzed");
         } 
-        this.ce.dataEventAction(de);
+	for(int k=0; k<this.modules.size(); k++) {
+            this.modules.get(k).dataEventAction(de);
+        }
         this.detectorView.repaint();
 
     }
 
+    public void loadHistosFromFile(String fileName) {
+        // TXT table summary FILE //
+        System.out.println("Opening file: " + fileName);
+        TDirectory dir = new TDirectory();
+        dir.readFile(fileName);
+        System.out.println(dir.getDirectoryList());
+        dir.cd();
+        dir.pwd();
+        
+        for(int k=0; k<this.modules.size(); k++) {
+            this.modules.get(k).readDataGroup(dir);
+        }
+    }
+    
+    public void printHistosToFile() {
+        DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
+        String data = this.workDir + "/kpp-pictures/clas12rec_run_" + this.runNumber + "_" + df.format(new Date());        
+        File theDir = new File(data);
+        // if the directory does not exist, create it
+        if (!theDir.exists()) {
+            boolean result = false;
+            try{
+                theDir.mkdir();
+                result = true;
+            } 
+            catch(SecurityException se){
+                //handle it
+            }        
+            if(result) {    
+            System.out.println("Created directory: " + data);
+            }
+        }
+        String fileName = data + "/clas12_canvas.png";
+        System.out.println(fileName);
+    }
+    
     public void timerUpdate() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.detectorView.repaint();
+	for(int k=0; k<this.modules.size(); k++) {
+            this.modules.get(k).timerUpdate();
+        }
+        
     }
 
     public void resetEventListener() {
-        this.ce.resetEventListener();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void constantsEvent(CalibrationConstants cc, int col, int row) {
-        System.out.println("Well. it's working " + col + "  " + row);
-        String str_sector    = (String) cc.getValueAt(row, 0);
-        String str_layer     = (String) cc.getValueAt(row, 1);
-        String str_component = (String) cc.getValueAt(row, 2);
-        System.out.println(str_sector + " " + str_layer + " " + str_component);
-        IndexedList<DataGroup> group = ce.getDataGroup();
-        
-        int sector    = Integer.parseInt(str_sector);
-        int layer     = Integer.parseInt(str_layer);
-        int component = Integer.parseInt(str_component);
-        
-        if(group.hasItem(sector,layer,component)==true){
-            DataGroup dataGroup = group.getItem(sector,layer,component);
-            this.canvas.clear();
-            this.canvas.draw(dataGroup);
-            this.canvas.update();
-        } else {
-            System.out.println(" ERROR: can not find the data group");
+	for(int k=0; k<this.modules.size(); k++) {
+            this.modules.get(k).resetEventListener();
         }
     }
 
     @Override
     public void processShape(DetectorShape2D dsd) {
-	// show summary
-        int sector = dsd.getDescriptor().getSector();
-        int layer  = dsd.getDescriptor().getLayer();
-        int paddle = dsd.getDescriptor().getComponent();
-        System.out.println("Selected shape " + sector + " " + layer + " " + paddle);
-        IndexedList<DataGroup> group = ce.getDataGroup();        
-        
-        if(group.hasItem(sector,layer,paddle)==true){
-            this.canvas.clear();
-            this.canvas.draw(this.ce.getDataGroup().getItem(sector,layer,paddle));
-            this.canvas.update();
-        } else {
-            System.out.println(" ERROR: can not find the data group");
+	for(int k=0; k<this.modules.size(); k++) {
+            this.modules.get(k).processShape(dsd);
         }
-        
     }
 
+    @Override
     public void update(DetectorShape2D dsd) {
-	// show summary
-        int sector = dsd.getDescriptor().getSector();
-        int layer  = dsd.getDescriptor().getLayer();
-        int key    = dsd.getDescriptor().getComponent();
-        ColorPalette palette = new ColorPalette();
-        Color col = new Color(100, 100, 100);
-//        if (this.detectorView.hasComponent(key)) {
-//            int nent = this.ce.getNEvents(sector, layer, key);
-//            if (nent > 0) {
-//                col = palette.getColor3D(nent, this.detectorView.getView()., true);
-//                }
-//            } 
-//            Color col = ce.getColor(sector,layer,paddle);
-//            dsd.setColor(col.getRed(),col.getGreen(),col.getBlue());  
+//        System.out.println("Changing color");
+	for(int k=0; k<this.modules.size(); k++) {
+            if(this.modules.get(k).getName()==moduleSelect) {
+                Color col = this.modules.get(k).getColor(dsd);
+                dsd.setColor(col.getRed(), col.getGreen(), col.getBlue());
+            }
+        }
     }
     
+   public void saveHistosToFile(String fileName) {
+        // TXT table summary FILE //
+        TDirectory dir = new TDirectory();
+        for(int k=0; k<this.modules.size(); k++) {
+            this.modules.get(k).writeDataGroup(dir);
+        }
+        System.out.println("Saving histograms to file " + fileName);
+        dir.writeFile(fileName);
+    }
+            
+    public void setCanvasUpdate(int time) {
+        System.out.println("Setting " + time + " ms update interval");
+        this.canvasUpdateTime = time;
+        for(int k=0; k<this.modules.size(); k++) {
+            this.modules.get(k).setCanvasUpdate(time);
+        }
+    }
+
+   public void stateChanged(ChangeEvent e) {
+        JTabbedPane sourceTabbedPane = (JTabbedPane) e.getSource();
+        int index = sourceTabbedPane.getSelectedIndex();
+        moduleSelect = sourceTabbedPane.getTitleAt(index);
+        this.detectorView.repaint();
+    }
+
     public static void main(String[] args){
         JFrame frame = new JFrame("Calibration");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         CalibrationViewer viewer = new CalibrationViewer();
         //frame.add(viewer.getPanel());
         frame.add(viewer.mainPanel);
+        frame.setJMenuBar(viewer.menuBar);
         frame.setSize(1400, 800);
         frame.setVisible(true);
     }

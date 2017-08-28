@@ -7,7 +7,7 @@ package org.clas.viewer;
 
 import java.util.Set;
 import org.jlab.detector.base.DetectorCollection;
-import org.jlab.detector.view.DetectorPane2D;
+import org.clas.view.DetectorPane2D;
 
 /**
  *
