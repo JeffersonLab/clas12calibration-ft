@@ -125,6 +125,12 @@ public class FTTimeCalibration extends FTCalibrationModule {
 
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
+        this.startTime = -1000;
+        if(event.hasBank("REC::Event")) {
+            DataBank recEvent = event.getBank("REC::Event");
+            this.startTime = recEvent.getFloat("STTime", 0);
+//            System.out.println(this.startTime);
+        }
         if (event.hasBank("FTCAL::adc")) {
             DataBank adcFTCAL = event.getBank("FTCAL::adc");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             for (int loop = 0; loop < adcFTCAL.rows(); loop++) {
