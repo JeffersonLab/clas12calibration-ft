@@ -33,6 +33,8 @@ import org.jlab.groot.data.GraphErrors;
  */
 public class FTEnergyCorrection extends FTCalibrationModule {
 
+    private int minNumberOfEvents =100;
+    
     public FTEnergyCorrection(FTDetector d, String name) {
         super(d, name, "c0:c1:c2:c3:c4");
     }
@@ -42,7 +44,11 @@ public class FTEnergyCorrection extends FTCalibrationModule {
         for (int key : this.getDetector().getDetectorComponents()) {
             // initializa calibration constant table
             this.getCalibrationTable().addEntry(1, 1, key);
-            //  calib.setDoubleValue(0.,"a",1, 1, key);
+            getCalibrationTable().setDoubleValue(0., "c0", 1, 1, key);
+            getCalibrationTable().setDoubleValue(0., "c1", 1, 1, key);
+            getCalibrationTable().setDoubleValue(0., "c2", 1, 1, key);
+            getCalibrationTable().setDoubleValue(0., "c3", 1, 1, key);
+            getCalibrationTable().setDoubleValue(0., "c4", 1, 1, key);
             // initializa data group
             H1F h1 = new H1F("h1_" + key, 100, 0., 11);
             h1.setTitleX("E( GeV)");
@@ -177,12 +183,13 @@ public class FTEnergyCorrection extends FTCalibrationModule {
       // consts=(" a "+1 + " b "+2);
 
       // calib.setStringValue(consts,"a",1, 1, key); 
-            getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(0), "c0", 1, 1, key);
-            getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(1), "c1", 1, 1, key);
-            getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(2), "c2", 1, 1, key);
-            getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(3), "c3", 1, 1, key);
-            getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(4), "c4", 1, 1, key);
-
+            if(this.getDataGroup().getItem(1, 1, key).getH1F("h1_" + key).getEntries()>minNumberOfEvents) {
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(0), "c0", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(1), "c1", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(2), "c2", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(3), "c3", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(4), "c4", 1, 1, key);
+            }
         }
         getCalibrationTable().show();
     }
