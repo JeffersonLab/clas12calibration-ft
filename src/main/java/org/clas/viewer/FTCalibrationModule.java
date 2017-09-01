@@ -46,9 +46,9 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     private CalibrationConstantsView         ccview = null;
     private int                          nProcessed = 0;
 
-    public FTCalibrationModule(FTDetector d, String ModuleName, String Constants) {
+    public FTCalibrationModule(FTDetector d, String ModuleName, String Constants,int Precision) {
         this.ft    = d; 
-        this.initModule(ModuleName,Constants);
+        this.initModule(ModuleName,Constants,Precision);
         this.resetEventListener();
     }
 
@@ -126,17 +126,16 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         return moduleView;
     }
 
-    public void initModule(String name, String Constants) {
+    public void initModule(String name, String Constants, int Precision) {
         this.moduleName = name;
         this.nProcessed = 0;
         // create calibration constants viewer
         ccview = new CalibrationConstantsView();
         this.calib = new CalibrationConstants(3,Constants);
         this.calib.setName(name);
-	this.calib.setPrecision(3);
         this.prevCalib = new CalibrationConstants(3,Constants);
         this.prevCalib.setName(name);
-	this.prevCalib.setPrecision(3);
+	this.setCalibrationTablePrecision(Precision);
         ccview.addConstants(this.getCalibrationConstants().get(0),this);
 
         moduleView = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -302,6 +301,11 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     
     public void setCanvasUpdate(int time) {
         this.getCanvas().initTimer(time);
+    }
+    
+    public void setCalibrationTablePrecision(int nDigits) {
+	this.calib.setPrecision(3);
+	this.prevCalib.setPrecision(3);        
     }
     
     public void writeDataGroup(TDirectory dir) {

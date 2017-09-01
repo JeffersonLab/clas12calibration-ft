@@ -36,7 +36,7 @@ public class FTEnergyCorrection extends FTCalibrationModule {
     private int minNumberOfEvents =100;
     
     public FTEnergyCorrection(FTDetector d, String name) {
-        super(d, name, "c0:c1:c2:c3:c4");
+        super(d, name, "c0:c1:c2:c3:c4",7);
     }
 
     @Override
@@ -85,6 +85,9 @@ public class FTEnergyCorrection extends FTCalibrationModule {
             F1D f2 = new F1D("f2_" + key, "[q]+x*[m]+x*x*[c1]+x*x*x*[c2]+x*x*x*x*[c3]", 0, 10.0);
             f2.setLineColor(2);
             f2.setLineStyle(1);
+            F1D f2calib = new F1D("f2calib_" + key, "[q]+x*[m]+x*x*[c1]+x*x*x*[c2]+x*x*x*x*[c3]", 0, 10.0);
+            f2calib.setLineColor(4);
+            f2calib.setLineStyle(1);
             DataGroup dg = new DataGroup(2, 3);
             dg.addDataSet(h1, 0);
             dg.addDataSet(h2, 1);
@@ -93,6 +96,7 @@ public class FTEnergyCorrection extends FTCalibrationModule {
             dg.addDataSet(h5, 4);
             dg.addDataSet(h6, 5);
             dg.addDataSet(f2, 5);
+            dg.addDataSet(f2calib, 5);
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
@@ -148,6 +152,14 @@ public class FTEnergyCorrection extends FTCalibrationModule {
                 // this.dataGroups.getItem(1,1,key).getH2F("h5_"+key).fill(x,0.02*x-0.08+Ran.nextDouble()*0.04);//System.out.println("x " + x);
                 // }         
                 this.getDataGroup().getItem(1, 1, key).getH2F("h5_" + key).fill(energyR, partGen.p() - energyR);//System.out.println(" Analyzed 1");
+                if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
+                    F1D f2calib = this.getDataGroup().getItem(1, 1, key).getF1D("f2calib_" + key);
+                    f2calib.setParameter(0, this.getPreviousCalibrationTable().getDoubleValue("c0", 1, 1, key)/100);
+                    f2calib.setParameter(1, this.getPreviousCalibrationTable().getDoubleValue("c1", 1, 1, key)/100);
+                    f2calib.setParameter(2, this.getPreviousCalibrationTable().getDoubleValue("c2", 1, 1, key)/100);
+                    f2calib.setParameter(3, this.getPreviousCalibrationTable().getDoubleValue("c3", 1, 1, key)/100);
+                    f2calib.setParameter(4, this.getPreviousCalibrationTable().getDoubleValue("c4", 1, 1, key)/100);
+                }
 
             }
         }
@@ -184,11 +196,11 @@ public class FTEnergyCorrection extends FTCalibrationModule {
 
       // calib.setStringValue(consts,"a",1, 1, key); 
             if(this.getDataGroup().getItem(1, 1, key).getH1F("h1_" + key).getEntries()>minNumberOfEvents) {
-                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(0), "c0", 1, 1, key);
-                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(1), "c1", 1, 1, key);
-                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(2), "c2", 1, 1, key);
-                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(3), "c3", 1, 1, key);
-                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(4), "c4", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(0)*100, "c0", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(1)*100, "c1", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(2)*100, "c2", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(3)*100, "c3", 1, 1, key);
+                getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(4)*100, "c4", 1, 1, key);
             }
         }
         getCalibrationTable().show();

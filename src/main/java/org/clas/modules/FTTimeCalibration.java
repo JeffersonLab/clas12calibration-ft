@@ -48,7 +48,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
     double c = 29.97; //cm/ns     
 
     public FTTimeCalibration(FTDetector d, String name) {
-        super(d, name, "offset:offset_error:resolution");
+        super(d, name, "offset:offset_error:resolution",3);
     }
 
     @Override
