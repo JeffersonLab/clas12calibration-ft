@@ -72,6 +72,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
         gtoffsets.setMarkerSize(5);  // size in points on the screen
 //        gtoffsets.setMarkerStyle(1); // Style can be 1 or 2
         gtoffsets.addPoint(0., 0., 0., 0.);
+        gtoffsets.addPoint(1., 1., 0., 0.);
 
         for (int key : this.getDetector().getDetectorComponents()) {
             // initializa calibration constant table
