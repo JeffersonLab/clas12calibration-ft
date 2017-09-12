@@ -304,8 +304,8 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     }
     
     public void setCalibrationTablePrecision(int nDigits) {
-	this.calib.setPrecision(3);
-	this.prevCalib.setPrecision(3);        
+	this.calib.setPrecision(nDigits);
+	this.prevCalib.setPrecision(nDigits);        
     }
     
     public void writeDataGroup(TDirectory dir) {
