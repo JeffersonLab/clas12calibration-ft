@@ -97,7 +97,7 @@ public class FTCalLedViewer implements IDataEventListener, ActionListener  {
         // Table menu bar
         if(e.getActionCommand()=="Save table...") {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
-            String fileName = "ftCalLed_" + df.format(new Date()) + ".txt";
+            String fileName = "ftCalLed_" + this.runNumber + "_" + df.format(new Date()) + ".txt";
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
             fc.setCurrentDirectory(workingDirectory);

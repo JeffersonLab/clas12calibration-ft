@@ -797,6 +797,8 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
         int sector    = Integer.parseInt(str_sector);
         int layer     = Integer.parseInt(str_layer);
         int component = Integer.parseInt(str_component);
+        this.keySelect = component;
+        this.plotHistograms();
     }
 
     public void dataEventAction(DataEvent event) {
