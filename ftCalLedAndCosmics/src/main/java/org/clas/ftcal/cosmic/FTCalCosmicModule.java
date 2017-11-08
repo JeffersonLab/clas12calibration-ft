@@ -5,24 +5,26 @@
  */
 package org.clas.ftcal.cosmic;
 
-import java.awt.Color;
-import java.util.ArrayList;
+import java.awt.GridLayout;
 import java.util.List;
-import java.util.Map;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 import org.clas.detector.DetectorDataDgtz;
-import org.clas.ftcal.tools.FTAdjustFit;
-import org.clas.ftcal.tools.FTCanvasBook;
-import org.clas.ftcal.tools.FTDetector;
-import org.clas.ftcal.tools.FTModule;
-import org.clas.ftcal.tools.FTModuleType;
-import org.clas.ftcal.tools.FTParameter;
+import org.clas.ft.tools.FTAdjustFit;
+import org.clas.ft.tools.FTCanvasBook;
+import org.clas.ft.tools.FTDetector;
+import org.clas.ft.tools.FTModule;
+import org.clas.ft.tools.FTModuleType;
+import org.clas.ft.tools.FTParameter;
 import org.jlab.groot.data.H1F;
-import org.jlab.groot.data.IDataSet;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.graphics.EmbeddedCanvas;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.groot.math.F1D;
+import org.jlab.utils.groups.IndexedList;
 
 /**
  *
@@ -45,7 +47,8 @@ public class FTCalCosmicModule extends FTModule {
 //    double[] timeHALF;   
     
     // analysis realted info
-    int    ncry_cosmic = 4;  // Horizonthal selection // number of crystals above threshold in a column for cosmics selection
+    int    cosmicMult  = 4;  // Horizonthal selection // number of crystals above threshold in a column for cosmics selection
+    int    cosmicRange = 5;
     double singleChThr = 7;// Single channel selection
     
     public FTCalCosmicModule(FTDetector d)  {
@@ -53,14 +56,14 @@ public class FTCalCosmicModule extends FTModule {
         this.setName("Cosmics");
         this.setType(FTModuleType.EVENT_ACCUMULATE);
         this.addCanvases("Energy");
-        this.addParameters("Occupancy", "<Q> (pC)", "\u03C3(Q) (pC)", "\u03C7\u00B2(Q)", "<T>", "\u03C3(T)");
+        this.addComparisonCanvas();
+        this.addParameters("Occupancy", "<Q> (pC)", "\u03C3(Q) (pC)", "\u03C7\u00B2(Q)"/*, "<T>", "\u03C3(T)"*/);
         this.getParameter(0).setRanges(0.0,1000000.0,1.0,1000000.0, false);
         this.getParameter(1).setRanges(5.0,45.0,10.0,10.0, false);///Range Charge
         this.getParameter(2).setRanges(0.0,10.0,10.0,2.0, false);
         this.getParameter(3).setRanges(0.0,2.0,10.0,2.0, false);
-        this.getParameter(4).setRanges(0.0,50.0,10.0,50.0, false);
-        this.getParameter(5).setRanges(0.0,5.0,10.0,5.0, false);
-        this.addConstants();
+//        this.getParameter(4).setRanges(0.0,50.0,10.0,50.0, false);
+//        this.getParameter(5).setRanges(0.0,5.0,10.0,5.0, false);
         this.getDetector().setThresholds(this.singleChThr);
     }
 
@@ -90,7 +93,7 @@ public class FTCalCosmicModule extends FTModule {
     }
     
     @Override
-    public void createDataGroup() {
+    public IndexedList<DataGroup> createDataGroup() {
         H_fADC_N       = new H1F("fADC"      , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
         H_COSMIC_N     = new H1F("EVENT"     , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
 //        H_COSMIC_MEAN  = new H1F("MEAN"      , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
@@ -105,6 +108,7 @@ public class FTCalCosmicModule extends FTModule {
 //        for(int i=0; i< this.getDetector().getNComponents(); i++) {
 //            detectorIDs[i]=this.getDetector().getIDArray()[i]; 
 //        }
+        IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>();
         for(int component : this.getDetector().getDetectorComponents()) {
             int ix = this.getDetector().getIdX(component);
             int iy = this.getDetector().getIdY(component);
@@ -144,8 +148,9 @@ public class FTCalCosmicModule extends FTModule {
             dg.addDataSet(H_COSMIC_VMAX,   2);
             dg.addDataSet(H_COSMIC_CHARGE, 3);
             dg.addDataSet(F_ChargeLandau,  4);
-            this.getDataGroup().add(dg, 1, 1, component);
+            dataGroups.add(dg, 1, 1, component);
         }
+        return dataGroups;
     }
     
     private void initLandauFitPar(H1F hcharge, F1D fcharge) {
@@ -209,7 +214,25 @@ public class FTCalCosmicModule extends FTModule {
             canvas.draw(this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key));
 //            canvas.draw(this.getDataGroup().getItem(1,1,key).getF1D("Landau_" + key),"same");
         }
-        this.updateTable();
+    }
+    
+    @Override
+    public void plotComparison() {
+        EmbeddedCanvas canvas = this.getCanvases().get("Comparison");
+        canvas.divide(2, 2);
+        canvas.setGridX(false);
+        canvas.setGridY(false);
+        int key = this.getSelectedKey();
+        if(this.getDetector().hasComponent(key)) {
+            canvas.cd(0);
+            canvas.draw(this.getDataGroup().getItem(1,1,key).getH1F("Amplitude_" + key));
+            canvas.cd(1);
+            canvas.draw(this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key));
+            canvas.cd(2);
+            canvas.draw(this.getComparisonDataGroup().getItem(1,1,key).getH1F("Amplitude_" + key));
+            canvas.cd(3);
+            canvas.draw(this.getComparisonDataGroup().getItem(1,1,key).getH1F("Charge_" + key));
+        }
     }
 
     @Override
@@ -307,14 +330,52 @@ public class FTCalCosmicModule extends FTModule {
         return value;
     }
     
+    @Override
+    public void setAnalysisParameters() {
+	JTextField multiplicity = new JTextField(5);
+	JTextField range        = new JTextField(5);
+	JTextField threshold    = new JTextField(5);
+	
+        
+	JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(3,2));            
+           
+        panel.add(new JLabel("Cosmic multiplicity"));
+        multiplicity.setText(Integer.toString(this.cosmicMult));
+        panel.add(multiplicity);
+        panel.add(new JLabel("Column range"));
+        range.setText(Integer.toString(this.cosmicRange));
+        panel.add(range);
+        panel.add(new JLabel("Threshold"));
+        threshold.setText(Double.toString(this.singleChThr));
+        panel.add(threshold);
+        
+        int result = JOptionPane.showConfirmDialog(null, panel, "Adjust Fit", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {        
+            if (!multiplicity.getText().isEmpty()) {
+                this.cosmicMult = Integer.parseInt(multiplicity.getText());
+            } 
+            if (!range.getText().isEmpty()) {
+                this.cosmicRange = Integer.parseInt(range.getText());
+            } 
+            if (!threshold.getText().isEmpty()) {
+                this.singleChThr = Double.parseDouble(threshold.getText());
+            } 
+            System.out.println("Cosmic analysis paramters");
+            System.out.println("\n\tCrystal multiplicity for cosmic ray selection: " + this.cosmicMult);
+            System.out.println("\n\tRange of crystals in a column: +/-" + this.cosmicRange);
+            System.out.println("\n\tSingle channel threshold: " + this.singleChThr);
+        }
+    }
+
     public Boolean selectCosmics(int key) {
         //System.out.println("HorizonthalSel "+singleChThr);
         Boolean flag = false;
         int nCrystalInColumn = 0;
         int ix = this.getDetector().getIX(key);
         int iy = this.getDetector().getIY(key);
-        int i1 = Math.max(0, iy - this.ncry_cosmic);    // allowing for +/- to cope with dead channels
-        int i2 = iy + ncry_cosmic;
+        int i1 = Math.max(0, iy - this.cosmicMult);    // allowing for +/- to cope with dead channels
+        int i2 = iy + cosmicMult;
         for (int i = i1; i<= i2; i++) {
             int component = this.getDetector().getComponent(ix, i);
             if (i != iy && this.getDetector().hasComponent(component)) {
@@ -323,7 +384,7 @@ public class FTCalCosmicModule extends FTModule {
                 }
             }
         }
-        if (nCrystalInColumn >= ncry_cosmic) {
+        if (nCrystalInColumn >= cosmicMult) {
             flag = true;
         }
         return flag;
@@ -332,7 +393,14 @@ public class FTCalCosmicModule extends FTModule {
     @Override
     public void setFunctionStyle() {
         for(int key : this.getDetector().getDetectorComponents()) {
-            H1F hcharge = this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key);
+            H1F hcharge = null;
+            hcharge = this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key);
+            if(hcharge.getFunction()!= null) {
+                hcharge.getFunction().setLineColor(4);
+                hcharge.getFunction().setLineWidth(2);
+                hcharge.getFunction().setOptStat(1111111);
+            }
+            hcharge = this.getComparisonDataGroup().getItem(1,1,key).getH1F("Charge_" + key);
             if(hcharge.getFunction()!= null) {
                 hcharge.getFunction().setLineColor(4);
                 hcharge.getFunction().setLineWidth(2);

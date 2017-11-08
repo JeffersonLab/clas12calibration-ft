@@ -112,6 +112,7 @@ public class CodaEventDecoder {
                 // FTCAL and EC/PCAL
                 //return this.getDataEntries_57602(crate, node, event);
                 this.readHeaderBank(crate, node, event);
+                //System.out.println("Found bank 57615");
                 //return this.getDataEntriesMode_7(crate,node, event);
             }
             

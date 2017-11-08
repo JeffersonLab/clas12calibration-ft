@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.clas.ftcal.tools;
+package org.clas.ft.tools;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -78,6 +78,8 @@ public class FTCanvasBook extends JPanel implements ActionListener {
     public void updateCanvas(){
         this.canvas.clear();
         this.canvas.divide(3, 3);
+        this.canvas.setGridX(false);
+        this.canvas.setGridY(false);
         for(int i = 0; i < this.padsPerPage; i++){
             int index = currentPage*this.padsPerPage + i;
             this.canvas.cd(i);

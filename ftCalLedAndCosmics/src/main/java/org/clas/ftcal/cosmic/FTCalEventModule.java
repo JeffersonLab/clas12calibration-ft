@@ -8,12 +8,13 @@ package org.clas.ftcal.cosmic;
 import java.awt.Color;
 import java.util.List;
 import org.clas.detector.DetectorDataDgtz;
-import org.clas.ftcal.tools.FTDetector;
-import org.clas.ftcal.tools.FTModule;
-import org.clas.ftcal.tools.FTModuleType;
+import org.clas.ft.tools.FTDetector;
+import org.clas.ft.tools.FTModule;
+import org.clas.ft.tools.FTModuleType;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
+import org.jlab.utils.groups.IndexedList;
 
 
 /**
@@ -36,10 +37,11 @@ public class FTCalEventModule extends FTModule {
     }
 
     @Override
-    public void createDataGroup() {
+    public IndexedList<DataGroup> createDataGroup() {
         H_WMAX   = new H1F("WMAX",   this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
         H_TCROSS = new H1F("TCROSS", this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
         H_WIDTH = new H1F("WIDTH",   this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
+        IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>();
         for(int component : this.getDetector().getDetectorComponents()) {
             int ix = this.getDetector().getIdX(component);
             int iy = this.getDetector().getIdY(component);
@@ -72,8 +74,9 @@ public class FTCalEventModule extends FTModule {
             dg.addDataSet(H_WAVE_PED,      0);
             dg.addDataSet(H_WAVE_PUL,      0);
             dg.addDataSet(G_PULSE_ANALYSIS,0);
-            this.getDataGroup().add(dg, 1, 1, component);
+            dataGroups.add(dg, 1, 1, component);
         }
+        return dataGroups;
     }
     
     @Override

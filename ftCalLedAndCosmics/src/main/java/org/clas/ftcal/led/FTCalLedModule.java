@@ -28,7 +28,7 @@ import org.clas.detector.CodaEventDecoder;
 import org.clas.detector.DetectorDataDgtz;
 import org.clas.detector.DetectorEventDecoder;
 import org.clas.ftcal.tools.FTCalDetector;
-import org.clas.ftcal.tools.FTParameter;
+import org.clas.ft.tools.FTParameter;
 import org.clas.view.DetectorListener;
 import org.clas.view.DetectorShape2D;
 import org.jlab.detector.base.DetectorCollection;
@@ -211,7 +211,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
         this.parameters.get(4).setRanges(0.75,1.05,1.0,2.0,false); 
         this.parameters.get(5).setRanges(500.0,1500.0,1.0,2000.0,false);        
         this.parameters.get(6).setRanges(0.0,deltaCharge,1.0,deltaCharge,false);
-        this.parameters.get(7).setRanges(400.0,600.0,1.0,1200.0,false);
+        this.parameters.get(7).setRanges(400.0,600.0,1.0,2400.0,false);
         this.parameters.get(8).setRanges(0.0,deltaAmpli,1.0,deltaAmpli,false);
         this.parameters.get(9).setRanges(0.0,100.0,1.0,100.0,false);
         this.parameters.get(10).setRanges(0.0,200.0,1.0,200.0,false);
@@ -837,7 +837,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
                         H_LED_fADC.get(1, 1, key).fill(i, pulse[i]-counter.getADCData(0).getPedestal() + 10.0);                
                     }
                     H_LED_CHARGE.get(1, 1, key).fill(counter.getADCData(0).getADC()*LSB*nsPerSample/50);
-                    H_LED_VMAX.get(1, 1, key).fill((counter.getADCData(0).getHeight()*LSB-counter.getADCData(0).getPedestal())*LSB);
+                    H_LED_VMAX.get(1, 1, key).fill((counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB);
                     H_LED_TCROSS.get(1, 1, key).fill(counter.getADCData(0).getTimeCourse()*nsPerSample-tPMTCross);
                     H_LED_THALF.get(1, 1, key).fill(counter.getADCData(0).getTime()-tPMTHalf); 
                     H_LED_WIDTH.get(1, 1, key).fill(counter.getADCData(0).getFWHM()*nsPerSample); 
@@ -849,7 +849,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
                     // fill info for time dependence evaluation
                     if(this.detector.hasComponent(key)) {
                         double ledCH = counter.getADCData(0).getADC()*LSB*nsPerSample/50;
-                        double ledAM = (counter.getADCData(0).getHeight()*LSB-counter.getADCData(0).getPedestal())*LSB;
+                        double ledAM = (counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB;
                         double ledFW = (counter.getADCData(0).getFWHM()*nsPerSample);
                         if(ledEvent[key]==-1) {
                             ledEvent[key] = nProcessed;

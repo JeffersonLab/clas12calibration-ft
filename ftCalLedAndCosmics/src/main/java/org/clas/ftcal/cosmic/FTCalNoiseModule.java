@@ -8,14 +8,15 @@ package org.clas.ftcal.cosmic;
 import java.awt.Color;
 import java.util.List;
 import org.clas.detector.DetectorDataDgtz;
-import org.clas.ftcal.tools.FTDetector;
-import org.clas.ftcal.tools.FTModule;
-import org.clas.ftcal.tools.FTModuleType;
-import org.clas.ftcal.tools.FTParameter;
+import org.clas.ft.tools.FTDetector;
+import org.clas.ft.tools.FTModule;
+import org.clas.ft.tools.FTModuleType;
+import org.clas.ft.tools.FTParameter;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.graphics.EmbeddedCanvas;
 import org.jlab.groot.group.DataGroup;
+import org.jlab.utils.groups.IndexedList;
 
 
 /**
@@ -44,7 +45,8 @@ public class FTCalNoiseModule extends FTModule {
     }
 
     @Override
-    public void createDataGroup() {
+    public IndexedList<DataGroup> createDataGroup() {
+        IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>();
         for(int component : this.getDetector().getDetectorComponents()) {
             int ix = this.getDetector().getIdX(component);
             int iy = this.getDetector().getIdY(component);
@@ -62,7 +64,7 @@ public class FTCalNoiseModule extends FTModule {
             DataGroup dg = new DataGroup(2, 1);
             dg.addDataSet(H_PED,        0);
             dg.addDataSet(H_NOISE,      1);
-            this.getDataGroup().add(dg, 1, 1, component);
+            dataGroups.add(dg, 1, 1, component);
         }
         pedestalMEAN    = new double[this.getDetector().getNComponents()];
         pedestalRMS     = new double[this.getDetector().getNComponents()];
@@ -71,6 +73,7 @@ public class FTCalNoiseModule extends FTModule {
         for(int i=0; i< this.getDetector().getNComponents(); i++) {
             detectorIDs[i]=this.getDetector().getIDArray()[i]; 
         }
+        return dataGroups;
     }
     
     @Override

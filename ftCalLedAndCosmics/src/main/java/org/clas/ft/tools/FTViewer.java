@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.clas.ftcal.tools;
+package org.clas.ft.tools;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -62,6 +62,11 @@ public class FTViewer implements ActionListener {
         menuItem.getAccessibleContext().setAccessibleDescription("Save histograms to file");
         menuItem.addActionListener(this);
         file.add(menuItem);
+        file.addSeparator();
+        menuItem = new JMenuItem("Load reference...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Load reference histograms");
+        menuItem.addActionListener(this);
+        file.add(menuItem);
         this.menuBar.add(file);  
     }
     
@@ -84,7 +89,7 @@ public class FTViewer implements ActionListener {
         JMenu settings = new JMenu("Settings");
         settings.setMnemonic(KeyEvent.VK_A);
         settings.getAccessibleContext().setAccessibleDescription("Choose monitoring parameters");
-        menuItem = new JMenuItem("Set analysis update interval...");
+        menuItem = new JMenuItem("Set analysis parameters...");
         menuItem.getAccessibleContext().setAccessibleDescription("Set analysis update interval");
         menuItem.addActionListener(this);
         settings.add(menuItem);

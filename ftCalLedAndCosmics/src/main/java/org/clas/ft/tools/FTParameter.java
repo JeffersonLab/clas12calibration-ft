@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.clas.ftcal.tools;
+package org.clas.ft.tools;
 
 import java.awt.Color;
 import org.jlab.groot.base.ColorPalette;
@@ -59,7 +59,13 @@ public class FTParameter {
     }
     
     public double getValue() {
-        return this.parValue;
+        if(parType) {
+            if(this.isValid(parValue))     return 0;
+            else if(this.isLow(parValue))  return -1;
+            else if(this.isHigh(parValue)) return 1;
+            else return 999;
+        }
+        else return this.parValue;
     }
         
     public void setLimit(double parLimit) {

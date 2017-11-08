@@ -3,28 +3,20 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.clas.ftcal.tools;
+package org.clas.ft.tools;
 
 import java.awt.Color;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JPanel;
 import org.clas.detector.DetectorDataDgtz;
-import org.jlab.detector.calib.utils.CalibrationConstants;
-import org.jlab.detector.calib.utils.CalibrationConstantsListener;
-import org.jlab.detector.calib.utils.CalibrationConstantsView;
 import org.jlab.groot.base.GStyle;
 import org.jlab.groot.data.IDataSet;
 import org.jlab.groot.data.TDirectory;
 import org.jlab.groot.graphics.EmbeddedCanvas;
 import org.jlab.groot.group.DataGroup;
-import org.jlab.groot.math.F1D;
 import org.jlab.utils.groups.IndexedList;
 
 
@@ -32,17 +24,16 @@ import org.jlab.utils.groups.IndexedList;
  *
  * @author devita
  */
-public class FTModule implements CalibrationConstantsListener {
+public class FTModule {
 
     private String                     name           = null;
     private FTModuleType               type           = null;
     private FTDetector                 detector       = null;
     private IndexedList<DataGroup>     moduleData     = new IndexedList<DataGroup>(3);
+    private IndexedList<DataGroup>     compareData    = new IndexedList<DataGroup>(3);
     private Map<String,EmbeddedCanvas> canvases       = new LinkedHashMap<String,EmbeddedCanvas>();
     private JPanel                     radioPane      = new JPanel();
     private List<FTParameter>          parameters     = new ArrayList<FTParameter>();
-    private CalibrationConstantsView   calibTable     = new CalibrationConstantsView();
-    private CalibrationConstants       calibConstants = null;
     private int                        numberOfEvents = 0;
     private int                        keySelect;
     private int                        runNumber      = 0;
@@ -88,27 +79,12 @@ public class FTModule implements CalibrationConstantsListener {
         }
     }
 
-    public void addConstants() {
-        String columnNames = "";
-        for(FTParameter par : this.parameters) {
-            if(columnNames.equals("")) columnNames = par.getName();
-            else {
-                columnNames = columnNames + ":";
-                columnNames = columnNames + par.getName() + "/F";
-            }
-        }
-        this.calibConstants = new CalibrationConstants(3, columnNames); 
-        for(int i=0; i<this.parameters.size(); i++) {
-            FTParameter par = this.parameters.get(i);
-            this.calibConstants.addConstraint(3+i, par.getMin(), par.getMax());
-        }
-        this.calibConstants.setPrecision(3);
-        for (int component : this.detector.getDetectorComponents()) this.calibConstants.addEntry(1, 1, component);
-        this.calibConstants.fireTableDataChanged();
-        this.resetTable();
-        this.calibTable.addConstants(this.calibConstants,this);
+    public final void addComparisonCanvas() {
+        EmbeddedCanvas can = new EmbeddedCanvas();  
+        this.canvases.put("Comparison", can);
     }
-    
+
+     
     public void addEvent(List<DetectorDataDgtz> counters) {
         this.numberOfEvents++;
         this.processEvent(counters);
@@ -127,23 +103,15 @@ public class FTModule implements CalibrationConstantsListener {
     public void analyze() {
         // analyze detector data at the end of data processing
     }
-
-    public void constantsEvent(CalibrationConstants cc, int col, int row) {
-        System.out.println("Well. it's working " + col + "  " + row);
-        String str_sector    = (String) cc.getValueAt(row, 0);
-        String str_layer     = (String) cc.getValueAt(row, 1);
-        String str_component = (String) cc.getValueAt(row, 2);
-        System.out.println(str_sector + " " + str_layer + " " + str_component);
-        
-        int sector    = Integer.parseInt(str_sector);
-        int layer     = Integer.parseInt(str_layer);
-        int component = Integer.parseInt(str_component);
-        this.keySelect = component;
-        this.plotDataGroup();
-    }
     
-    public void createDataGroup() {
-        // analyze detector data at the end of data processing
+    public IndexedList<DataGroup> createDataGroup() {
+        IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>();
+        return dataGroups;
+    }
+
+    private void createDataGroups() {
+        this.moduleData  = this.createDataGroup();
+        this.compareData = this.createDataGroup();
     }
 
     public Map<String,EmbeddedCanvas> getCanvases() {
@@ -159,12 +127,12 @@ public class FTModule implements CalibrationConstantsListener {
         return col;
     }
 
-    public CalibrationConstants getConstants() {
-        return calibConstants;
-    }
-
     public IndexedList<DataGroup> getDataGroup(){
         return moduleData;
+    }
+
+    public IndexedList<DataGroup> getComparisonDataGroup() {
+        return compareData;
     }
 
     public FTDetector getDetector() {
@@ -218,10 +186,6 @@ public class FTModule implements CalibrationConstantsListener {
         return keySelect;
     }
 
-    public CalibrationConstantsView getTable() {
-        return calibTable;
-    }
-
     public FTModuleType getType() {
         return type;
     }
@@ -234,6 +198,15 @@ public class FTModule implements CalibrationConstantsListener {
 
     }
     
+    public void plotDataGroups() {
+        this.plotDataGroup();
+        if(this.canvases.containsKey("Comparison")) this.plotComparison();
+    }
+    
+    public void plotComparison() {
+
+    }
+    
     public void printCanvas(String dir) {
         // print canvas to files
         for(Map.Entry<String, EmbeddedCanvas> entry : this.canvases.entrySet()) {
@@ -243,10 +216,12 @@ public class FTModule implements CalibrationConstantsListener {
         }
     }
     
-    public void readDataGroup(TDirectory dir) {
+    public void readDataGroup(TDirectory dir, boolean ref) {
         String folder = this.name + "/";
         System.out.println("Reading from: " + folder);        
-        Map<Long, DataGroup> map = this.getDataGroup().getMap();
+        Map<Long, DataGroup> map = null;
+        if(ref) map = this.getComparisonDataGroup().getMap();
+        else    map = this.getDataGroup().getMap();
         for( Map.Entry<Long, DataGroup> entry : map.entrySet()) {
             Long key = entry.getKey();
             DataGroup group = entry.getValue();
@@ -263,58 +238,20 @@ public class FTModule implements CalibrationConstantsListener {
             }
             map.replace(key, newGroup);
         }
-        this.plotDataGroup();
+        this.plotDataGroups();
         this.setFunctionStyle();
-        this.updateTable();
         this.detector.repaint();
     }
     
     public void resetEventListener() {
         System.out.println("Resetting " + this.name + " module");
-        this.createDataGroup();
-        this.plotDataGroup();
-        this.resetTable();
+        this.createDataGroups();
+        this.plotDataGroups();
         this.detector.repaint();
     }
     
-    public void resetTable() {
-        if(this.calibConstants!=null) {
-            for (int j=3; j<this.calibConstants.getColumnCount(); j++) {
-                for (int component : this.detector.getDetectorComponents()) { 
-                    this.calibConstants.setDoubleValue(-1.,this.calibConstants.getColumnName(j),1, 1, component);
-                }
-            }
-            this.calibConstants.fireTableDataChanged();
-        }
-    }
-    
-    public void saveTable(String name) {
-       try {
-            // Open the output file
-            File outputFile = new File(name);
-            FileWriter outputFw = new FileWriter(outputFile.getAbsoluteFile());
-            BufferedWriter outputBw = new BufferedWriter(outputFw);
-
-            for (int i = 0; i < this.calibConstants.getRowCount(); i++) {
-                String line = new String();
-                for (int j = 0; j < this.calibConstants.getColumnCount(); j++) {
-                    line = line + this.calibConstants.getValueAt(i, j);
-                    if (j < this.calibConstants.getColumnCount() - 1) {
-                        line = line + " ";
-                    }
-                }
-                outputBw.write(line);
-                outputBw.newLine();
-            }
-            outputBw.close();
-            System.out.println("Constants saved to'" + name);
-        } catch (IOException ex) {
-            System.out.println(
-                    "Error writing file '"
-                    + name + "'");
-            // Or we could just do this: 
-            ex.printStackTrace();
-        }
+    public void setAnalysisParameters() {
+               
     }
     
     public void setCanvasUpdate(int time) {
@@ -346,17 +283,6 @@ public class FTModule implements CalibrationConstantsListener {
         System.out.println("Function not implemented in current module");
     }
     
-    public void updateTable() {
-        if(this.calibConstants!=null) {
-            for(int key : this.detector.getDetectorComponents()) {
-                for(FTParameter par : this.parameters) {
-                    this.calibConstants.setDoubleValue(this.getParameterValue(par.getName(), key), par.getName(), 1, 1, key);
-                }
-            }
-            this.calibConstants.fireTableDataChanged();
-        }
-    }
-
     public void writeDataGroup(TDirectory dir) {
         String folder = "/" + this.name;
         dir.mkdir(folder);

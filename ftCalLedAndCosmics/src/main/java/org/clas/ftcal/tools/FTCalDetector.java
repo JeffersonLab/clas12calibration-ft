@@ -6,6 +6,7 @@
 package org.clas.ftcal.tools;
 
 import java.util.Set;
+import org.clas.ft.tools.FTDetector;
 import org.jlab.detector.base.DetectorCollection;
 import org.jlab.detector.base.DetectorType;
 import org.clas.view.DetectorShape2D;
