@@ -15,12 +15,14 @@ import org.jlab.groot.base.ColorPalette;
  */
 public class FTParameter {
     
-    private String name;
-    private double parValue;
-    private double parMin;
-    private double parMax;
-    private double parScale;
-    private double parLimit;
+    private String  name;
+    private double  parValue;
+    private double  parMin;
+    private double  parMax;
+    private double  parScale;
+    private double  parLimit;
+    private Color   parColor;
+    private boolean parType;
     
     public FTParameter(String n) {
         this.name = n;
@@ -36,42 +38,46 @@ public class FTParameter {
         return this.name;
     }
 
+    public double getLimit() {
+        return this.parLimit;
+    }
+        
+    public double getMax() {
+        return this.parMax;
+    }
+
+    public double getMin() {
+        return this.parMin;
+    }
+
+    public double getScale() {
+        return this.parScale;
+    }
+
+    public boolean getType() {
+        return parType;
+    }
+    
     public double getValue() {
         return this.parValue;
     }
         
-    public double getParMin() {
-        return this.parMin;
-    }
-
-    public double getParMax() {
-        return this.parMax;
-    }
-
-    public double getParScale() {
-        return this.parScale;
+    public void setLimit(double parLimit) {
+        this.parLimit = parLimit;
     }
     
-    public double getParLimit() {
-        return this.parLimit;
-    }
-        
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setValue(double value) {
-        this.parValue = value;
-    }
-            
-    public void setMin(double parMin) {
-        this.parMin = parMin;
-    }
-
     public void setMax(double parMax) {
         this.parMax = parMax;
     }
     
+    public void setMin(double parMin) {
+        this.parMin = parMin;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void setRange(double parMin, double parMax) {
         this.parMin = parMin;
         this.parMax = parMax;
@@ -84,14 +90,22 @@ public class FTParameter {
         this.parLimit = parLimit;
     }
     
+    public void setRanges(double parMin, double parMax, double parScale, double parLimit, boolean type) {
+        this.parMin = parMin;
+        this.parMax = parMax;
+        this.parScale = parScale;
+        this.parLimit = parLimit;
+        this.parType  = type;
+    }
+    
     public void setScale(double parScale) {
         this.parScale = parScale;
     }
     
-    public void setLimit(double parLimit) {
-        this.parLimit = parLimit;
+    public void setValue(double value) {
+        this.parValue = value;
     }
-    
+            
     public boolean isValid(double value) {
         boolean stat = false;
         this.setValue(value);
@@ -113,18 +127,23 @@ public class FTParameter {
         return stat;
     }
     
-    public Color getColor(double value, boolean bool) {
+    private Color getColor() {
         ColorPalette palette = new ColorPalette();
         Color col = new Color(100, 100, 100);
-        if(bool) {
-            if(this.isValid(value))    col = new Color(0, 145, 0);
-            else if(this.isLow(value)) col = new Color(0, 0, 100);
-            else                       col = new Color(255, 100, 0);             
+        if(this.parType) {
+            if(this.isValid(this.parValue))    col = new Color(0, 145, 0);
+            else if(this.isLow(this.parValue)) col = new Color(0, 0, 100);
+            else                               col = new Color(255, 100, 0);             
         }
         else {
-            col = palette.getColor3D(value*this.parScale, this.parLimit*this.parScale, false);
+            col = palette.getColor3D(this.parValue*this.parScale, this.parLimit*this.parScale, false);
          
         }
         return col;
+    }
+
+    public Color getColor(double value) {
+        this.setValue(value);       
+        return this.getColor();
     }
 }

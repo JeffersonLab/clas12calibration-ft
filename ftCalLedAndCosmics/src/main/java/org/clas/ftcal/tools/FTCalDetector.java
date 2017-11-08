@@ -89,10 +89,7 @@ public class FTCalDetector extends FTDetector {
     
     public void setThresholds(double threshold) {
         for (int component : this.getDetectorComponents()) {
-            int ix = this.getIdX(component);
-            int iy = this.getIdY(component);
-            thresholds.add(1, 1, component, threshold);// for runs Run>692
-            // For runs 487(?)>Run<=691 from here 1)
+            thresholds.add(1, 1, component, threshold);
         }
     }
     

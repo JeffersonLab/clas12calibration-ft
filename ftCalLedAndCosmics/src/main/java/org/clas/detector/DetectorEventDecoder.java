@@ -234,6 +234,7 @@ public class DetectorEventDecoder {
                                         adc.setThresholdCrossing(this.basicFitter.thresholdCrossing);
                                         adc.setRMS(this.basicFitter.rms);
                                         adc.setFWHM(this.basicFitter.pulseWidth);
+                                        adc.setADC(0, basicFitter.pulseLength);
                                     }
                                 } catch (Exception e) {
                                     System.out.println(">>>> error : fitting pulse "
@@ -247,7 +248,7 @@ public class DetectorEventDecoder {
                     //System.out.println(" apply nsa nsb " + nsa + " " + nsb);
                     if(data.getADCSize()>0){
                         for(int i = 0; i < data.getADCSize(); i++){
-                            data.getADCData(i).setADC(nsa, nsb);
+                            if(this.fadcPanel.useMode7) data.getADCData(i).setADC(nsa, nsb);
                         }
                     }
                 }

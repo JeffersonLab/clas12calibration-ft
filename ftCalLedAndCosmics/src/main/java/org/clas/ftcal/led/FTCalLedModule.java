@@ -183,36 +183,6 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
         JPanel canvasPane = new JPanel();
 
         canvasPane.setLayout(new BorderLayout());
-        JPanel buttonPane = new JPanel();
-        buttonPane.setLayout(new FlowLayout());
-
-        JButton fitBtn = new JButton("Fit Histograms");
-        fitBtn.addActionListener(this);
-        buttonPane.add(fitBtn);
-
-        JButton tableBtn = new JButton("Update Summary");
-        tableBtn.addActionListener(this);
-        buttonPane.add(tableBtn);
-
-        JRadioButton wavesRb  = new JRadioButton("Waveforms");
-        JRadioButton noiseRb  = new JRadioButton("Noise");
-        JRadioButton cosmicOccRb = new JRadioButton("Cosmics(Occ)");
-        JRadioButton cosmicCrgRb = new JRadioButton("Cosmics(Fit)");
-        ButtonGroup group = new ButtonGroup();
-        group.add(wavesRb);
-        group.add(noiseRb);
-        group.add(cosmicOccRb);
-        group.add(cosmicCrgRb);
-//        buttonPane.add(wavesRb);
-//        buttonPane.add(noiseRb);
-//        buttonPane.add(cosmicOccRb);
-//        buttonPane.add(cosmicCrgRb);
-        wavesRb.setSelected(true);
-        wavesRb.addActionListener(this);
-        noiseRb.addActionListener(this);
-        cosmicOccRb.addActionListener(this);
-        cosmicCrgRb.addActionListener(this);
-
         canvasPane.add(tabbedPane, BorderLayout.CENTER);
 //        canvasPane.add(buttonPane, BorderLayout.PAGE_END);
     
@@ -234,17 +204,17 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
         
         this.addParameters("Event", "Status", "Occupancy", "Pedestal (Counts)", "Noise (mV)", "Charge Mean (pC)", "Charge Sigma (pC)", 
                            "Amplitude Mean (mV)", "Amplitude Sigma (mV)", "Width (ns)", "Time (ns)");
-        this.parameters.get(0).setRanges(0.0,0.0,1.0,1.0);
-        this.parameters.get(1).setRanges(0.75,1.05,1.0,2.0);
-        this.parameters.get(2).setRanges(0.0,5000.0,1.0,5000.0);
-        this.parameters.get(3).setRanges(130.0,250.0,1.0,500.0);
-        this.parameters.get(4).setRanges(0.75,1.05,1.0,2.0); 
-        this.parameters.get(5).setRanges(500.0,1500.0,1.0,2000.0);        
-        this.parameters.get(6).setRanges(0.0,deltaCharge,1.0,deltaCharge);
-        this.parameters.get(7).setRanges(400.0,600.0,1.0,1200.0);
-        this.parameters.get(8).setRanges(0.0,deltaAmpli,1.0,deltaAmpli);
-        this.parameters.get(9).setRanges(0.0,100.0,1.0,100.0);
-        this.parameters.get(10).setRanges(0.0,200.0,1.0,200.0);
+        this.parameters.get(0).setRanges(0.0,0.0,1.0,1.0,true);
+        this.parameters.get(1).setRanges(0.75,1.05,1.0,2.0,true);
+        this.parameters.get(2).setRanges(0.0,5000.0,1.0,5000.0,false);
+        this.parameters.get(3).setRanges(130.0,250.0,1.0,500.0,false);
+        this.parameters.get(4).setRanges(0.75,1.05,1.0,2.0,false); 
+        this.parameters.get(5).setRanges(500.0,1500.0,1.0,2000.0,false);        
+        this.parameters.get(6).setRanges(0.0,deltaCharge,1.0,deltaCharge,false);
+        this.parameters.get(7).setRanges(400.0,600.0,1.0,1200.0,false);
+        this.parameters.get(8).setRanges(0.0,deltaAmpli,1.0,deltaAmpli,false);
+        this.parameters.get(9).setRanges(0.0,100.0,1.0,100.0,false);
+        this.parameters.get(10).setRanges(0.0,200.0,1.0,200.0,false);
         
     }
 
@@ -359,12 +329,12 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
         calib = new CalibrationConstants(3,"Pedestal (Counts)/F:Noise (mV)/F:Charge Mean (pC)/F:Charge Sigma (pC)/F:Amp. Mean (mV)/F:Amp. Sigma (mV)/F");
         calib.setName("Summary");
 	calib.setPrecision(3);
-        calib.addConstraint(3, this.parameters.get(3).getParMin(),this.parameters.get(3).getParMax()); 
-        calib.addConstraint(4, this.parameters.get(4).getParMin(),this.parameters.get(4).getParMax()); 
-        calib.addConstraint(5, this.parameters.get(5).getParMin(),this.parameters.get(5).getParMax()); 
-        calib.addConstraint(6, this.parameters.get(6).getParMin(),this.parameters.get(6).getParMax()); 
-        calib.addConstraint(7, this.parameters.get(7).getParMin(),this.parameters.get(7).getParMax()); 
-        calib.addConstraint(8, this.parameters.get(8).getParMin(),this.parameters.get(8).getParMax()); 
+        calib.addConstraint(3, this.parameters.get(3).getMin(),this.parameters.get(3).getMax()); 
+        calib.addConstraint(4, this.parameters.get(4).getMin(),this.parameters.get(4).getMax()); 
+        calib.addConstraint(5, this.parameters.get(5).getMin(),this.parameters.get(5).getMax()); 
+        calib.addConstraint(6, this.parameters.get(6).getMin(),this.parameters.get(6).getMax()); 
+        calib.addConstraint(7, this.parameters.get(7).getMin(),this.parameters.get(7).getMax()); 
+        calib.addConstraint(8, this.parameters.get(8).getMin(),this.parameters.get(8).getMax()); 
         for (int component : this.detector.getDetectorComponents()) calib.addEntry(1, 1, component);
         calib.fireTableDataChanged();
         this.resetTable();
@@ -645,7 +615,8 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
                 for(int i=0; i<hfADC.getData().length; i++) {
                     hfADC.setBinContent(i, H_LED_fADC.get(1, 1, keySelect).getBinContent(i)/H_LED_N.getBinContent(keySelect));
                 }
-            }            canvasAmpli.draw(hfADC);               
+            }            
+            canvasAmpli.draw(hfADC);               
         }
         canvasAmpli.cd(1);
         canvasAmpli.draw(G_LED_AMPLI.get(1, 1, keySelect));
@@ -1075,13 +1046,13 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
                 }
             }
             else if(plotSelect==1) {
-                col = this.parameters.get(1).getColor(this.getParameterValue(1,component), true);
+                col = this.parameters.get(1).getColor(this.getParameterValue(1,component));
             }
             else if(plotSelect==41) {
                 col = palette.getColor3D(this.getParameterValue(4,component), 1200., false); 
             }
             else {
-                col = this.parameters.get(plotSelect).getColor(this.getParameterValue(plotSelect,component), false);
+                col = this.parameters.get(plotSelect).getColor(this.getParameterValue(plotSelect,component));
             }
         }
         shape.setColor(col.getRed(),col.getGreen(),col.getBlue());
@@ -1094,7 +1065,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
         for(int i=0; i<this.parameters.size(); i++) {
             if(e.getActionCommand() == this.parameters.get(i).getName()) {
                 this.plotSelect=i;
-                this.detector.getView().getColorAxis().setRange(0, this.parameters.get(i).getParLimit());
+                this.detector.getView().getColorAxis().setRange(0, this.parameters.get(i).getLimit());
                 this.detector.getView().repaint();
                 break;
             }
@@ -1104,7 +1075,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
                 String item = (String) this.radioList.getSelectedItem();
                 if(item == this.parameters.get(i).getName()) {
                     this.plotSelect=i;
-                    this.detector.getView().getColorAxis().setRange(0, this.parameters.get(i).getParLimit());
+                    this.detector.getView().getColorAxis().setRange(0, this.parameters.get(i).getLimit());
                     this.detector.getView().repaint();
                     break;
                 }

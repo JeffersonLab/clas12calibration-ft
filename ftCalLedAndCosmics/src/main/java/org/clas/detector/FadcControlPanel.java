@@ -160,6 +160,23 @@ public class FadcControlPanel extends JPanel implements ActionListener {
         updateGUI();
     }
 
+    public void setMode1(int ped1, int ped2, int pul1, int pul2, int tet) {
+        this.bGa.setSelected(true);
+        this.mode1.setVisible(true);
+        this.mode7.setVisible(false);
+        this.useMode7 = false;
+        this.ped1 = ped1;
+        this.ped2 = ped2;
+        this.pul1 = pul1;
+        this.pul2 = pul2;
+        this.tet  = tet;
+        System.out.println("\nfADC integration in fixed windows:");
+        System.out.println("\t pedestal:  " + ped1 + ":" + ped2);
+        System.out.println("\t pulse:     " + pul1 + ":" + pul2);
+        System.out.println("\t threshold: " + tet);
+        updateGUI();
+    }
+
     public void setTET(int tet) {
         this.bG7b.setSelected(true);
         this.ttet.setEnabled(true);
@@ -184,18 +201,11 @@ public class FadcControlPanel extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         if (e.getActionCommand().compareTo("Mode 1") == 0) {
-            this.mode1.setVisible(true);
-            this.mode7.setVisible(false);
-            this.useMode7 = false;
-            this.ped1 = Integer.parseInt(tped1.getText());
-            this.ped2 = Integer.parseInt(tped2.getText());
-            this.pul1 = Integer.parseInt(tpul1.getText());
-            this.pul2 = Integer.parseInt(tpul2.getText());
-            this.tet = Integer.parseInt(tthrs.getText());
-            System.out.println("\nfADC integration in fixed windows:");
-            System.out.println("\t pedestal:  " + ped1 + ":" + ped2);
-            System.out.println("\t pulse:     " + pul1 + ":" + pul2);
-            System.out.println("\t threshold: " + tet);
+            this.setMode1(Integer.parseInt(tped1.getText()), 
+                          Integer.parseInt(tped2.getText()), 
+                          Integer.parseInt(tpul1.getText()), 
+                          Integer.parseInt(tpul2.getText()), 
+                          Integer.parseInt(tthrs.getText()));
         }
         if (e.getActionCommand().compareTo("Mode 7") == 0) {
             this.mode1.setVisible(false);

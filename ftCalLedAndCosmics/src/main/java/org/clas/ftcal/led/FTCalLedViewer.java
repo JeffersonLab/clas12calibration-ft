@@ -188,6 +188,7 @@ public class FTCalLedViewer implements IDataEventListener, ActionListener  {
         table.add(menuItem);
         this.menuBar.add(table);
     }
+    
     public void chooseUpdateInterval() {
         String s = (String)JOptionPane.showInputDialog(
                     null,

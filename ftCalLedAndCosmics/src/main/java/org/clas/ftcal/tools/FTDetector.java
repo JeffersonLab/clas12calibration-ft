@@ -45,4 +45,6 @@ public abstract class FTDetector extends DetectorPane2D {
     public abstract int getComponent(int ix, int iy);
 
     public abstract int getComponent(double x, double y);
+    
+    public abstract void setThresholds(double value);
 }

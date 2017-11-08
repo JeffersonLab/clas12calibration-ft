@@ -83,7 +83,7 @@ public class BasicFADCFitter  implements IFADCFitter {
                     noise  += pulse[bin] * pulse[bin];
                 }
                 baseline = ((double) pedsum)/ (pedistalMaxBin - pedistalMinBin);
-                ped = pedsum=pedsum/(pedistalMaxBin - pedistalMinBin);	//(int) baseline;
+                ped = pedsum/(pedistalMaxBin - pedistalMinBin);	//(int) baseline;
                 rms = Math.sqrt(noise / (pedistalMaxBin - pedistalMinBin) - baseline * baseline);
             }
             // find threshold crossing
