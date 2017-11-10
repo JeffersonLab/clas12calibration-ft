@@ -49,18 +49,18 @@ public class FTCalEventModule extends FTModule {
             H1F H_WAVE = new H1F("Wave_" + component, title, 100, 0.0, 100.0);
             H_WAVE.setFillColor(5);
             H_WAVE.setTitleX("fADC sample");
-            H_WAVE.setTitleY("fADC counts");   
-            H_WAVE.setOptStat(1111);    
+            H_WAVE.setTitleY("fADC channels");   
+            H_WAVE.setOptStat(1);    
             H1F H_WAVE_PED = new H1F("Wave_ped_" + component, title, 100, 0.0, 100.0);
             H_WAVE_PED.setFillColor(47);
             H_WAVE_PED.setTitleX("fADC sample");
-            H_WAVE_PED.setTitleY("fADC counts");   
-            H_WAVE_PED.setOptStat(1111);    
+            H_WAVE_PED.setTitleY("fADC channels");   
+            H_WAVE_PED.setOptStat(1);    
             H1F H_WAVE_PUL = new H1F("Wave_pul_" + component, title, 100, 0.0, 100.0);
             H_WAVE_PUL.setFillColor(46);
             H_WAVE_PUL.setTitleX("fADC sample");
-            H_WAVE_PUL.setTitleY("fADC counts");   
-            H_WAVE_PUL.setOptStat(1111); 
+            H_WAVE_PUL.setTitleY("fADC channels");   
+            H_WAVE_PUL.setOptStat(1); 
             GraphErrors G_PULSE_ANALYSIS = new GraphErrors("Pulse_" + component);
             G_PULSE_ANALYSIS.setTitle(title); //  title
             G_PULSE_ANALYSIS.setTitleX("Event");             // X axis title

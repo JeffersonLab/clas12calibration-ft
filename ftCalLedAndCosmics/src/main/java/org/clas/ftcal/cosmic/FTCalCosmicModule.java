@@ -60,7 +60,7 @@ public class FTCalCosmicModule extends FTModule {
         this.addParameters("Occupancy", "<Q> (pC)", "\u03C3(Q) (pC)", "\u03C7\u00B2(Q)"/*, "<T>", "\u03C3(T)"*/);
         this.getParameter(0).setRanges(0.0,1000000.0,1.0,1000000.0, false);
         this.getParameter(1).setRanges(4.0,45.0,10.0,10.0, false);///Range Charge
-        this.getParameter(2).setRanges(0.0,10.0,10.0,2.0, false);
+        this.getParameter(2).setRanges(0.0,10.0,10.0,1.0, false);
         this.getParameter(3).setRanges(0.0,2.0,10.0,2.0, false);
 //        this.getParameter(4).setRanges(0.0,50.0,10.0,50.0, false);
 //        this.getParameter(5).setRanges(0.0,5.0,10.0,5.0, false);
@@ -116,13 +116,13 @@ public class FTCalCosmicModule extends FTModule {
             H1F H_fADC = new H1F("fADC_" + component, title, 100, 0.0, 100.0);
             H_fADC.setFillColor(5);
             H_fADC.setTitleX("fADC sample");
-            H_fADC.setTitleY("fADC counts");   
-            H_fADC.setOptStat(1111);    
+            H_fADC.setTitleY("fADC channels");   
+            H_fADC.setOptStat(1);    
             H1F H_COSMIC_fADC = new H1F("Cosmic_fADC_" + component, title, 100, 0.0, 100.0);
             H_COSMIC_fADC.setFillColor(3);
             H_COSMIC_fADC.setTitleX("fADC sample");
-            H_COSMIC_fADC.setTitleY("fADC counts");   
-            H_COSMIC_fADC.setOptStat(1111); 
+            H_COSMIC_fADC.setTitleY("fADC channels");   
+            H_COSMIC_fADC.setOptStat(1); 
             H1F H_COSMIC_CHARGE = new H1F("Charge_" + component, title, 96, -2.0, 30.0);
             H_COSMIC_CHARGE.setFillColor(2);
             H_COSMIC_CHARGE.setTitleX("Charge (pC)");

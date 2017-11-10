@@ -37,10 +37,10 @@ public class FTCalNoiseModule extends FTModule {
         this.setName("Noise");
         this.addCanvases("Noise");
         this.setType(FTModuleType.EVENT_ACCUMULATE);
-        this.addParameters("Status", "Pedestal (Counts)", "Pedestal RMS (Counts)", "Noise (mV)");
+        this.addParameters("Status", "Pedestal (Channels)", "Pedestal RMS (Channels)", "Noise (mV)");
         this.getParameter("Status").setRanges(0.75,1.05,1.0,2.0, true);
-        this.getParameter("Pedestal (Counts)").setRanges(130.0,250.0,1.0,500.0, false);
-        this.getParameter("Pedestal RMS (Counts)").setRanges(0.0,2.0,1.0,2.0,false);
+        this.getParameter("Pedestal (Channels)").setRanges(130.0,250.0,1.0,500.0, false);
+        this.getParameter("Pedestal RMS (Channels)").setRanges(0.0,2.0,1.0,2.0,false);
         this.getParameter("Noise (mV)").setRanges(0.75,1.05,1.0,2.0,false);
     }
 
@@ -53,7 +53,7 @@ public class FTCalNoiseModule extends FTModule {
             String title = "Crystal " + component + " (" + ix + "," + iy + ")";
             H1F H_PED = new H1F("Pedestal_" + component, title, 120, 130., 250.);
             H_PED.setFillColor(2);
-            H_PED.setTitleX("fADC counts");
+            H_PED.setTitleX("fADC channels");
             H_PED.setTitleY("Counts");   
             H_PED.setOptStat(1111);    
             H1F H_NOISE = new H1F("Noise_" + component, title, 200, 0.0, 10.0);
@@ -92,7 +92,7 @@ public class FTCalNoiseModule extends FTModule {
         GraphErrors  G_PED = new GraphErrors("Pedestals",detectorIDs,pedestalRMS);
         G_PED.setTitle(" "); //  title
         G_PED.setTitleX("Crystal ID"); // X axis title
-        G_PED.setTitleY("Pedestal RMS (mV)");   // Y axis title
+        G_PED.setTitleY("Pedestal RMS (Channels)");   // Y axis title
         G_PED.setMarkerColor(2); // color from 0-9 for given palette
         G_PED.setMarkerSize(4); // size in points on the screen
         G_PED.setMarkerStyle(0); // Style can be 1 or 2
@@ -138,12 +138,12 @@ public class FTCalNoiseModule extends FTModule {
                     value = this.getDataGroup().getItem(1,1,key).getH1F("Noise_" + key).getMean();
                     break;
                 }
-                case "Pedestal (Counts)":
+                case "Pedestal (Channels)":
                 {
                     value = this.getDataGroup().getItem(1,1,key).getH1F("Pedestal_" + key).getMean();
                     break;
                 }
-                case "Pedestal RMS (Counts)":
+                case "Pedestal RMS (Channels)":
                 {
                     value = this.getDataGroup().getItem(1,1,key).getH1F("Pedestal_" + key).getRMS();
                     break;

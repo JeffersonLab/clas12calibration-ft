@@ -438,7 +438,7 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
                             if (reader.hasEvent()) {
                                 DataEvent event = reader.getNextEvent();
                                 this.dataEventAction(event);
-                                if(k % 1000 == 0) System.out.println("Analyzed " + k + " events");
+                                if(k % 1000 == 0) System.out.println("Read " + k + " events");
                             }
                         }
                         for(FTModule module : this.modules) {
@@ -448,6 +448,7 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
                     }
                 }
             }
+            System.out.println("Task completed");
         }
     }
     
