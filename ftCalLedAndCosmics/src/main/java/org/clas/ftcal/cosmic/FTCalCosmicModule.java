@@ -59,7 +59,7 @@ public class FTCalCosmicModule extends FTModule {
         this.addComparisonCanvas();
         this.addParameters("Occupancy", "<Q> (pC)", "\u03C3(Q) (pC)", "\u03C7\u00B2(Q)"/*, "<T>", "\u03C3(T)"*/);
         this.getParameter(0).setRanges(0.0,1000000.0,1.0,1000000.0, false);
-        this.getParameter(1).setRanges(5.0,45.0,10.0,10.0, false);///Range Charge
+        this.getParameter(1).setRanges(4.0,45.0,10.0,10.0, false);///Range Charge
         this.getParameter(2).setRanges(0.0,10.0,10.0,2.0, false);
         this.getParameter(3).setRanges(0.0,2.0,10.0,2.0, false);
 //        this.getParameter(4).setRanges(0.0,50.0,10.0,50.0, false);
@@ -169,16 +169,16 @@ public class FTCalCosmicModule extends FTModule {
         fcharge.setParLimits(1, 4.0, 30.0);//Changed from 5-30        
         fcharge.setParameter(2,1.6);//Changed from 2
         fcharge.setParLimits(2, 0.3, 5);//Changed from 0.5-10
-        if(hcharge.getBinContent(1)==0){
-            fcharge.setParLimits(3, 0, 0);
-            fcharge.setParLimits(4, 0, 0);
-        }
-        else {
+//        if(hcharge.getBinContent(1)==0){
+//            fcharge.setParLimits(3, 0, 0);
+//            fcharge.setParLimits(4, 0, 0);
+//        }
+//        else {
             fcharge.setParameter(3,hcharge.getBinContent(5));
             fcharge.setParLimits(3,  0.0, 10000000.); 
             fcharge.setParameter(4, -0.3);//Changed from -0.2
             fcharge.setParLimits(4,  0.0, 3.0); //Changed from -10-0
-        }
+//        }
         
     }
     
@@ -350,7 +350,7 @@ public class FTCalCosmicModule extends FTModule {
         threshold.setText(Double.toString(this.singleChThr));
         panel.add(threshold);
         
-        int result = JOptionPane.showConfirmDialog(null, panel, "Adjust Fit", JOptionPane.OK_CANCEL_OPTION);
+        int result = JOptionPane.showConfirmDialog(null, panel, "Analysis parameters", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {        
             if (!multiplicity.getText().isEmpty()) {
                 this.cosmicMult = Integer.parseInt(multiplicity.getText());

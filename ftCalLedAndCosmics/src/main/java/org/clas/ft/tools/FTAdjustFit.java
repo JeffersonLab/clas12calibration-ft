@@ -26,7 +26,7 @@ import org.jlab.groot.math.F1D;
 
 public class FTAdjustFit {
     
-    public F1D newfct; 
+    public  F1D newfct; 
     private F1D fct;
     private H1F hist;
     private String opt;
@@ -91,14 +91,14 @@ public class FTAdjustFit {
 	JTextField[] params = new JTextField[10];
         
 	private CustomPanel(){
-            int npar = fct.getNPars();
+            int npar = newfct.getNPars();
             this.setLayout(new GridLayout(npar+2, 2));            
            
             for (int i = 0; i < npar; i++) {  
-                JLabel l = new JLabel("Par"+i, JLabel.TRAILING);
+                JLabel l = new JLabel(newfct.parameter(i).name(), JLabel.TRAILING);
                 this.add(l);
                 params[i] = new JTextField(5);
-                params[i].setText(Double.toString(fct.getParameter(i)));
+                params[i].setText(String.format("%.3f", fct.getParameter(i)));
                 this.add(params[i]);
             }
             this.add(new JLabel("Fit range minimum"));
