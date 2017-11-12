@@ -36,15 +36,7 @@ public class FTCalCosmicModule extends FTModule {
     H1F hfADC          = null;
     H1F H_fADC_N       = null;
     H1F H_COSMIC_N     = null;
-//    H1F H_COSMIC_MEAN  = null;
-//    H1F H_COSMIC_SIGMA = null;
-//    H1F H_COSMIC_CHI2  = null;
-//    H1F H_TIME_MEAN    = null;
-//    H1F H_TIME_SIGMA   = null;
     H1F H_WMAX         = null;
-//    double[] detectorIDs;
-//    double[] timeCROSS;
-//    double[] timeHALF;   
     
     // analysis realted info
     int    cosmicMult  = 4;  // Horizonthal selection // number of crystals above threshold in a column for cosmics selection
@@ -79,50 +71,55 @@ public class FTCalCosmicModule extends FTModule {
     @Override
     public void analyze() {
         for(int key : this.getDetector().getDetectorComponents()) {
+            H1F hfadcn  = this.getDataGroup().getItem(1,1,key).getH1F("fADC");
+            H1F hfadcr  = this.getDataGroup().getItem(1,1,key).getH1F("fADC_RAW_" + key);
+            H1F hfadc   = this.getDataGroup().getItem(1,1,key).getH1F("fADC_" + key);
+            H1F hcosmn  = this.getDataGroup().getItem(1,1,key).getH1F("EVENT");
+            H1F hcosmr  = this.getDataGroup().getItem(1,1,key).getH1F("Cosmic_fADC_RAW_" + key);
+            H1F hcosm   = this.getDataGroup().getItem(1,1,key).getH1F("Cosmic_fADC_" + key);
+            for(int i=0; i<hfadc.getDataSize(0); i++) {
+                if(hfadcn.getBinContent(key)>0) hfadc.setBinContent(i, hfadcr.getBinContent(i)/hfadcn.getBinContent(key));
+                if(hcosmn.getBinContent(key)>0) hcosm.setBinContent(i, hcosmr.getBinContent(i)/hcosmn.getBinContent(key));
+            }
             H1F hcharge = this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key);
             F1D fcharge = this.getDataGroup().getItem(1,1,key).getF1D("Landau_" + key);
             if(hcharge.getEntries()>100) {
                 this.initLandauFitPar(hcharge, fcharge);
                 DataFitter.fit(fcharge,hcharge,"LRQ");
-//                hcharge.getFunction().setOptStat(0);
-//                H_COSMIC_MEAN.setBinContent(key, fcharge.getParameter(1));
-//                H_COSMIC_SIGMA.setBinContent(key, fcharge.parameter(1).error());
-//                H_COSMIC_CHI2.setBinContent(key, fcharge.getChiSquare()/fcharge.getNDF());
             }
         }
     }
     
     @Override
     public IndexedList<DataGroup> createDataGroup() {
-        H_fADC_N       = new H1F("fADC"      , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
-        H_COSMIC_N     = new H1F("EVENT"     , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
-//        H_COSMIC_MEAN  = new H1F("MEAN"      , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
-//        H_COSMIC_SIGMA = new H1F("SIGMA"     , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
-//        H_COSMIC_CHI2  = new H1F("CHI2"      , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
-//        H_TIME_MEAN    = new H1F("TIME MEAN" , this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
-//        H_TIME_SIGMA   = new H1F("TIME SIGMA", this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
-        H_WMAX         = new H1F("WMAX"      ,this.getDetector().getComponentMaxCount(),0.,this.getDetector().getComponentMaxCount());
-//        timeCROSS       = new double[this.getDetector().getNComponents()];
-//        timeHALF        = new double[this.getDetector().getNComponents()];
-//        detectorIDs     = new double[this.getDetector().getNComponents()];        
-//        for(int i=0; i< this.getDetector().getNComponents(); i++) {
-//            detectorIDs[i]=this.getDetector().getIDArray()[i]; 
-//        }
+        H_fADC_N       = new H1F("fADC"      , this.getDetector().getComponentMaxCount()+1, 0, this.getDetector().getComponentMaxCount()+1);
+        H_COSMIC_N     = new H1F("EVENT"     , this.getDetector().getComponentMaxCount()+1, 0, this.getDetector().getComponentMaxCount()+1);
+        H_WMAX         = new H1F("WMAX"      , this.getDetector().getComponentMaxCount()+1, 0, this.getDetector().getComponentMaxCount()+1);
         IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>();
         for(int component : this.getDetector().getDetectorComponents()) {
             int ix = this.getDetector().getIdX(component);
             int iy = this.getDetector().getIdY(component);
             String title = "Crystal " + component + " (" + ix + "," + iy + ")";
-            H1F H_fADC = new H1F("fADC_" + component, title, 100, 0.0, 100.0);
+            H1F H_fADC = new H1F("fADC_RAW_" + component, title, 100, 0.0, 100.0);
             H_fADC.setFillColor(5);
             H_fADC.setTitleX("fADC sample");
             H_fADC.setTitleY("fADC channels");   
             H_fADC.setOptStat(1);    
-            H1F H_COSMIC_fADC = new H1F("Cosmic_fADC_" + component, title, 100, 0.0, 100.0);
+            H1F H_fADC_NORM = new H1F("fADC_" + component, title, 100, 0.0, 100.0);
+            H_fADC_NORM.setFillColor(5);
+            H_fADC_NORM.setTitleX("fADC sample");
+            H_fADC_NORM.setTitleY("fADC channels");   
+            H_fADC_NORM.setOptStat(1);    
+             H1F H_COSMIC_fADC = new H1F("Cosmic_fADC_RAW_" + component, title, 100, 0.0, 100.0);
             H_COSMIC_fADC.setFillColor(3);
             H_COSMIC_fADC.setTitleX("fADC sample");
             H_COSMIC_fADC.setTitleY("fADC channels");   
             H_COSMIC_fADC.setOptStat(1); 
+             H1F H_COSMIC_fADC_NORM = new H1F("Cosmic_fADC_" + component, title, 100, 0.0, 100.0);
+            H_COSMIC_fADC_NORM.setFillColor(3);
+            H_COSMIC_fADC_NORM.setTitleX("fADC sample");
+            H_COSMIC_fADC_NORM.setTitleY("fADC channels");   
+            H_COSMIC_fADC_NORM.setOptStat(1); 
             H1F H_COSMIC_CHARGE = new H1F("Charge_" + component, title, 96, -2.0, 30.0);
             H_COSMIC_CHARGE.setFillColor(2);
             H_COSMIC_CHARGE.setTitleX("Charge (pC)");
@@ -143,11 +140,15 @@ public class FTCalCosmicModule extends FTModule {
             F_ChargeLandau.setOptStat(1111111); 
             F_ChargeLandau.setLineWidth(2);  
             DataGroup dg = new DataGroup(2, 4);
-            dg.addDataSet(H_fADC,          0);
-            dg.addDataSet(H_COSMIC_fADC,   1);
-            dg.addDataSet(H_COSMIC_VMAX,   2);
-            dg.addDataSet(H_COSMIC_CHARGE, 3);
-            dg.addDataSet(F_ChargeLandau,  4);
+            dg.addDataSet(H_fADC_N,           0);
+            dg.addDataSet(H_fADC,             0);
+            dg.addDataSet(H_fADC_NORM,        0);
+            dg.addDataSet(H_COSMIC_N,         1);
+            dg.addDataSet(H_COSMIC_fADC,      1);
+            dg.addDataSet(H_COSMIC_fADC_NORM, 1);
+            dg.addDataSet(H_COSMIC_VMAX,      2);
+            dg.addDataSet(H_COSMIC_CHARGE,    3);
+            dg.addDataSet(F_ChargeLandau,     4);
             dataGroups.add(dg, 1, 1, component);
         }
         return dataGroups;
@@ -244,8 +245,8 @@ public class FTCalCosmicModule extends FTModule {
         for(DetectorDataDgtz counter : counters) {
             int key = counter.getDescriptor().getComponent();
             if(this.getDetector().hasComponent(key)) {
-                H1F hfadc  = this.getDataGroup().getItem(1,1,key).getH1F("fADC_" + key);
-                H_fADC_N.fill(key);
+                H1F hfadc  = this.getDataGroup().getItem(1,1,key).getH1F("fADC_RAW_" + key);
+                this.getDataGroup().getItem(1,1,key).getH1F("fADC").fill(key);
                 short pulse[] = counter.getADCData(0).getPulseArray();
                 for (int i = 0; i < Math.min(pulse.length, hfadc.getAxis().getNBins()); i++) {
                     hfadc.fill(i, pulse[i] - counter.getADCData(0).getPedestal() + 10.0);
@@ -259,19 +260,17 @@ public class FTCalCosmicModule extends FTModule {
             int key = counter.getDescriptor().getComponent();
             if(this.getDetector().hasComponent(key)) {
                 if(this.selectCosmics(key) && !this.isLargeEvent()){
-                    H1F hcfadc  = this.getDataGroup().getItem(1,1,key).getH1F("Cosmic_fADC_" + key);
+                    H1F hcfadc  = this.getDataGroup().getItem(1,1,key).getH1F("Cosmic_fADC_RAW_" + key);
                     H1F hcharge = this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key);
                     H1F hampli  = this.getDataGroup().getItem(1,1,key).getH1F("Amplitude_" + key);
-                    H_COSMIC_N.fill(key);
+                    this.getDataGroup().getItem(1,1,key).getH1F("EVENT").fill(key);
                     short pulse[] = counter.getADCData(0).getPulseArray();
                     for (int i = 0; i < Math.min(pulse.length, hcfadc.getAxis().getNBins()); i++) {
                          hcfadc.fill(i, pulse[i] - counter.getADCData(0).getPedestal() + 10.0);
                     }
                     double charge = counter.getADCData(0).getADC()*LSB*nsPerSample/50;
                     hcharge.fill(charge);
-                    hampli.fill((counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB);
-//                    H_COSMIC_TCROSS.get(0, 0, key).fill(this.getFitter().getTime(3)-tPMTCross);
-//                    H_COSMIC_THALF.get(0, 0, key).fill(this.getFitter().getTime(7)-tPMTHalf);      
+                    hampli.fill((counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB);     
                 }  
             }
          }
@@ -310,16 +309,6 @@ public class FTCalCosmicModule extends FTModule {
                             this.getDataGroup().getItem(1,1,key).getF1D("Landau_" + key).getNDF();
                     break;
                 }
-//                case "<T> (ns)":
-//                {
-//                    value = this.H_TIME_MEAN.getBinContent(key);
-//                    break;
-//                }
-//                case "\u03C3(T) (ns)":
-//                {
-//                    value = this.H_TIME_SIGMA.getBinContent(key);
-//                    break;
-//                }
                 default:
                 {
                     value = -1;
@@ -374,13 +363,28 @@ public class FTCalCosmicModule extends FTModule {
         int nCrystalInColumn = 0;
         int ix = this.getDetector().getIX(key);
         int iy = this.getDetector().getIY(key);
-        int i1 = Math.max(0, iy - this.cosmicMult);    // allowing for +/- to cope with dead channels
-        int i2 = iy + cosmicMult;
-        for (int i = i1; i<= i2; i++) {
-            int component = this.getDetector().getComponent(ix, i);
-            if (i != iy && this.getDetector().hasComponent(component)) {
-                if (H_WMAX.getBinContent(component) > this.singleChThr) {
-                    nCrystalInColumn++;
+//        int i1 = Math.max(0, iy - this.cosmicRange);    // allowing for +/- to cope with dead channels
+//        int i2 = iy + cosmicRange;
+//        for (int i = i1; i<= i2; i++) {
+//            int component = this.getDetector().getComponent(ix, i);
+//            if (i != iy && this.getDetector().hasComponent(component)) {
+//                if (H_WMAX.getBinContent(component) > this.singleChThr) {
+//                    nCrystalInColumn++;
+//                }
+//            }
+//        }
+        int ntest = 0;
+        for (int i = 1; i<=this.cosmicRange; i++) {
+            if(ntest<=this.cosmicRange) {
+                int component = this.getDetector().getComponent(ix, iy + i);
+                if (this.getDetector().hasComponent(component) ) {
+                    ntest++;
+                    if (H_WMAX.getBinContent(component) > this.singleChThr) nCrystalInColumn++;               
+                }
+                component = this.getDetector().getComponent(ix, iy - i);
+                if (this.getDetector().hasComponent(component) && (iy-1)>=0) {
+                    ntest++;
+                    if (H_WMAX.getBinContent(component) > this.singleChThr) nCrystalInColumn++;               
                 }
             }
         }

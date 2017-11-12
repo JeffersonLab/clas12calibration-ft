@@ -135,7 +135,8 @@ public class FTCalNoiseModule extends FTModule {
             switch (parameterName) {
                 case "Status":
                 {
-                    value = this.getDataGroup().getItem(1,1,key).getH1F("Noise_" + key).getMean();
+                    this.getParameter(parameterName).setValue(this.getDataGroup().getItem(1,1,key).getH1F("Noise_" + key).getMean());
+                    value = this.getParameter(parameterName).getValue();
                     break;
                 }
                 case "Pedestal (Channels)":

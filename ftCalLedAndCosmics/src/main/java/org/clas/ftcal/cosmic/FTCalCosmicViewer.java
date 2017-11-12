@@ -199,7 +199,7 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
             String fileName = null;
             JFileChooser fc = new JFileChooser();
             fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-            File workingDirectory = new File(this.workDir + "/" + this.getName());
+            File workingDirectory = new File(this.workDir);
             fc.setCurrentDirectory(workingDirectory);
             int option = fc.showOpenDialog(null);
             if (option == JFileChooser.APPROVE_OPTION) {
@@ -228,7 +228,7 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
             String fileName = null;
             JFileChooser fc = new JFileChooser();
             fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-            File workingDirectory = new File(this.workDir + "/" + this.getName());
+            File workingDirectory = new File(this.workDir);
             fc.setCurrentDirectory(workingDirectory);
             int option = fc.showOpenDialog(null);
             if (option == JFileChooser.APPROVE_OPTION) {
@@ -296,7 +296,8 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
         int icol=0;
         for(Map.Entry<FTParameter, Integer> entry : this.parameters.entrySet()) {
             FTParameter par = entry.getKey();
-            this.calibConstants.addConstraint(3+icol, par.getMin(), par.getMax());
+            if(par.getType()) this.calibConstants.addConstraint(3+icol, 0, 0);
+            else              this.calibConstants.addConstraint(3+icol, par.getMin(), par.getMax());
             icol++;
         }
         this.calibConstants.setPrecision(3);
@@ -377,6 +378,7 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
         for(int k=0; k<this.modules.size(); k++) {
             this.modules.get(k).readDataGroup(dir,ref);
         }
+        this.updateTable();
     }
 
     public void processEvent(DataEvent event) {
@@ -456,6 +458,7 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
     public void resetEventListener() {
         for(FTModule module : this.modules) {
             module.resetEventListener();
+            module.setNumberOfEvents(0);
         }
         this.resetTable();
     }

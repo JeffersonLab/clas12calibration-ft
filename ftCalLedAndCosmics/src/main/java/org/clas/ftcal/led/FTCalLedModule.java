@@ -211,7 +211,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
         this.parameters.get(4).setRanges(0.75,1.05,1.0,2.0,false); 
         this.parameters.get(5).setRanges(500.0,1500.0,1.0,2000.0,false);        
         this.parameters.get(6).setRanges(0.0,deltaCharge,1.0,deltaCharge,false);
-        this.parameters.get(7).setRanges(400.0,600.0,1.0,2400.0,false);
+        this.parameters.get(7).setRanges(800.0,1200.0,1.0,2400.0,false);
         this.parameters.get(8).setRanges(0.0,deltaAmpli,1.0,deltaAmpli,false);
         this.parameters.get(9).setRanges(0.0,100.0,1.0,100.0,false);
         this.parameters.get(10).setRanges(0.0,200.0,1.0,200.0,false);
