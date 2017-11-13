@@ -450,6 +450,7 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
                     }
                 }
             }
+            this.updateTable();
             System.out.println("Task completed");
         }
     }
