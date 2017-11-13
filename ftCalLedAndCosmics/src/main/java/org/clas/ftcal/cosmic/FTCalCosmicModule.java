@@ -86,6 +86,7 @@ public class FTCalCosmicModule extends FTModule {
             if(hcharge.getEntries()>100) {
                 this.initLandauFitPar(hcharge, fcharge);
                 DataFitter.fit(fcharge,hcharge,"LRQ");
+                hcharge.setFunction(null);
             }
         }
     }
@@ -133,13 +134,13 @@ public class FTCalCosmicModule extends FTModule {
             F1D F_ChargeLandau = new F1D("Landau_" + component,"[amp]*landau(x,[mean],[sigma])+[e0]*exp(-x*[e1])", 0.0, 40.0);
             F_ChargeLandau.setParameter(0,0.0);
             F_ChargeLandau.setParameter(1,0.0);
-            F_ChargeLandau.setParameter(2,0.0);
+            F_ChargeLandau.setParameter(2,1.0);
             F_ChargeLandau.setParameter(3,0.0);
             F_ChargeLandau.setParameter(4,0.0);
             F_ChargeLandau.setLineColor(4);  
             F_ChargeLandau.setOptStat(1111111); 
             F_ChargeLandau.setLineWidth(2);  
-            DataGroup dg = new DataGroup(2, 4);
+            DataGroup dg = new DataGroup(2, 2);
             dg.addDataSet(H_fADC_N,           0);
             dg.addDataSet(H_fADC,             0);
             dg.addDataSet(H_fADC_NORM,        0);
@@ -148,7 +149,7 @@ public class FTCalCosmicModule extends FTModule {
             dg.addDataSet(H_COSMIC_fADC_NORM, 1);
             dg.addDataSet(H_COSMIC_VMAX,      2);
             dg.addDataSet(H_COSMIC_CHARGE,    3);
-            dg.addDataSet(F_ChargeLandau,     4);
+            dg.addDataSet(F_ChargeLandau,     3);
             dataGroups.add(dg, 1, 1, component);
         }
         return dataGroups;
@@ -213,7 +214,7 @@ public class FTCalCosmicModule extends FTModule {
             canvas.draw(this.getDataGroup().getItem(1,1,key).getH1F("Amplitude_" + key));
             canvas.cd(3);
             canvas.draw(this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key));
-//            canvas.draw(this.getDataGroup().getItem(1,1,key).getF1D("Landau_" + key),"same");
+            canvas.draw(this.getDataGroup().getItem(1,1,key).getF1D("Landau_" + key),"same");
         }
     }
     
@@ -229,10 +230,12 @@ public class FTCalCosmicModule extends FTModule {
             canvas.draw(this.getDataGroup().getItem(1,1,key).getH1F("Amplitude_" + key));
             canvas.cd(1);
             canvas.draw(this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key));
+            canvas.draw(this.getDataGroup().getItem(1,1,key).getF1D("Landau_" + key),"same");
             canvas.cd(2);
             canvas.draw(this.getComparisonDataGroup().getItem(1,1,key).getH1F("Amplitude_" + key));
             canvas.cd(3);
             canvas.draw(this.getComparisonDataGroup().getItem(1,1,key).getH1F("Charge_" + key));
+            canvas.draw(this.getComparisonDataGroup().getItem(1,1,key).getF1D("Landau_" + key),"same");
         }
     }
 
@@ -397,18 +400,18 @@ public class FTCalCosmicModule extends FTModule {
     @Override
     public void setFunctionStyle() {
         for(int key : this.getDetector().getDetectorComponents()) {
-            H1F hcharge = null;
-            hcharge = this.getDataGroup().getItem(1,1,key).getH1F("Charge_" + key);
-            if(hcharge.getFunction()!= null) {
-                hcharge.getFunction().setLineColor(4);
-                hcharge.getFunction().setLineWidth(2);
-                hcharge.getFunction().setOptStat(1111111);
+            F1D fcharge = null;
+            fcharge = this.getDataGroup().getItem(1,1,key).getF1D("Landau_" + key);
+            if(fcharge!= null) {
+                fcharge.setLineColor(4);
+                fcharge.setLineWidth(2);
+                fcharge.setOptStat(1111111);
             }
-            hcharge = this.getComparisonDataGroup().getItem(1,1,key).getH1F("Charge_" + key);
-            if(hcharge.getFunction()!= null) {
-                hcharge.getFunction().setLineColor(4);
-                hcharge.getFunction().setLineWidth(2);
-                hcharge.getFunction().setOptStat(1111111);
+            fcharge = this.getComparisonDataGroup().getItem(1,1,key).getF1D("Landau_" + key);
+            if(fcharge!= null) {
+                fcharge.setLineColor(4);
+                fcharge.setLineWidth(2);
+                fcharge.setOptStat(1111111);
             }
         }
     }
