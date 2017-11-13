@@ -59,13 +59,7 @@ public class FTParameter {
     }
     
     public double getValue() {
-        if(parType) {
-            if(this.isValid(parValue))     return 0;
-            else if(this.isLow(parValue))  return -1;
-            else if(this.isHigh(parValue)) return 1;
-            else return 999;
-        }
-        else return this.parValue;
+        return this.parValue;
     }
         
     public void setLimit(double parLimit) {
@@ -151,5 +145,11 @@ public class FTParameter {
     public Color getColor(double value) {
         this.setValue(value);       
         return this.getColor();
+    }
+    
+    public double getStatus(double value) {
+        if(this.isValid(value))    return 0;
+        else if(this.isLow(value)) return -1;
+        else                       return 1;
     }
 }

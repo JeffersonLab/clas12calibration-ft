@@ -239,6 +239,7 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
         if(e.getActionCommand() == "Adjust fit...") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
             this.modules.get(moduleTabSelect).adjustFit();
+            this.updateTable();
         }        
         if(e.getActionCommand() == "View all") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
@@ -574,7 +575,12 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
                 for(Map.Entry<FTParameter, Integer> entry : this.parameters.entrySet()) {
                     FTParameter par = entry.getKey();
                     int imod = entry.getValue();
-                    this.calibConstants.setDoubleValue(this.modules.get(imod).getParameterValue(par.getName(), key), par.getName(), 1, 1, key);
+                    if(par.getType()) {
+                        this.calibConstants.setDoubleValue(par.getStatus(this.modules.get(imod).getParameterValue(par.getName(), key)), par.getName(), 1, 1, key);
+                    }
+                    else {
+                        this.calibConstants.setDoubleValue(this.modules.get(imod).getParameterValue(par.getName(), key), par.getName(), 1, 1, key);
+                    }
                 }
             }
             this.calibConstants.fireTableDataChanged();
