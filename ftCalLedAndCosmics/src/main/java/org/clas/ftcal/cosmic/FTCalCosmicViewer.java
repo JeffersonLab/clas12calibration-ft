@@ -239,7 +239,6 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
         if(e.getActionCommand() == "Adjust fit...") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
             this.modules.get(moduleTabSelect).adjustFit();
-            this.updateTable();
         }        
         if(e.getActionCommand() == "View all") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
@@ -280,6 +279,9 @@ public class FTCalCosmicViewer extends FTViewer implements DetectorListener, IDa
         }
         if(e.getActionCommand()=="Clear table") {
             this.resetTable();
+        }
+        if(e.getActionCommand()=="Update table") {
+            this.updateTable();
         }
         
     }

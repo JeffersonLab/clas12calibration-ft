@@ -114,6 +114,10 @@ public class FTViewer implements ActionListener {
         menuItem.getAccessibleContext().setAccessibleDescription("Clear table content");
         menuItem.addActionListener(this);
         table.add(menuItem);
+        menuItem = new JMenuItem("Update table");
+        menuItem.getAccessibleContext().setAccessibleDescription("Update table content");
+        menuItem.addActionListener(this);
+        table.add(menuItem);
         this.menuBar.add(table);
     }
 
