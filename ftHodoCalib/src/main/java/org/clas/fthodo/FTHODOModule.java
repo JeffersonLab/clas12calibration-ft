@@ -2248,7 +2248,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
 
     }
 
-    private void updateConstants() {
+    public void updateConstants() {
 
         int index;
         double mipE = 0.0;

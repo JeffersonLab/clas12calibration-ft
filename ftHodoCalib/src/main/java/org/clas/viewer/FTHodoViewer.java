@@ -209,7 +209,7 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
                     }
                 }
             }
-//            this.updateTable();
+            moduleFTHODO.updateConstants();
             System.out.println("Task completed");
         }
     }
