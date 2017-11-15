@@ -6,7 +6,7 @@
 package org.clas.tools;
 
 import java.util.Set;
-import org.clas.detector.DetectorPane2D;
+import org.clas.view.DetectorPane2D;
 import org.jlab.detector.base.DetectorCollection;
 //import org.jlab.clas12.calib.DetectorShapeView2D;
 

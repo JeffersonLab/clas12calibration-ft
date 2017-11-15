@@ -21,12 +21,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.clas.detector.CodaEventDecoder;
+import org.clas.detector.DetectorDataDgtz;
+import org.clas.detector.DetectorEventDecoder;
 
-import org.clas.detector.DetectorListener;
-import org.clas.detector.DetectorPane2D;
-import org.clas.detector.DetectorShape2D;
-import org.clas.tools.DetectorEventDecoder;
-import org.clas.tools.Mode7Emulation;
+import org.clas.view.DetectorListener;
+import org.clas.view.DetectorPane2D;
+import org.clas.view.DetectorShape2D;
 
 import org.jlab.detector.base.DetectorCollection;
 import org.jlab.detector.base.DetectorDescriptor;
@@ -35,8 +36,6 @@ import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.CalibrationConstantsListener;
 import org.jlab.detector.calib.utils.CalibrationConstantsView;
 import org.jlab.detector.calib.utils.ConstantsManager;
-import org.jlab.detector.decode.CodaEventDecoder;
-import org.jlab.detector.decode.DetectorDataDgtz;
 import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.base.GStyle;
 import org.jlab.groot.data.GraphErrors;
@@ -60,7 +59,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     JPanel                    canvasPane = new JPanel(new BorderLayout());
     JPanel                  detectorPane = new JPanel(new BorderLayout());
     JTabbedPane             detectorView = new JTabbedPane();
-    Mode7Emulation            mode7Panel = new Mode7Emulation();
     ConstantsManager                ccdb = new ConstantsManager();
     CalibrationConstantsView canvasTable = new CalibrationConstantsView();
     CalibrationConstants       ccdbTable = null;
@@ -242,7 +240,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         this.canvasPane.add(tabbedPane, BorderLayout.CENTER);
         this.canvasPane.add(buttonPane, BorderLayout.PAGE_END);
         this.detectorPane.add(detectorView, BorderLayout.CENTER);
-        this.detectorPane.add(mode7Panel,   BorderLayout.PAGE_END);
+        this.detectorPane.add(this.detectorDecoder.getFadcPanel(), BorderLayout.PAGE_END);
         splitPane.setRightComponent(this.canvasPane);
         splitPane.setLeftComponent(this.detectorPane);
         splitPane.setDividerLocation(400);
@@ -338,7 +336,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     "/daq/tt/fthodo",
                     "/geometry/ft/fthodo"}));
 //            this.getReverseTT(ccdb,"/daq/tt/ftof"); 
-            this.mode7Panel.init(ccdb,11,"/daq/fadc/fthodo", 72,3,1);  
+            this.detectorDecoder.getFadcPanel().init(ccdb,11,"/daq/fadc/fthodo", 72,3,1); 
             this.geometryTable = ccdb.getConstants(11, "/geometry/ft/fthodo");
     } 
 

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.clas.detector;
+package org.clas.view;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

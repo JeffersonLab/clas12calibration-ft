@@ -44,12 +44,16 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
     JMenuBar          menuBar = null;
     DataSourceProcessorPane evPane = new DataSourceProcessorPane();
     int          nProcessed = 0;
+    String workDir         = null;
    
     public FTHodoViewer() {
         this.initDetector();
         this.initHistograms();
         this.initArrays();
         this.initMenu();
+        this.workDir = System.getProperty("user.dir");
+        System.out.println("\nCurrent work directory set to:" + this.workDir);
+
         
         this.evPane.addEventListener(this);
        // this.evPane.setUpdateRate(500);
@@ -172,45 +176,42 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
     
     public void actionPerformed(ActionEvent e) {
         System.out.println("FTViewer ACTION = " + e.getActionCommand());
-        if(e.getActionCommand().compareTo("Open evio files...")==0) FileList();
+        if(e.getActionCommand().compareTo("Open evio files...")==0) this.readFiles();
     }
     
-    private void FileList(){
+    private void readFiles() {
         EvioSource reader = new EvioSource();
         JFileChooser fc = new JFileChooser();
-        File file = new File("/scratch/Gary/Netbeans_Projects/ft/FTmon/");
-        int returnValue = fc.showOpenDialog(null);
-        fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        fc.setDialogTitle("Choose input files directory...");
+        fc.setMultiSelectionEnabled(true);
         fc.setAcceptAllFileFilterUsed(false);
-        
-        int nf=0;
-        String ff ="";
+        File workingDirectory = new File(this.workDir);
+        fc.setCurrentDirectory(workingDirectory);
+        int returnValue = fc.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File[] folders = new File(fc.getCurrentDirectory().getPath()).listFiles();
-            for (File fd : folders) {
-                if(fd.isFile()){
-                    if(nf==0)ff=fd.getName();
-                    // File type chosen based on the first file selected //
-                    if((ff.contains(".evio") && 
-			!fd.getName().contains(".evio")) || 
-		       (ff.contains(".hipo") && 
-			!fd.getName().contains(".hipo")))continue;
-		    reader.open(fd);
-		    Integer current = reader.getCurrentIndex();
-		    Integer nevents = reader.getSize();
-                    System.out.println("FILE: "+nf+" "+fd.getName()+
-				       " N.EVENTS: " + nevents.toString() + 
-				       "  CURRENT : " + current.toString());
-		    for(int k=0; k<nevents; k++){
-			if(reader.hasEvent()){
-			    DataEvent event = reader.getNextEvent();
-			    dataEventAction(event);
+            int nf = 0;
+            for (File fd : fc.getSelectedFiles()) {
+                if (fd.isFile()) {
+                    if (fd.getName().contains(".evio") || fd.getName().contains(".hipo")) {
+                        reader.open(fd);
+                        Integer current = reader.getCurrentIndex();
+                        Integer nevents = reader.getSize();
+                        System.out.println("\nFILE: " + nf + " " + fd.getName() + " N.EVENTS: " + nevents.toString() + "  CURRENT : " + current.toString());
+                        for (int k = 0; k < nevents; k++) {
+                            if (reader.hasEvent()) {
+                                DataEvent event = reader.getNextEvent();
+                                this.dataEventAction(event);
+                                if(k % 1000 == 0) System.out.println("Read " + k + " events");
+                            }
                         }
-		    }
-		    nf++;
+//                        moduleFTHODO.analyze();
+                        nf++;
+                    }
                 }
             }
-        }   
+//            this.updateTable();
+            System.out.println("Task completed");
+        }
     }
 
     public static void main(String[] args) {

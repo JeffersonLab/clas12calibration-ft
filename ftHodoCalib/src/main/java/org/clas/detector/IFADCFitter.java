@@ -3,13 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package org.clas.detector;
+
+import org.clas.detector.DetectorDataDgtz.ADCData;
+
 
 /**
  *
  * @author gavalian
  */
-public interface DetectorListener {
-    void update(DetectorShape2D shape);
-    void processShape(DetectorShape2D shape);
+public interface IFADCFitter {
+    void fit(ADCData data);
 }

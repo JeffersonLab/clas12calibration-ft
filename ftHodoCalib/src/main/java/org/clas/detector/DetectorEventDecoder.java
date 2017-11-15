@@ -4,18 +4,14 @@
  * and open the template in the editor.
  */
 
-package org.clas.tools;
+package org.clas.detector;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.clas.detector.DetectorDataDgtz.ADCData;
 import org.jlab.detector.base.DetectorType;
 import org.jlab.detector.calib.utils.ConstantsManager;
-import org.jlab.detector.decode.BasicFADCFitter;
-import org.jlab.detector.decode.DetectorDataDgtz;
-import org.jlab.detector.decode.DetectorDataDgtz.ADCData;
-import org.jlab.detector.decode.ExtendedFADCFitter;
-import org.jlab.detector.decode.MVTFitter;
 import org.jlab.utils.groups.IndexedList;
 import org.jlab.utils.groups.IndexedTable;
 
@@ -28,6 +24,8 @@ public class DetectorEventDecoder {
     ConstantsManager  translationManager = new ConstantsManager();
     ConstantsManager  fitterManager      = new ConstantsManager();
     
+    FadcControlPanel fadcPanel           = new FadcControlPanel();
+
     List<String>  tablesTrans            = null;
     List<String>  keysTrans              = null;
     
@@ -38,11 +36,9 @@ public class DetectorEventDecoder {
     
     private  BasicFADCFitter      basicFitter     = new BasicFADCFitter();
     private  ExtendedFADCFitter   extendedFitter  = new ExtendedFADCFitter();
-    private  MVTFitter            mvtFitter       = new MVTFitter();
     
     private  Boolean          useExtendedFitter   = false;
-    
-    
+
     
     public DetectorEventDecoder(boolean development){
         if(development==true){
@@ -60,7 +56,7 @@ public class DetectorEventDecoder {
         this.initDecoder();
         /*
         keysTrans = Arrays.asList(new String[]{
-            "FTCAL","FTHODO","LTCC","EC","FTOF","HTCC","DC"
+            "FTCAL","FTHODO","LTCC","ECAL","FTOF","HTCC","DC"
         });
         
         tablesTrans = Arrays.asList(new String[]{
@@ -70,7 +66,7 @@ public class DetectorEventDecoder {
         
         translationManager.init(keysTrans,tablesTrans);
         
-        keysFitter   = Arrays.asList(new String[]{"FTCAL","FTOF","LTCC","EC","HTCC"});
+        keysFitter   = Arrays.asList(new String[]{"FTCAL","FTOF","LTCC","ECAL","HTCC"});
         tablesFitter = Arrays.asList(new String[]{
             "/daq/fadc/ftcal","/daq/fadc/ftof","/daq/fadc/ltcc","/daq/fadc/ec",
             "/daq/fadc/htcc"
@@ -79,6 +75,10 @@ public class DetectorEventDecoder {
         */
     }
     
+    public FadcControlPanel getFadcPanel() {
+        return fadcPanel;
+    }
+
     public final void initDecoderDev(){
         keysTrans = Arrays.asList(new String[]{ "HTCC","BST"} );
         tablesTrans = Arrays.asList(new String[]{ "/daq/tt/clasdev/htcc","/daq/tt/clasdev/svt" });
@@ -91,7 +91,7 @@ public class DetectorEventDecoder {
     
     public final void initDecoder(){
         keysTrans = Arrays.asList(new String[]{
-		"FTCAL","FTHODO","LTCC","ECAL","FTOF","HTCC","DC","CTOF","BST","RF","BMT","FMT"
+		"FTCAL","FTHODO","LTCC","EC","FTOF","HTCC","DC","CTOF","SVT","RF","BMT","FMT"
         });
         
         tablesTrans = Arrays.asList(new String[]{
@@ -102,10 +102,10 @@ public class DetectorEventDecoder {
         
         translationManager.init(keysTrans,tablesTrans);
         
-        keysFitter   = Arrays.asList(new String[]{"FTCAL","FTHODO","FTOF","LTCC","ECAL","HTCC","CTOF","BMT","FMT"});
+        keysFitter   = Arrays.asList(new String[]{"FTCAL","FTHODO","FTOF","LTCC","EC","HTCC","CTOF"});
         tablesFitter = Arrays.asList(new String[]{
             "/daq/fadc/ftcal","/daq/fadc/fthodo","/daq/fadc/ftof","/daq/fadc/ltcc","/daq/fadc/ec",
-            "/daq/fadc/htcc","/daq/fadc/ctof","/daq/config/bmt","/daq/config/fmt"
+            "/daq/fadc/htcc","/daq/fadc/ctof"
         });
         fitterManager.init(keysFitter, tablesFitter);
     }
@@ -119,6 +119,14 @@ public class DetectorEventDecoder {
     public void setUseExtendedFitter(boolean flag){
         this.useExtendedFitter = flag;
     }
+   
+    // set fadc integration parameters for mode 7 emulation
+    public void setBasicFitterParameters(int ped1, int ped2, int pul1, int pul2, int tet) {
+        this.basicFitter.setPedestal(ped1, ped2);
+        this.basicFitter.setPulse(pul1, pul2);
+        this.basicFitter.setThreshold(tet);
+    }
+    
     /**
      * applies translation table to the digitized data to translate
      * crate,slot channel to sector layer component.
@@ -166,7 +174,11 @@ public class DetectorEventDecoder {
         //Collections.sort(detectorData);
     }
     
-        public void fitPulses(List<DetectorDataDgtz>  detectorData){
+    public void fitPulses(List<DetectorDataDgtz>  detectorData){
+        
+        int nsa = this.fadcPanel.nsa;
+        int nsb = this.fadcPanel.nsb;
+        int tet = this.fadcPanel.tet;
         for(DetectorDataDgtz data : detectorData){            
             int crate    = data.getDescriptor().getCrate();
             int slot     = data.getDescriptor().getSlot();
@@ -174,60 +186,69 @@ public class DetectorEventDecoder {
             //System.out.println(" looking for " + crate + "  " 
             //       + slot + " " + channel);
             for(String table : keysFitter){
-                //custom MM fitter
-            	if( ( (table.equals("BMT"))&&(data.getDescriptor().getType().getName().equals("BMT")) ) || ( (table.equals("FMT"))&&(data.getDescriptor().getType().getName().equals("FMT")) ) ){
-                    IndexedTable daq = fitterManager.getConstants(runNumber, table);
-                    short adcOffset = (short) daq.getDoubleValue("adc_offset", 0, 0, 0);
-                    double fineTimeStampResolution = (byte) daq.getDoubleValue("dream_clock", 0, 0, 0);
-                    double samplingTime = (byte) daq.getDoubleValue("sampling_time", 0, 0, 0);
-                    if (data.getADCSize() > 0) {
-                        ADCData adc = data.getADCData(0);
-                        mvtFitter.fit(adcOffset, fineTimeStampResolution, samplingTime, adc.getPulseArray(),
-                                        adc.getTimeStamp());
-                        adc.setHeight((short) (mvtFitter.adcMax));
-                        adc.setTime((int) (mvtFitter.timeMax));
-                        adc.setIntegral((int) (mvtFitter.integral));
-                        adc.setTimeStamp(mvtFitter.timestamp);
+                IndexedTable  daq = fitterManager.getConstants(runNumber, table);
+                DetectorType  type = DetectorType.getType(table);
+                if(daq.hasEntry(crate,slot,channel)==true){                    
+                    if(this.fadcPanel.useCCDB) {
+                        nsa = daq.getIntValue("nsa", crate,slot,channel);
+                        nsb = daq.getIntValue("nsb", crate,slot,channel);
+                        tet = daq.getIntValue("tet", crate,slot,channel);
                     }
-                } else {
-                    IndexedTable  daq = fitterManager.getConstants(runNumber, table);
-                    DetectorType  type = DetectorType.getType(table);
-                    if(daq.hasEntry(crate,slot,channel)==true){                    
-                        //basicFitter.setPulse(0, 4).setPedestal(35, 70);
-                        //for(int i = 0; i < data.getADCSize(); i++){
-                        //    basicFitter.fit(data.getADCData(i));
-                        //}
-                        int nsa = daq.getIntValue("nsa", crate,slot,channel);
-                        int nsb = daq.getIntValue("nsb", crate,slot,channel);
-                        int tet = daq.getIntValue("tet", crate,slot,channel);
-                        if(data.getADCSize()>0){
-                            for(int i = 0; i < data.getADCSize(); i++){
-                                ADCData adc = data.getADCData(i);
-                                if(adc.getPulseSize()>0){
-                                    //System.out.println("-----");
-                                    //System.out.println(" FITTING PULSE " + 
-                                    //        crate + " / " + slot + " / " + channel);
-                                    try {
+                    if(data.getADCSize()>0){
+                        for(int i = 0; i < data.getADCSize(); i++){
+                            ADCData adc = data.getADCData(i);
+                            if(adc.getPulseSize()>0){
+                                //System.out.println("-----");
+                                //System.out.println(" FITTING PULSE " + 
+                                //        crate + " / " + slot + " / " + channel);
+                                try {
+                                    if(this.fadcPanel.useMode7) { 
                                         extendedFitter.fit(nsa, nsb, tet, 0, adc.getPulseArray());
-                                    } catch (Exception e) {
-                                        System.out.println(">>>> error : fitting pulse "
-                                                            +  crate + " / " + slot + " / " + channel);
+                                        int adc_corrected = extendedFitter.adc + extendedFitter.ped*(nsa+nsb);
+                                        adc.setIntegral(adc_corrected);
+                                        adc.setTimeWord(this.extendedFitter.t0);
+                                        adc.setPedestal((short) this.extendedFitter.ped); 
+                                        adc.setPedistalMaxBin(this.extendedFitter.pedistalMaxBin);
+                                        adc.setPedistalMinBin(this.extendedFitter.pedistalMinBin);
+                                        adc.setHeight((short) this.extendedFitter.pulsePeakValue);
+                                        adc.setPosition(this.extendedFitter.pulsePeakPosition);
+                                        adc.setPulseMaxBin(this.extendedFitter.pulseMaxBin);
+                                        adc.setPulseMinBin(this.extendedFitter.pulseMinBin);
+                                        adc.setThresholdCrossing(this.extendedFitter.thresholdCrossing);
+                                        adc.setRMS(this.extendedFitter.rms);
+                                        adc.setFWHM(this.extendedFitter.pulseWidth);
                                     }
-                                    //System.out.println(" FIT RESULT = " + extendedFitter.adc + " / "
-                                    //        + this.extendedFitter.t0 + " / " + this.extendedFitter.ped);
-                                    int adc_corrected = extendedFitter.adc + extendedFitter.ped*(nsa+nsb);
-                                    adc.setHeight((short) this.extendedFitter.pulsePeakValue);
-                                    adc.setIntegral(adc_corrected);
-                                    adc.setTimeWord(this.extendedFitter.t0);
-                                    adc.setPedestal((short) this.extendedFitter.ped);                                
+                                    else {
+                                        this.setBasicFitterParameters(this.fadcPanel.ped1, this.fadcPanel.ped2, this.fadcPanel.pul1, this.fadcPanel.pul2, this.fadcPanel.tet);                    
+                                        basicFitter.fit(0, adc.getPulseArray());
+                                        int adc_corrected = basicFitter.adc + basicFitter.ped*(basicFitter.pulseLength);
+                                        adc.setIntegral(adc_corrected);
+                                        adc.setTimeWord(this.basicFitter.t0);
+                                        adc.setPedestal((short) this.basicFitter.ped); 
+                                        adc.setPedistalMaxBin(this.basicFitter.getPedistalMaxBin());
+                                        adc.setPedistalMinBin(this.basicFitter.getPedistalMinBin());
+                                        adc.setHeight((short) this.basicFitter.pulsePeakValue);
+                                        adc.setPosition(this.basicFitter.pulsePeakPosition);
+                                        adc.setPulseMaxBin(this.basicFitter.getPulseMaxBin());
+                                        adc.setPulseMinBin(this.basicFitter.getPulseMinBin());
+                                        adc.setThresholdCrossing(this.basicFitter.thresholdCrossing);
+                                        adc.setRMS(this.basicFitter.rms);
+                                        adc.setFWHM(this.basicFitter.pulseWidth);
+                                        adc.setADC(0, basicFitter.pulseLength);
+                                    }
+                                } catch (Exception e) {
+                                    System.out.println(">>>> error : fitting pulse "
+                                    +  crate + " / " + slot + " / " + channel);
                                 }
+                                //System.out.println(" FIT RESULT = " + extendedFitter.adc + " / "
+                                //        + this.extendedFitter.t0 + " / " + this.extendedFitter.ped);
                             }
                         }
-                        //System.out.println(" apply nsa nsb " + nsa + " " + nsb);
-                        if(data.getADCSize()>0){
-                            for(int i = 0; i < data.getADCSize(); i++){
-                                    data.getADCData(i).setADC(nsa, nsb);
-                            }
+                    }
+                    //System.out.println(" apply nsa nsb " + nsa + " " + nsb);
+                    if(data.getADCSize()>0){
+                        for(int i = 0; i < data.getADCSize(); i++){
+                            if(this.fadcPanel.useMode7) data.getADCData(i).setADC(nsa, nsb);
                         }
                     }
                 }

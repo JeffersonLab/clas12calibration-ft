@@ -6,7 +6,7 @@
 package org.clas.fthodo;
 
 import java.util.Set;
-import org.clas.detector.DetectorShape2D;
+import org.clas.view.DetectorShape2D;
 import org.clas.tools.FTDetector;
 import org.jlab.detector.base.DetectorCollection;
 import org.jlab.detector.base.DetectorType;

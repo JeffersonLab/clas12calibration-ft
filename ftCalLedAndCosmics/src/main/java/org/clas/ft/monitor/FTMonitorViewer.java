@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.clas.ftcal.cosmic;
+package org.clas.ft.monitor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +13,7 @@ import org.clas.detector.DetectorDataDgtz;
 import org.clas.ftcal.tools.FTCalDetector;
 import org.clas.ft.tools.FTModule;
 import org.clas.ft.tools.FTViewer;
+import org.clas.ftcal.cosmic.FTCalEventModule;
 
 
 import org.jlab.detector.base.DetectorType;
@@ -24,19 +25,17 @@ import org.jlab.io.evio.EvioDataEvent;
  *
  * @author gavalian
  */
-public class FTCalCosmicViewer extends FTViewer  {
+public class FTMonitorViewer extends FTViewer  {
 
     
     int    threshold       = 6;
     int    nProcessed      = 0;
 
 
-    public FTCalCosmicViewer() {
+    public FTMonitorViewer() {
         super();
         // create analysis modules
         this.getModules().add(new FTCalEventModule(this.getDetector()));
-        this.getModules().add(new FTCalNoiseModule(this.getDetector()));
-        this.getModules().add(new FTCalCosmicModule(this.getDetector()));
         this.initModules();
         this.addSummaryTable();
         this.initPanel();
@@ -105,7 +104,7 @@ public class FTCalCosmicViewer extends FTViewer  {
     }
   
     public static void main(String[] args) {
-        FTCalCosmicViewer module = new FTCalCosmicViewer();
+        FTMonitorViewer module = new FTMonitorViewer();
         JFrame frame = new JFrame();
         frame.add(module.getPanel());
         frame.pack();
