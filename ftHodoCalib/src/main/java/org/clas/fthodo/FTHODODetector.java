@@ -184,9 +184,8 @@ public class FTHODODetector extends FTDetector {
         }
         return crystalID;
     }
-    
-    private boolean doesThisCrystalExist(int id) {
 
+    private boolean doesThisCrystalExist(int id) {
         boolean crystalExist=false;
         int iy = id / nCrystalX;
         int ix = id - iy * nCrystalX;
@@ -218,7 +217,7 @@ public class FTHODODetector extends FTDetector {
         }
 
         private void setY(int y) {
-            this.y = y;
+        this.y = y;
         }
         
         public int x() {
