@@ -43,58 +43,46 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
     FTHODOModule moduleFTHODO = new FTHODOModule();
     JMenuBar          menuBar = null;
     DataSourceProcessorPane evPane = new DataSourceProcessorPane();
-      
-        
     int          nProcessed = 0;
-       
-    
-     
+   
     public FTHodoViewer() {
-	
         this.initDetector();
         this.initHistograms();
-	this.initArrays();
+        this.initArrays();
         this.initMenu();
         
         this.evPane.addEventListener(this);
-        this.evPane.setUpdateRate(500);
-                       
+       // this.evPane.setUpdateRate(500);
+        this.evPane.setUpdateRate(10);
+
         /*Graphics starts here*/
         // whole panel
-	this.panel = new JPanel();
+        this.panel = new JPanel();
         this.panel.setLayout(new BorderLayout());
 
 	// create tabbed objects for CAL and HODO modules
-//	this.moduleFTHODO = new JPanel(new BorderLayout());
+    // this.moduleFTHODO = new JPanel(new BorderLayout());
 	
-       // filling main panel with tabs for different FT subdetectors 
+    // filling main panel with tabs for different FT subdetectors
 	// and event handling panel
         this.panel.add(this.moduleFTHODO, BorderLayout.CENTER);
         this.panel.add(this.evPane,        BorderLayout.PAGE_END);
-               
         moduleFTHODO.setLayout(new BorderLayout());
-	moduleFTHODO.initPanel();
-
-    	
+        moduleFTHODO.initPanel();
     }
 
     private void initDetector() {
-        
-	moduleFTHODO.initDetector();
+        moduleFTHODO.initDetector();
     }
 
-
     private void initHistograms() {
-            
-	moduleFTHODO.initHistograms();
+        moduleFTHODO.initHistograms();
     }
 
     private void initArrays() {
-            
 	// if(!onlyHodo)
 	//   moduleFTCAL.initArrays();
-        
-	moduleFTHODO.initArrays();
+        moduleFTHODO.initArrays();
     }
 
     private void initMenu() {
@@ -134,16 +122,13 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
         menuItem.addActionListener(this);
         settings.add(menuItem);
         menuBar.add(settings);
-
     }
     private void resetHistograms() {
-	
-	moduleFTHODO.resetHistograms();
+        moduleFTHODO.resetHistograms();
     }    
 
     public void dataEventAction(DataEvent de) {
 	// Simulated Data
-
         if (de.getType()==DataEventType.EVENT_START) {
                 //System.out.println(" EVENT_START");
         }
@@ -158,14 +143,12 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
                // System.out.println(" Analyzed");
         } 
 
-        if(de instanceof EvioDataEvent)      moduleFTHODO.dataEvioEventAction(de);
+        if(de instanceof EvioDataEvent)
+            moduleFTHODO.dataEvioEventAction(de);
         else if(de instanceof HipoDataEvent) {
             moduleFTHODO.dataHipoEventAction((HipoDataEvent) de);
         }
-	
-	
     }
-    
     
     public String getName() {
         return "HODOViewerModule";
@@ -189,14 +172,11 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
     
     public void actionPerformed(ActionEvent e) {
         System.out.println("FTViewer ACTION = " + e.getActionCommand());
-	
-	if(e.getActionCommand().compareTo("Open evio files...")==0) FileList();
-	
+        if(e.getActionCommand().compareTo("Open evio files...")==0) FileList();
     }
     
     private void FileList(){
         EvioSource reader = new EvioSource();
-        
         JFileChooser fc = new JFileChooser();
         File file = new File("/scratch/Gary/Netbeans_Projects/ft/FTmon/");
         int returnValue = fc.showOpenDialog(null);
