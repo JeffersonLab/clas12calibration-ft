@@ -31,7 +31,6 @@ public class FTCanvasBook extends JPanel implements ActionListener {
 
     private EmbeddedCanvas canvas = new EmbeddedCanvas();
     private int     padsPerPage = 9;
-    private DataGroup dataGroup = new DataGroup();
     private int     currentPage = 0;
     private int        maxPages = 1;
     private List<DataGroup> canvasDataSets = new ArrayList<DataGroup>();
@@ -73,8 +72,11 @@ public class FTCanvasBook extends JPanel implements ActionListener {
         this.updateCanvas();
         
     }
-    
-    
+
+    public List<DataGroup> getCanvasDataSets() {
+        return canvasDataSets;
+    }
+        
     public void updateCanvas(){
         this.canvas.clear();
         this.canvas.divide(3, 3);

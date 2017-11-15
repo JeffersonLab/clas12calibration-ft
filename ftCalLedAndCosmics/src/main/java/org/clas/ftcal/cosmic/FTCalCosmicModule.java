@@ -398,6 +398,11 @@ public class FTCalCosmicModule extends FTModule {
     }
     
     @Override
+    public void setCanvasBookData() {
+        this.getCanvasBook().setData(this.getDataGroup(), 3);
+    }
+    
+    @Override
     public void setFunctionStyle() {
         for(int key : this.getDetector().getDetectorComponents()) {
             F1D fcharge = null;
@@ -416,17 +421,17 @@ public class FTCalCosmicModule extends FTModule {
         }
     }
     
-    @Override
-    public void showPlots() {
-        FTCanvasBook canvasGroup = new FTCanvasBook();
-        canvasGroup.setData(this.getDataGroup(), 3);
-        JFrame frame = new JFrame(this.getName());
-        frame.setSize(1000, 800);        
-        frame.add(canvasGroup);
-        // frame.pack();
-        frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-    }
+//    @Override
+//    public void showPlots() {
+//        FTCanvasBook canvasGroup = new FTCanvasBook();
+//        canvasGroup.setData(this.getDataGroup(), 3);
+//        JFrame frame = new JFrame(this.getName());
+//        frame.setSize(1000, 800);        
+//        frame.add(canvasGroup);
+//        // frame.pack();
+//        frame.setVisible(true);
+//        frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+//    }
     
 
 }

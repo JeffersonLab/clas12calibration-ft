@@ -7,7 +7,9 @@ package org.clas.ftcal.cosmic;
 
 import java.awt.Color;
 import java.util.List;
+import javax.swing.JFrame;
 import org.clas.detector.DetectorDataDgtz;
+import org.clas.ft.tools.FTCanvasBook;
 import org.clas.ft.tools.FTDetector;
 import org.clas.ft.tools.FTModule;
 import org.clas.ft.tools.FTModuleType;
@@ -161,7 +163,11 @@ public class FTCalNoiseModule extends FTModule {
             }
         }
         return value;
-    }   
+    }  
+    @Override
+    public void setCanvasBookData() {
+        this.getCanvasBook().setData(this.getDataGroup(), 1);
+    }    
 }
     
     

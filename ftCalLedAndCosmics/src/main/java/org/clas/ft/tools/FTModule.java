@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import org.clas.detector.DetectorDataDgtz;
 import org.jlab.groot.base.GStyle;
@@ -32,6 +33,7 @@ public class FTModule {
     private IndexedList<DataGroup>     moduleData     = new IndexedList<DataGroup>(3);
     private IndexedList<DataGroup>     compareData    = new IndexedList<DataGroup>(3);
     private Map<String,EmbeddedCanvas> canvases       = new LinkedHashMap<String,EmbeddedCanvas>();
+    private FTCanvasBook               canvasBook    = new FTCanvasBook();
     private JPanel                     radioPane      = new JPanel();
     private List<FTParameter>          parameters     = new ArrayList<FTParameter>();
     private int                        numberOfEvents = 0;
@@ -120,6 +122,10 @@ public class FTModule {
     
     public EmbeddedCanvas getCanvas(String name) {
         return canvases.get(name);
+    }
+
+    public FTCanvasBook getCanvasBook() {
+        return canvasBook;
     }
     
     public Color getColor(int key, String name) {
@@ -254,6 +260,10 @@ public class FTModule {
                
     }
     
+    public void setCanvasBookData() {
+        
+    }
+    
     public void setCanvasUpdate(int time) {
         if(this.type == FTModuleType.EVENT_ACCUMULATE) {
             for(Map.Entry<String, EmbeddedCanvas> entry : this.canvases.entrySet()) entry.getValue().initTimer(time);
@@ -280,7 +290,18 @@ public class FTModule {
     }
 
     public void showPlots() {
-        System.out.println("Function not implemented in current module");
+        this.setCanvasBookData();
+        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+            JFrame frame = new JFrame(this.getName());
+            frame.setSize(1000, 800);        
+            frame.add(canvasBook);
+            // frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        }
+        else {
+        System.out.println("Function not implemented in current module");            
+        }
     }
     
     public void writeDataGroup(TDirectory dir) {
