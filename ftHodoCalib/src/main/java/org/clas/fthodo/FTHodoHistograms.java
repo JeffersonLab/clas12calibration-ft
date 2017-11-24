@@ -65,7 +65,7 @@ public class FTHodoHistograms {
     //=================================
     //           CONSTANTS
     //=================================
-    boolean fitTwoPeaksV = false;
+    boolean fitTwoPeaksV = true;
     boolean fitTwoPeaksQ = false;
     // n is for nominal
     final double nStatus = 5.0;
@@ -127,7 +127,7 @@ public class FTHodoHistograms {
     double NoiseVXMin[] = {0., 0.5 * nGain_mV, 0.5 * nGain_mV};
     double NoiseVXMax[] = {0., 3.0 * nGain_mV, 3.0 * nGain_mV};
     int[] NBinsNoiseQ = {0, 75, 75};
-    int[] NBinsNoiseV = {0, 50, 50};
+    int[] NBinsNoiseV = {0, 55, 55};
     final int NBinsPed = 200;
     //pedestal min and max bin values for histogram
     int[] PedQX = {100, 500};
@@ -468,15 +468,11 @@ public class FTHodoHistograms {
             fV2.add(s, l, c, new F1D("gaus", "[amp]*gaus(x,[mean],[sigma])",1.5 * nGain_mV,3.0 * nGain_mV));
             fV2.get(s, l, c).
             setParameter(0, ampl / 3.0);
-            fV2.get(s, l, c).
-            setParameter(1, 2.0 * nGain_mV);
-            fV2.get(s, l, c).
-            setParameter(2, std);
+            fV2.get(s, l, c).setParameter(1, 2.0 * nGain_mV);
+            fV2.get(s, l, c).setParameter(2, std);
             if (testMode) System.out.println(" initFitVNoiseParameters setting"+ " fV2 limits ");
-            fV2.get(s, l, c).
-            setParLimits(0, 0, ampl);
-            fV2.get(s, l, c).
-            setParLimits(1,1.5 * nGain_mV,2.5 * nGain_mV);
+            fV2.get(s, l, c).setParLimits(0, 0, ampl);
+            fV2.get(s, l, c).setParLimits(1,1.5 * nGain_mV,2.5 * nGain_mV);
             fV2.get(s, l, c).setParLimits(2, 0., std * 4.0);
             return true;
         } else {
