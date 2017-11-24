@@ -86,9 +86,11 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     private double[][][] status;
     private double[][][] thrshNPE;
     private double[][][] pedMean;
+    private double[][][] pedEvent;
+    private double[][][] pedPreviousEvent;
+
     private double[][][] pedRMS;
     // save the pedestal of the previous event
-    private double[][][] pedPrevious;
     private double[][][] gain;
     private double[][][] errGain;
     private double[][][] gain_mV;
@@ -162,8 +164,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.add("Event", this.canvasEvent);
         tabbedPane.add("Pedestal", this.canvasPed);
-        tabbedPane.add("Noise", this.canvasNoise);
-        tabbedPane.add("Gain", this.canvasGain);
+        tabbedPane.add("Noise Signal", this.canvasNoise);
+        tabbedPane.add("Noise Gain", this.canvasGain);
         tabbedPane.add("MIP signal", this.canvasMIPsignal);
 
 //        tabbedPane.add("Charge", this.canvasCharge);
@@ -804,7 +806,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             detector.getView().setDetectorListener(lay, this);
         }
         detector.updateBox();
-        
         return detector;
     }
 
@@ -1209,7 +1210,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         int oppCDL = 2 * oppCD;
         int layCDR = layCDL + 1;
         int oppCDR = oppCDL + 1;
-        
         //----------------------------------------
         // left top (bottom) for thin (thick) layer
         if (plotVoltageChargeBoth==2){
@@ -2012,7 +2012,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         else{
             canvasGain.draw(histogramsFTHodo.H_EMPTYGAIN_ELE_PC);
             canvasGain.draw(histogramsFTHodo.GGgainElectronicsC[mezz],"same");
-
         }
     
     }
@@ -2063,9 +2062,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         int sec = shape.getDescriptor().getSector();
         int lay = shape.getDescriptor().getLayer();
         int com = shape.getDescriptor().getComponent();
-
         int index = com;
-
+        
         if (shape.getDescriptor().getType() == DetectorType.FTCAL) {
             sec = 0;
             lay = 0;
@@ -2084,7 +2082,17 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         int signalAlpha = abs(min((int) (waveMax) / 16, 255));
         // map [0,20] to [0,255]
         int noiseAlpha = abs(min((int) (npeWaveMax / 20 * 255), 255));
-        Color pedColor = palette.getColor3D(pedMean[sec][lay][com],400,true);
+        
+        int pedDiff;
+        if (histogramsFTHodo.H_PED.get(sec, lay, com).integral()>2){
+            double avePedfromHist = histogramsFTHodo.H_PED.get(sec, lay, com).getMaximumBin();
+            avePedfromHist = avePedfromHist * histogramsFTHodo.H_PED.get(sec, lay, com).getAxis().getBinWidth(2);
+            avePedfromHist = avePedfromHist + histogramsFTHodo.H_PED.get(sec, lay, com).getAxis().min();
+            pedDiff=(int) (abs(pedEvent[sec][lay][com]-avePedfromHist));
+        }else{
+            pedDiff=(int) (abs(pedEvent[sec][lay][com]-pedPreviousEvent[sec][lay][com]));
+        }
+        int pedAlpha = abs(min((int) (pedDiff), 255));
         Color noiseColor = palette.getColor3D(vMax[sec][lay][com],2 * histogramsFTHodo.nGain_mV,false);
         Color gainColor;
         if (useGain_mV) {
@@ -2092,24 +2100,32 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         } else {
             gainColor = palette.getColor3D(gain[sec][lay][com],1.0 * histogramsFTHodo.nGain,true);
         }
-        Color voltColor = palette.getColor3D(vMax[sec][lay][com],12 * histogramsFTHodo.nGain_mV,true);
+        Color voltColor = palette.getColor3D(vMax[sec][lay][com], 70 * histogramsFTHodo.nGain_mV,false);
         Color qColor = palette.getColor3D(qMax[sec][lay][com],250 * histogramsFTHodo.nGain,true);
-
+        //System.out.println("qMax: "+qMax[sec][lay][com]);
+        
         if (tabSel == tabIndexEvent) {
             if (waveMax > histogramsFTHodo.cosmicsThrsh) {
-                shape.setColor(0, 255, 0, signalAlpha);
+                shape.setColor(0, 255, 0, signalAlpha); //GREEN
             } else if (waveMax > histogramsFTHodo.noiseThrsh) {
-                shape.setColor(255, 255, 0, noiseAlpha);
+                shape.setColor(255, 255, 0, noiseAlpha); //Yellow
             } else {
-                shape.setColor(255, 255, 255, 0);
+                shape.setColor(255, 255, 255, 0); //white
             }
         } else if (tabSel == tabIndexPed) {
-            shape.setColor(pedColor.getRed(),pedColor.getGreen(),pedColor.getBlue());
+            if (pedDiff > 10) {
+                shape.setColor(255, 255, 0, pedAlpha); //Yellow
+            }else {
+                shape.setColor(0, 255, 0, pedAlpha); //Green
+            }
         } else if (tabSel == tabIndexNoise) {
             shape.setColor(noiseColor.getRed(),noiseColor.getGreen(),noiseColor.getBlue());
         } else if (tabSel == tabIndexGain) {
             shape.setColor(gainColor.getRed(),gainColor.getGreen(),gainColor.getBlue());
-        } 
+        } else if (tabSel == tabIndexMIPsignal){
+            shape.setColor(voltColor.getRed(),voltColor.getGreen(),voltColor.getBlue());
+        }
+        
 //        else if (tabSel == tabIndexVoltage) {
 //            shape.setColor(voltColor.getRed(),
 //                    voltColor.getGreen(),
@@ -2599,8 +2615,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         status = new double[9][3][21];
         thrshNPE = new double[9][3][21];
         pedMean = new double[9][3][21];
+        pedEvent = new double[9][3][21];
         pedRMS = new double[9][3][21];
-        pedPrevious = new double[9][3][21];
+        pedPreviousEvent = new double[9][3][21];
         vMax = new double[9][3][21];
         vMaxEvent = new double[9][3][21];
         qMax = new double[9][3][21];
@@ -2624,8 +2641,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     this.status[s][l][c] = histogramsFTHodo.nStatus;
                     this.thrshNPE[s][l][c] = histogramsFTHodo.nThrshNPE;
                     this.pedMean[s][l][c] = histogramsFTHodo.nPedMean;
+                    this.pedEvent[s][l][c] = 0;
+                    this.pedPreviousEvent[s][l][c] = 0;
                     this.pedRMS[s][l][c] = histogramsFTHodo.nPedRMS;
-                    this.pedPrevious[s][l][c] = histogramsFTHodo.nPedMean;
                     this.gain[s][l][c] = histogramsFTHodo.nGain;
                     this.errGain[s][l][c] = histogramsFTHodo.nErrGain;
                     this.gain_mV[s][l][c] = histogramsFTHodo.nGain_mV;
@@ -2852,7 +2870,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 histogramsFTHodo.H_W_MAX.reset();
                 histogramsFTHodo.H_V_MAX.reset();
                 histogramsFTHodo.H_NPE_MAX.reset();
-                
+                int nTilesAboveThresholdLayer1=0;
+                int nTilesAboveThresholdLayer2=0;
+                double threshDV = (double) histogramsFTHodo.matchingTilesThreshold * histogramsFTHodo.LSB;
+
                 //=-=-=-=-=-=-=-=-=-=-=-=-=-
                 // Loop One
                 double previousChargePed = 0.0;
@@ -2870,7 +2891,11 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     double avePed = 0.0;
                     double nEventsAvePed = 0;
                     int index = getIndex4SLC(sec, lay, com);
-
+                    
+                    histogramsFTHodo.threshold=this.detectorDecoder.getFadcPanel().tet;
+                    histogramsFTHodo.initThresholdParameters(sec, lay, com);
+                    //System.out.println("Threshold:"+this.detectorDecoder.getFadcPanel().tet);
+                    
                     short pulse[] = counter.getADCData(0).getPulseArray();
                     int ped_i1=counter.getADCData(0).getPedistalMinBin();
                     int ped_i2=counter.getADCData(0).getPedistalMaxBin();
@@ -2879,7 +2904,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     double npeWave;
                     double calibratedWave;
                     double baselineSubRaw;
-                    double vOffset = 5.0;
                     int eventloop;
                     // reset non-accumulating histograms
                     histogramsFTHodo.H_FADC.get(sec, lay, com).reset();
@@ -2900,6 +2924,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                         histogramsFTHodo.H_NPE_INT.get(sec, lay, com).fill(npeEvent[sec][lay][com]);
                     }
                     double compEvntPed = counter.getADCData(0).getPedestal();
+                    pedPreviousEvent[sec][lay][com]=pedEvent[sec][lay][com];
+                    pedEvent[sec][lay][com]=compEvntPed;
+
                     histogramsFTHodo.H_PED.get(sec, lay, com).fill(compEvntPed);
                     // Maybe this can be of number of events in histogram instead.. 
                     // however all histograms should have ped for every event
@@ -2975,9 +3002,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                             histogramsFTHodo.H_FADC_RAW_PUL.get(sec, lay, com).fill(i, pulse[i]);
                         
                         // Baseline unsubtracted
-                        baselineSubRaw = pulse[i] - compEvntPed + 10.0;
+                        baselineSubRaw = pulse[i] - compEvntPed + histogramsFTHodo.PedOffset;
                         histogramsFTHodo.H_FADC.get(sec, lay, com).fill(i, baselineSubRaw);
-                        calibratedWave = (pulse[i] - compEvntPed) * histogramsFTHodo.LSB + vOffset;
+                        calibratedWave = (pulse[i] - compEvntPed) * histogramsFTHodo.LSB +  histogramsFTHodo.vPedOffset;
                         histogramsFTHodo.H_VT.get(sec, lay, com).fill(i * 4, calibratedWave);
                         npeWave = (pulse[i] - compEvntPed) * histogramsFTHodo.LSB / histogramsFTHodo.voltsPerSPE;
                         histogramsFTHodo.H_NPE.get(sec, lay, com).fill(i * 4, npeWave);
@@ -2986,11 +3013,18 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     waveMax = -compEvntPed;
                     waveMax = waveMax + counter.getADCData(0).getHeight();
                     vMaxEvent[sec][lay][com] = waveMax * histogramsFTHodo.LSB;
-
+                    if (vMaxEvent[sec][lay][com] > threshDV){
+                        if (lay==1)
+                            nTilesAboveThresholdLayer1++;
+                        else if (lay==2)
+                            nTilesAboveThresholdLayer2++;
+                    }
                 }
 
                 //=-=-=-=-=-=-=-=-=-=-=-=-=-
                 // Loop Two
+                int matchedTile=-1;
+
                 for (DetectorDataDgtz counter : counters) {
                     int sec = counter.getDescriptor().getSector();
                     int lay = counter.getDescriptor().getLayer();
@@ -3010,10 +3044,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     double waveMax = 0.;
                     double compEvntPed = counter.getADCData(0).getPedestal();
                     // first use of pedestal (in second loop)
-                    if (abs(counter.getADCData(0).getPedestal()
-                            - pedMean[sec][lay][com]) > 5.
-                            && pedMeanGood) {
-
+                    if (abs(counter.getADCData(0).getPedestal()- pedMean[sec][lay][com]) > 5.&& pedMeanGood) {
                         compEvntPed = pedMean[sec][lay][com];
                     }
                     waveMax = -compEvntPed;
@@ -3031,17 +3062,27 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                         //if ( npeLowLimOther < 3.0 )
                         //npeLowLimOther = 3.0;
                         //if ( npeOtherLayer > npeLowLimOther )
-                        double threshDV = (double) histogramsFTHodo.threshD * histogramsFTHodo.LSB;
-                        
-                        if (vMaxEvent[sec][lay][com] > threshDV && vMaxEvent[sec][opp][com] > threshDV) {
-                            histogramsFTHodo.H_MIP_V_MatchingTiles.get(sec, lay, com).fill(vMaxEvent[sec][lay][com]);
-                            double intcharge=counter.getADCData(0).getADC() * histogramsFTHodo.LSB * histogramsFTHodo.nsPerSample / 50;
-                            histogramsFTHodo.H_MIP_Q_MatchingTiles.get(sec, lay, com).fill(intcharge);
-                            if (histogramsFTHodo.testMode){
-                                System.out.println(" vMaxEvent["+sec+"]["+lay+"]["+com+"] =" + vMaxEvent[sec][lay][com] + " voltmax: "+ voltMax);
-                                System.out.println(" vMaxEvent["+sec+"]["+opp+"]["+com+"] =" + vMaxEvent[sec][opp][com]);
-                                System.out.println(" threshDV                             =" + threshDV);
+                        //double threshDV = (double) histogramsFTHodo.threshold * histogramsFTHodo.LSB;
+                        //if (vMaxEvent[sec][lay][com] > threshDV && vMaxEvent[sec][opp][com] > threshDV && (matched_sec<0 || (matched_sec==sec && matched_comp==com))) {
+                        if (vMaxEvent[sec][lay][com] > threshDV && vMaxEvent[sec][opp][com] > threshDV ) {
+                            boolean toFill=false;
+                            if (histogramsFTHodo.SingleMatchedTile && nTilesAboveThresholdLayer1==1 && nTilesAboveThresholdLayer2==1){
+                                toFill=true;
                             }
+                            else if (!histogramsFTHodo.SingleMatchedTile){
+                                toFill=true;
+                            }
+                            if (toFill){
+                                histogramsFTHodo.H_MIP_V_MatchingTiles.get(sec, lay, com).fill(vMaxEvent[sec][lay][com]);
+                                double intcharge=counter.getADCData(0).getADC() * histogramsFTHodo.LSB * histogramsFTHodo.nsPerSample / 50;
+                                histogramsFTHodo.H_MIP_Q_MatchingTiles.get(sec, lay, com).fill(intcharge);
+                                if (histogramsFTHodo.testMode){
+                                    System.out.println(" vMaxEvent["+sec+"]["+lay+"]["+com+"] =" + vMaxEvent[sec][lay][com] + " voltmax: "+ voltMax);
+                                    System.out.println(" vMaxEvent["+sec+"]["+opp+"]["+com+"] =" + vMaxEvent[sec][opp][com]);
+                                    System.out.println(" threshDV                             =" + threshDV);
+                                }
+                            }
+
                             if (npeEvent[sec][lay][com] > 0.0) {
                                 histogramsFTHodo.H_NPE_MATCH.get(sec, lay, com).fill(npeEvent[sec][lay][com]);
                             }
@@ -3133,6 +3174,11 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     this.detectorView.repaint();
                     this.canvasEvent.update();
                 }
+                if (tabSel == tabIndexPed)
+                    this.detectorView.repaint();
+                if (tabSel == tabIndexMIPsignal)
+                    this.detectorView.repaint();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
