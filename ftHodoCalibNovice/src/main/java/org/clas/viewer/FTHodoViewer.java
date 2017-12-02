@@ -44,15 +44,15 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
     JMenuBar          menuBar = null;
     DataSourceProcessorPane evPane = new DataSourceProcessorPane();
     int          nProcessed = 0;
-    String workDir         = null;
+    //String workDir         = null;
    
     public FTHodoViewer() {
         this.initDetector();
         this.initHistograms();
         this.initArrays();
         this.initMenu();
-        this.workDir = System.getProperty("user.dir");
-        System.out.println("\nCurrent work directory set to:" + this.workDir);
+        moduleFTHODO.workDir = System.getProperty("user.dir");
+        //System.out.println("\nCurrent work directory set to:" + this.workDir);
 
         
         this.evPane.addEventListener(this);
@@ -140,7 +140,11 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
         settings.add(menuItem);
         menuBar.add(settings);
         
-        
+        menuItem = new JMenuItem("Choose work directory...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Set analysis work directory");
+        menuItem.addActionListener(this);
+        settings.add(menuItem);
+        this.menuBar.add(settings);
         
         
         
@@ -204,6 +208,22 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
             moduleFTHODO.adjustFitConstants();
         }
+        if(e.getActionCommand().compareTo("Choose work directory...")==0) {
+            //System.out.println("\nYOooooooo");
+            String filePath = moduleFTHODO.workDir;
+            JFileChooser fc = new JFileChooser();
+            fc.setDialogTitle("Choose work directory...");
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fc.setAcceptAllFileFilterUsed(false);
+            File workingDirectory = new File(moduleFTHODO.workDir);
+            fc.setCurrentDirectory(workingDirectory);
+            int returnValue = fc.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                filePath = fc.getSelectedFile().getAbsolutePath();
+            }
+            moduleFTHODO.workDir = filePath;
+            System.out.println("\nCurrent work directory set to:" + moduleFTHODO.workDir);
+        }
     }
     
     private void readFiles() {
@@ -212,7 +232,7 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
         fc.setDialogTitle("Choose input files directory...");
         fc.setMultiSelectionEnabled(true);
         fc.setAcceptAllFileFilterUsed(false);
-        File workingDirectory = new File(this.workDir);
+        File workingDirectory = new File(moduleFTHODO.workDir);
         fc.setCurrentDirectory(workingDirectory);
         int returnValue = fc.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
