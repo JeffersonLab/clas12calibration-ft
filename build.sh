@@ -28,10 +28,10 @@ echo "Building ftCalLedAndCosmics..."
 
 # ftCalCalib
 echo "Building ftHodoCalib..."
-    cd ftHodoCalib
+    cd ftHodoCalibNovice
     mvn install
     mvn package
-    cp target/FTHodoCalib-4.0-SNAPSHOT.jar ../lib/
+    cp target/ftHodoCalibNovice-4.0-SNAPSHOT.jar ../lib/
     cd ..
 
 

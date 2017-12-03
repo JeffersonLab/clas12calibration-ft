@@ -229,6 +229,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
 //        tabbedPane.add("Match", this.canvasMatch);
 //        tabbedPane.add("Time", this.canvasTime);
 //        tabbedPane.add("Table", canvasTable);
+        
+        
+        
         tabbedPane.addChangeListener(this);
         tabbedPane.setSelectedIndex(this.tabSel);
         this.initCanvas();
@@ -248,6 +251,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         JButton setDefaultBtn = new JButton("Set Constants to Default");
         setDefaultBtn.addActionListener(this);
         buttonPane.add(setDefaultBtn);
+
+        JButton resetBtn = new JButton("Reset Histograms/Constants");
+        resetBtn.addActionListener(this);
+        buttonPane.add(resetBtn);
         
 //        JButton fitBtn = new JButton("Fit");
 //        fitBtn.addActionListener(this);
@@ -1126,8 +1133,11 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
 
     public void actionPerformed(ActionEvent e) {
         System.out.println("ACTION = " + e.getActionCommand());
-        if (e.getActionCommand().compareTo("Reset") == 0) {
+        if (e.getActionCommand().compareTo("Reset Histograms/Constants") == 0) {
             this.resetHistograms();
+            this.setArraysToDefault();
+            this.setGGraphGain();
+            this.updateTable();
         }
         if (e.getActionCommand().compareTo("Calibrate") == 0) {
             this.fitHistograms();
@@ -4255,7 +4265,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     }
                     // Fill Charge Histograms
                     histogramsFTHodo.H_MIP_Q.get(sec, lay, com).fill(counter.getADCData(0).getADC() * histogramsFTHodo.LSB * histogramsFTHodo.nsPerSample / 50);
-                    histogramsFTHodo.H_NOISE_Q.get(sec, lay, com).fill(counter.getADCData(0).getADC() * histogramsFTHodo.LSB * histogramsFTHodo.nsPerSample / 50);
+                    //HERE: To clean up NoiseQ histogram from noise that comes too late.
+                    if (counter.getADCData(0).getPosition()>15 && counter.getADCData(0).getPosition()<60)
+                        histogramsFTHodo.H_NOISE_Q.get(sec, lay, com).fill(counter.getADCData(0).getADC() * histogramsFTHodo.LSB * histogramsFTHodo.nsPerSample / 50);
+                    
                     double waveMax = 0.;
                     double compEvntPed = counter.getADCData(0).getPedestal();
                     // first use of pedestal (in second loop)
