@@ -24,7 +24,7 @@ import org.jlab.io.evio.EvioDataEvent;
  *
  * @author gavalian
  */
-public class FTCalCosmicViewer extends FTViewer  {
+public class FTCalCosmicViewer extends FTViewer {
 
     
     int    threshold       = 6;
@@ -40,6 +40,7 @@ public class FTCalCosmicViewer extends FTViewer  {
         this.initModules();
         this.addSummaryTable();
         this.initPanel();
+        this.getEvPane().setUpdateRate(50);
     }
 
     @Override
@@ -81,26 +82,22 @@ public class FTCalCosmicViewer extends FTViewer  {
     public void processEvent(DataEvent event) {
         nProcessed++;
         if (event instanceof EvioDataEvent) {
-            try {
-                List<DetectorDataDgtz> dataList = this.getDecoder().getDataEntries((EvioDataEvent) event);
-                if (this.getRunNumber() != this.getDecoder().getRunNumber()) {
-                    this.setRunNumber(this.getDecoder().getRunNumber());
-                    System.out.println("\nRun number " + this.getRunNumber());
-                }
-                this.getDetectorDecoder().translate(dataList);
-                this.getDetectorDecoder().fitPulses(dataList);
-                List<DetectorDataDgtz> counters = new ArrayList<DetectorDataDgtz>();
-                for (DetectorDataDgtz entry : dataList) {
-                    if (entry.getDescriptor().getType() == DetectorType.FTCAL) {
-                        if (entry.getADCSize() > 0) {
-                            counters.add(entry);
-                        }
+            List<DetectorDataDgtz> dataList = this.getDecoder().getDataEntries((EvioDataEvent) event);
+            if (this.getRunNumber() != this.getDecoder().getRunNumber()) {
+                this.setRunNumber(this.getDecoder().getRunNumber());
+                System.out.println("\nRun number " + this.getRunNumber());
+            }
+            this.getDetectorDecoder().translate(dataList);
+            this.getDetectorDecoder().fitPulses(dataList);
+            List<DetectorDataDgtz> counters = new ArrayList<DetectorDataDgtz>();
+            for (DetectorDataDgtz entry : dataList) {
+                if (entry.getDescriptor().getType() == DetectorType.FTCAL) {
+                    if (entry.getADCSize() > 0) {
+                        counters.add(entry);
                     }
                 }
-                for(FTModule module : this.getModules()) module.addEvent(counters);
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+            for(FTModule module : this.getModules()) module.addEvent(counters);
         } 
     }
   

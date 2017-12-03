@@ -60,7 +60,7 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
     JPanel               colorSchemePanel = new JPanel();
     JComboBox                   colorList = new JComboBox();
     JTabbedPane                tabbedPane = new JTabbedPane(); 
-    DataSourceProcessorPane        evPane = new DataSourceProcessorPane();
+    DataSourceProcessorPane        evPane = null;
 
     // Detector
     FTDetector                   detector = null;
@@ -168,6 +168,10 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         if(e.getActionCommand() == "Adjust fit...") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
             this.getModules().get(moduleTabSelect).adjustFit();
+        }        
+        if(e.getActionCommand() == "Adjust all fit ranges...") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            this.getModules().get(moduleTabSelect).adjustAllFitRanges();
         }        
         if(e.getActionCommand() == "View all") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
@@ -290,6 +294,10 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters and range");
         menuItem.addActionListener(this);
         fit.add(menuItem);        
+        menuItem = new JMenuItem("Adjust all fit ranges...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit range for all histograms");
+        menuItem.addActionListener(this);
+        fit.add(menuItem);        
         menuItem = new JMenuItem("View all");
         menuItem.getAccessibleContext().setAccessibleDescription("Save histograms to file");
         menuItem.addActionListener(this);
@@ -375,10 +383,16 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
 	} else if (event.getType() == DataEventType.EVENT_ACCUMULATE) {
             processEvent(event);
 	} else if (event.getType() == DataEventType.EVENT_STOP) {
-            for(FTModule module : this.getModules()) {
-                module.analyze();
+            processEvent(event);
+            if(this.evPane.getDataFile()!=null) {
+                for(FTModule module : this.getModules()) {
+                    module.analyze();
+                }
+                this.getDetector().repaint();
             }
-	}        
+	} 
+        if(this.getModules().get(moduleSelect).getType())         this.getModules().get(moduleSelect).plotDataGroup();
+        if(this.getModules().get(this.moduleParSelect).getType()) this.getDetector().repaint();
 
     }
 
@@ -394,7 +408,10 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         return detectorDecoder;
     }
 
-    
+    public DataSourceProcessorPane getEvPane() {
+        return evPane;
+    }
+
     public int getKeySelect() {
         return keySelect;
     }
@@ -444,7 +461,6 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
     }
     
     public void initModules() {
-        this.setModuleSelect(2);
         for(FTModule module : this.getModules()) {
             module.setKeySelect(this.getKeySelect());
             module.setCanvasUpdate(timerUpdate);
@@ -461,6 +477,7 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         for(int i=0; i<this.modules.size(); i++) {
             for(FTParameter par : this.modules.get(i).getParameters()) {
                 this.parameters.put(par, i);
+                if(this.parameterSelect == null) this.parameterSelect = par.getName();
             }
         }
     }
@@ -480,11 +497,12 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         splitPane.setDividerLocation(0.3);        
         splitPane.setResizeWeight(0.3);        
         // set main panel layout
+        this.evPane = new DataSourceProcessorPane();
+        this.evPane.addEventListener(this);
+        this.getEvPane().setUpdateRate(this.eventUpdate);
         this.mainPanel.setLayout(new BorderLayout());
         this.mainPanel.add(splitPane, BorderLayout.CENTER);
-        this.mainPanel.add(evPane, BorderLayout.PAGE_END);
-        this.evPane.setUpdateRate(eventUpdate);
-        this.evPane.addEventListener(this);
+        this.mainPanel.add(this.evPane, BorderLayout.PAGE_END);
         // set menu bar
         this.addFileMenu();
 //        this.addConstantMenu();

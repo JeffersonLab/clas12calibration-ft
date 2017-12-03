@@ -7,12 +7,9 @@ package org.clas.ftcal.cosmic;
 
 import java.awt.Color;
 import java.util.List;
-import javax.swing.JFrame;
 import org.clas.detector.DetectorDataDgtz;
-import org.clas.ft.tools.FTCanvasBook;
 import org.clas.ft.tools.FTDetector;
 import org.clas.ft.tools.FTModule;
-import org.clas.ft.tools.FTModuleType;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
@@ -32,7 +29,7 @@ public class FTCalEventModule extends FTModule {
         super(d);
         this.setName("Event Viewer");
         this.addCanvases("Event");
-        this.setType(FTModuleType.EVENT_SINGLE);
+        this.setType(true);
         this.addParameters("Event");
         this.getParameter("Event").setRanges(0.0, 0.0, 1.0, 1.0);
     }
@@ -42,7 +39,7 @@ public class FTCalEventModule extends FTModule {
         H_WMAX = new H1F("WMAX", this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
         H_TCROSS = new H1F("TCROSS", this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
         H_WIDTH = new H1F("WIDTH", this.getDetector().getComponentMaxCount(), 0, this.getDetector().getComponentMaxCount());
-        IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>();
+        IndexedList<DataGroup> dataGroups = new IndexedList<>();
         for (int component : this.getDetector().getDetectorComponents()) {
             int ix = this.getDetector().getIdX(component);
             int iy = this.getDetector().getIdY(component);

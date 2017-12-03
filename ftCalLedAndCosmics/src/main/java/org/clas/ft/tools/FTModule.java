@@ -28,7 +28,7 @@ import org.jlab.utils.groups.IndexedList;
 public class FTModule {
 
     private String                     name           = null;
-    private FTModuleType               type           = null;
+    private boolean                    type           = false;
     private FTDetector                 detector       = null;
     private IndexedList<DataGroup>     moduleData     = new IndexedList<DataGroup>(3);
     private IndexedList<DataGroup>     compareData    = new IndexedList<DataGroup>(3);
@@ -49,11 +49,10 @@ public class FTModule {
         GStyle.getAxisAttributesY().setTitleFontSize(18);
         GStyle.getAxisAttributesY().setLabelFontSize(14);
         this.detector = d;
-        this.type     = FTModuleType.EVENT_ACCUMULATE;
         this.numberOfEvents = 0;
     }
   
-    public FTModule(FTDetector d, String name, FTModuleType type) {
+    public FTModule(FTDetector d, String name) {
         GStyle.getAxisAttributesX().setTitleFontSize(18);
         GStyle.getAxisAttributesX().setLabelFontSize(14);
         GStyle.getAxisAttributesY().setTitleFontSize(18);
@@ -100,6 +99,10 @@ public class FTModule {
     
     public void adjustFit() {
         System.out.println("\nAdjust-fit function not implemented for current module");
+    }
+    
+    public void adjustAllFitRanges() {
+        System.out.println("\nAdjust-all-fit-ranges function not implemented for current module");
     }
     
     public void analyze() {
@@ -192,7 +195,7 @@ public class FTModule {
         return keySelect;
     }
 
-    public FTModuleType getType() {
+    public boolean getType() {
         return type;
     }
         
@@ -265,7 +268,7 @@ public class FTModule {
     }
     
     public void setCanvasUpdate(int time) {
-        if(this.type == FTModuleType.EVENT_ACCUMULATE) {
+        if(this.type) {
             for(Map.Entry<String, EmbeddedCanvas> entry : this.canvases.entrySet()) entry.getValue().initTimer(time);
         }
         else {
@@ -324,7 +327,7 @@ public class FTModule {
         }
     }
 
-    public void setType(FTModuleType type) {
+    public void setType(boolean type) {
         this.type = type;
     }
 }

@@ -12,7 +12,6 @@ import org.clas.detector.DetectorDataDgtz;
 import org.clas.ft.tools.FTCanvasBook;
 import org.clas.ft.tools.FTDetector;
 import org.clas.ft.tools.FTModule;
-import org.clas.ft.tools.FTModuleType;
 import org.clas.ft.tools.FTParameter;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.groot.data.H1F;
@@ -38,7 +37,7 @@ public class FTCalNoiseModule extends FTModule {
         super(d);
         this.setName("Noise");
         this.addCanvases("Noise");
-        this.setType(FTModuleType.EVENT_ACCUMULATE);
+        this.setType(false);
         this.addParameters("Status", "Pedestal (Channels)", "Pedestal RMS (Channels)", "Noise (mV)");
         this.getParameter("Status").setRanges(0.75,1.05,1.0,2.0, true);
         this.getParameter("Pedestal (Channels)").setRanges(130.0,250.0,1.0,500.0, false);

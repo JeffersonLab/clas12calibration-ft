@@ -7,17 +7,15 @@ package org.clas.ftcal.cosmic;
 
 import java.awt.GridLayout;
 import java.util.List;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.clas.detector.DetectorDataDgtz;
 import org.clas.ft.tools.FTAdjustFit;
-import org.clas.ft.tools.FTCanvasBook;
+import org.clas.ft.tools.FTAdjustRanges;
 import org.clas.ft.tools.FTDetector;
 import org.clas.ft.tools.FTModule;
-import org.clas.ft.tools.FTModuleType;
 import org.clas.ft.tools.FTParameter;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.fitter.DataFitter;
@@ -46,7 +44,7 @@ public class FTCalCosmicModule extends FTModule {
     public FTCalCosmicModule(FTDetector d)  {
         super(d);
         this.setName("Cosmics");
-        this.setType(FTModuleType.EVENT_ACCUMULATE);
+        this.setType(false);
         this.addCanvases("Energy");
         this.addComparisonCanvas();
         this.addParameters("Occupancy", "<Q> (pC)", "\u03C3(Q) (pC)", "\u03C7\u00B2(Q)"/*, "<T>", "\u03C3(T)"*/);
@@ -65,6 +63,20 @@ public class FTCalCosmicModule extends FTModule {
         H1F hcharge = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("Charge_" + this.getSelectedKey());
         F1D fcharge = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getF1D("Landau_" + this.getSelectedKey());
         FTAdjustFit cfit = new FTAdjustFit(hcharge, fcharge, "LRQ");
+        this.getCanvas("Energy").update();
+    }
+    
+    @Override
+    public void adjustAllFitRanges() {
+        System.out.println("Adjusting fit ranges");
+        F1D fcharge = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getF1D("Landau_" + this.getSelectedKey());
+        FTAdjustRanges cfit = new FTAdjustRanges(fcharge, "LRQ");
+        double rmin = fcharge.getRange().getMin();
+        double rmax = fcharge.getRange().getMax();
+        for(int key : this.getDetector().getDetectorComponents()) {
+            this.getDataGroup().getItem(1,1,key).getF1D("Landau_" + key).setRange(rmin, rmax);
+        }
+        this.analyze();
         this.getCanvas("Energy").update();
     }
     
