@@ -13,4 +13,4 @@ echo "\n"
 echo "INSTALLATION DIRECTORY = " $CLAS12DIR
 echo "LIBRARY DIRECTORY      = " $DISTRO_DIR/lib
 
-java -Dsun.java2d.pmoffscreen=false -Xmx2048m -Xms1024m -cp "$CLAS12DIR/lib/clas/*:$CLAS12DIR/lib/services/*:$DISTRO_DIR/lib/FTHodoCalib-4.0-SNAPSHOT.jar" org.clas.viewer.FTHodoViewer $*
+java -Dsun.java2d.pmoffscreen=false -Xmx2048m -Xms1024m -cp "$CLAS12DIR/lib/clas/*:$CLAS12DIR/lib/services/*:$DISTRO_DIR/lib/FTHodoCalibNovice-4.0-SNAPSHOT.jar" org.clas.viewer.FTHodoViewer $*
