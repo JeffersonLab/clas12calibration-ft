@@ -1221,7 +1221,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             this.setGGraphGain();
             this.updateTable();
         }
-        
   
         if (e.getActionCommand().compareTo("Save Calibration Constants") == 0) {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
@@ -3766,184 +3765,337 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     public void constantsEvent(CalibrationConstants cc, int i, int i1) {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
-    public void adjustNoisemvFit() {
-        System.out.println("Adjusting Noise mV fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        H1F hvolpeak =  histogramsFTHodo.H_NOISE_V.get(secSel, laySel, comSel);
-        F1D fvolpeak = histogramsFTHodo.fV2.get(secSel, laySel, comSel);
-        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
-        
-        if (histogramsFTHodo.testMode)
-            System.out.println("Old Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
-        //this.canvasNoise.update();
+    public void adjustFit() {
+        if (this.tabSel==tabIndexPed){
+            System.out.println("Adjusting Ped fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+            H1F histtofit =  histogramsFTHodo.H_PED.get(secSel, laySel, comSel);
+            F1D ftofit = histogramsFTHodo.fPed.get(secSel, laySel, comSel);
+            FTAdjustFit cfit = new FTAdjustFit(histtofit, ftofit, "LRQ");
+        }
+        else if (this.tabSel==tabIndexNoise){
+            System.out.println("Adjusting Noise fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+            H1F histtofit1 =  histogramsFTHodo.H_NOISE_Q.get(secSel, laySel, comSel);
+            F1D ftofit1 = histogramsFTHodo.fQ2.get(secSel, laySel, comSel);
+            FTAdjustFit cfit1 = new FTAdjustFit(histtofit1, ftofit1, "LRQ");
+            
+            H1F histtofit2 =  histogramsFTHodo.H_NOISE_V.get(secSel, laySel, comSel);
+            F1D ftofit2 = histogramsFTHodo.fV2.get(secSel, laySel, comSel);
+            FTAdjustFit cfit2 = new FTAdjustFit(histtofit2, ftofit2, "LRQ");
+        }else if (this.tabSel==tabIndexMIPsignal){
+            if (!matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP mV fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+                    H1F histtofit =  histogramsFTHodo.H_MIP_V.get(secSel, laySel, comSel);
+                    F1D ftofit = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel);
+                    FTAdjustFit cfit = new FTAdjustFit(histtofit, ftofit, "LRQ");
+                }
+                if (plotVoltageChargeBoth==2 ||plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP pC fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+                    H1F histtofit1 =  histogramsFTHodo.H_MIP_Q.get(secSel, laySel, comSel);
+                    F1D ftofit1 = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel);
+                    FTAdjustFit cfit1 = new FTAdjustFit(histtofit1, ftofit1, "LRQ");
+                }
+            }else if (matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP Matching Tiles mV fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+                    H1F histtofit =  histogramsFTHodo.H_MIP_V_MatchingTiles.get(secSel, laySel, comSel);
+                    F1D ftofit = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel);
+                    FTAdjustFit cfit = new FTAdjustFit(histtofit, ftofit, "LRQ");
+                }
+                if (plotVoltageChargeBoth==2 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP Matching Tiles pC fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+                    H1F histtofit1 =  histogramsFTHodo.H_MIP_Q_MatchingTiles.get(secSel, laySel, comSel);
+                    F1D ftofit1 = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel);
+                    FTAdjustFit cfit1 = new FTAdjustFit(histtofit1, ftofit1, "LRQ");
+                }
+            }
+        }
     }
-    public void adjustNoisemVFitConstants() {
-        System.out.println("Adjusting noise mV Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        //if (histogramsFTHodo.testMode)
+    public void adjustFitConstants() {
+        if (this.tabSel==tabIndexPed){
+            System.out.println("Old Mean:"+pedMean[secSel][laySel][comSel] +" "+ pedRMS[secSel][laySel][comSel]);
+            this.pedMean[secSel][laySel][comSel]=histogramsFTHodo.fPed.get(secSel, laySel, comSel).getParameter(1);
+            this.pedRMS[secSel][laySel][comSel]=histogramsFTHodo.fPed.get(secSel, laySel, comSel).getParameter(2);
+            System.out.println("New Mean:"+pedMean[secSel][laySel][comSel] +" "+ pedRMS[secSel][laySel][comSel]);
+
+            this.updateTable();
+        }
+        else if (this.tabSel==tabIndexNoise){
             System.out.println("Old Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
-        this.gain_mV[secSel][laySel][comSel]=histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(1);
-        double gainError=histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error()+histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error();
-        this.errGain_mV[secSel][laySel][comSel] = sqrt(gainError);
-        //if (histogramsFTHodo.testMode)
+            this.gain_mV[secSel][laySel][comSel]=histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(1);
+            double gainError=histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error()*histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error();
+            this.errGain_mV[secSel][laySel][comSel] = sqrt(gainError);
             System.out.println("New Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
-        this.setGGraphGain();
-        this.updateTable();
-        if (!drawByElec)
-            drawCanvasGain();
-        else
-            drawCanvasGainElec(secSel,laySel,comSel );
-    }
-    public void adjustNoisechargeFit() {
-        System.out.println("Adjusting Noise charge fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        H1F hvolpeak =  histogramsFTHodo.H_NOISE_Q.get(secSel, laySel, comSel);
-        F1D fvolpeak = histogramsFTHodo.fQ2.get(secSel, laySel, comSel);
-        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
-        
-        if (histogramsFTHodo.testMode)
+            
             System.out.println("Old Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
-        //this.canvasNoise.update();
+            this.gain[secSel][laySel][comSel]=histogramsFTHodo.fQ2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fQ2.get(secSel, laySel, comSel).getParameter(1);
+            gainError=histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(1).error()*histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(1).error();
+            this.errGain[secSel][laySel][comSel] = sqrt(gainError);
+            System.out.println("New Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
+            
+            this.setGGraphGain();
+            this.updateTable();
+            if (!drawByElec)
+                drawCanvasGain();
+            else
+                drawCanvasGainElec(secSel,laySel,comSel );
+        }else if (this.tabSel==tabIndexMIPsignal){
+            if (!matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Old Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
+                    this.MIPS_maxV_all[secSel][laySel][comSel]=histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(1);
+                    this.MIPSerr_maxV_all[secSel][laySel][comSel]=histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(2);
+                    if (gain_mV[secSel][laySel][comSel]>0)
+                        this.MIPgain_mV[secSel][laySel][comSel]=MIPS_maxV_all[secSel][laySel][comSel]/gain_mV[secSel][laySel][comSel];
+                    else
+                        this.MIPgain_mV[secSel][laySel][comSel]=0.0;
+                    if (MIPgain_mV[secSel][laySel][comSel]>0){
+                        double n1Error = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(1);
+                        double n2Error =getGainError(secSel, laySel, comSel, "peakvolt")/getGain(secSel, laySel, comSel, "peakvolt");
+                        this.MIPerrgain_mV[secSel][laySel][comSel]=MIPgain_mV[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+                    }else {
+                        this.MIPerrgain_mV[secSel][laySel][comSel]=100.0;
+                    }
+                    System.out.println("New Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
+                }
+                if (plotVoltageChargeBoth==2 || plotVoltageChargeBoth==3){
+                    System.out.println("Old Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
+                    this.MIPS_pC_all[secSel][laySel][comSel]=histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(1);
+                    this.MIPSerr_pC_all[secSel][laySel][comSel]=histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(2);
+                    if (gain[secSel][laySel][comSel]>0)
+                        this.MIPgain[secSel][laySel][comSel]=MIPS_pC_all[secSel][laySel][comSel]/gain[secSel][laySel][comSel];
+                    else
+                        this.MIPgain[secSel][laySel][comSel]=0.0;
+                    if (MIPgain[secSel][laySel][comSel]>0){
+                        double n1Error = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(1);
+                        double n2Error =getGainError(secSel, laySel, comSel, "charge")/getGain(secSel, laySel, comSel, "charge");
+                        this.MIPerrgain[secSel][laySel][comSel]=MIPgain[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+                    }else
+                        this.MIPerrgain[secSel][laySel][comSel]=100.0;
+                    System.out.println("New Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
+                }
+            }else if (matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Old Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
+                    this.MIPS_maxV_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+                    this.MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(2);
+                    if (gain_mV[secSel][laySel][comSel]>0)
+                        this.MIPMatchingTilesgain_mV[secSel][laySel][comSel]=MIPS_maxV_MatchingTiles[secSel][laySel][comSel]/gain_mV[secSel][laySel][comSel];
+                    else
+                        this.MIPMatchingTilesgain_mV[secSel][laySel][comSel]=0.0;
+                    if (this.MIPMatchingTilesgain_mV[secSel][laySel][comSel]>0){
+                        double n1Error = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+                        double n2Error =getGainError(secSel, laySel, comSel, "peakvolt")/getGain(secSel, laySel, comSel, "peakvolt");
+                        this.MIPMatchingTileserrgain_mV[secSel][laySel][comSel]=MIPMatchingTilesgain_mV[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+                    }else {
+                        this.MIPMatchingTileserrgain_mV[secSel][laySel][comSel]=100.0;
+                    }
+                    System.out.println("New Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
+                }
+                if (plotVoltageChargeBoth==2 || plotVoltageChargeBoth==3){
+                    System.out.println("Old Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
+                    this.MIPS_pC_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+                    this.MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(2);
+                    if (gain[secSel][laySel][comSel]>0)
+                        this.MIPMatchingTilesgain[secSel][laySel][comSel]=MIPS_pC_MatchingTiles[secSel][laySel][comSel]/gain[secSel][laySel][comSel];
+                    else
+                        this.MIPMatchingTilesgain[secSel][laySel][comSel]=0.0;
+                    if (this.MIPMatchingTilesgain[secSel][laySel][comSel]>0){
+                        double n1Error = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+                        double n2Error =getGainError(secSel, laySel, comSel, "charge")/getGain(secSel, laySel, comSel, "charge");
+                        this.MIPMatchingTileserrgain[secSel][laySel][comSel]=MIPMatchingTilesgain[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+                    }else {
+                        this.MIPMatchingTileserrgain[secSel][laySel][comSel]=100.0;
+                    }
+                    System.out.println("New Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
+                }
+            }
+            this.setGGraphGain();
+            this.updateTable();
+            if (!drawByElec)
+                drawCanvasMIPgain();
+            else
+                drawCanvasMIPgainElec(secSel,laySel,comSel );
+        }
     }
-    public void adjustNoisechargeFitConstants() {
-        System.out.println("Adjusting noise charge Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        //if (histogramsFTHodo.testMode)
-        System.out.println("Old Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
-        this.gain[secSel][laySel][comSel]=histogramsFTHodo.fQ2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fQ2.get(secSel, laySel, comSel).getParameter(1);
-        double gainError=histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(1).error()+histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(1).error();
-        this.errGain[secSel][laySel][comSel] = sqrt(gainError);
-        //if (histogramsFTHodo.testMode)
-        System.out.println("New Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
-        this.setGGraphGain();
-        this.updateTable();
-        if (!drawByElec)
-            drawCanvasGain();
-        else
-            drawCanvasGainElec(secSel,laySel,comSel );
-    }
-    
-    public void adjustMIPmvFit() {
-        System.out.println("Adjusting MIP mV fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        H1F hvolpeak =  histogramsFTHodo.H_MIP_V.get(secSel, laySel, comSel);
-        F1D fvolpeak = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel);
-        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
-        
-        if (histogramsFTHodo.testMode)
-            System.out.println("Old Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
-    }
-    public void adjustMIPmVFitConstants() {
-        System.out.println("Adjusting MIP mV Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        //if (histogramsFTHodo.testMode)
-        System.out.println("Old Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
-        this.MIPS_maxV_all[secSel][laySel][comSel]=histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(1);
-        this.MIPSerr_maxV_all[secSel][laySel][comSel]=histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(2);
-        this.MIPgain_mV[secSel][laySel][comSel]=MIPS_maxV_all[secSel][laySel][comSel]/gain_mV[secSel][laySel][comSel];
-        
-        double n1Error = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(1);
-        double n2Error =getGainError(secSel, laySel, comSel, "peakvolt")/getGain(secSel, laySel, comSel, "peakvolt");
-        this.MIPerrgain_mV[secSel][laySel][comSel]=MIPgain_mV[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
-
-        //if (histogramsFTHodo.testMode)
-        System.out.println("New Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
-        this.setGGraphGain();
-        this.updateTable();
-        if (!drawByElec)
-            drawCanvasMIPgain();
-        else
-            drawCanvasMIPgainElec(secSel,laySel,comSel );
-    }
-    public void adjustMIPchargeFit() {
-        System.out.println("Adjusting MIP charge fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        H1F hvolpeak =  histogramsFTHodo.H_MIP_Q.get(secSel, laySel, comSel);
-        F1D fvolpeak = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel);
-        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
-        
-        if (histogramsFTHodo.testMode)
-            System.out.println("Old Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
-        this.canvasNoise.update();
-    }
-    public void adjustMIPchargeFitConstants() {
-        System.out.println("Adjusting MIP charge Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        //if (histogramsFTHodo.testMode)
-        System.out.println("Old Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
-        this.MIPS_pC_all[secSel][laySel][comSel]=histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(1);
-        this.MIPSerr_pC_all[secSel][laySel][comSel]=histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(2);
-        this.MIPgain[secSel][laySel][comSel]=MIPS_pC_all[secSel][laySel][comSel]/gain[secSel][laySel][comSel];
-        
-        double n1Error = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(1);
-        double n2Error =getGainError(secSel, laySel, comSel, "charge")/getGain(secSel, laySel, comSel, "charge");
-        this.MIPerrgain[secSel][laySel][comSel]=MIPgain[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
-    
-        //if (histogramsFTHodo.testMode)
-        System.out.println("New Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
-        this.setGGraphGain();
-        this.updateTable();
-        if (!drawByElec)
-            drawCanvasMIPgain();
-        else
-            drawCanvasMIPgainElec(secSel,laySel,comSel );
-    }
-
-    public void adjustMIPmvMatchingTilesFit() {
-        System.out.println("Adjusting MIP mV fit for Matching Tiles Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        H1F hvolpeak =  histogramsFTHodo.H_MIP_V_MatchingTiles.get(secSel, laySel, comSel);
-        F1D fvolpeak = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel);
-        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
-        
-        if (histogramsFTHodo.testMode)
-            System.out.println("Old Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
-    }
-    public void adjustMIPmVMatchingTilesFitConstants() {
-        System.out.println("Adjusting MIP mV Constants for Matching Tiles Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        //if (histogramsFTHodo.testMode)
-        System.out.println("Old Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
-        this.MIPS_maxV_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(1);
-        this.MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(2);
-        this.MIPMatchingTilesgain_mV[secSel][laySel][comSel]=MIPS_maxV_MatchingTiles[secSel][laySel][comSel]/gain_mV[secSel][laySel][comSel];
-        
-        double n1Error = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(1);
-        double n2Error =getGainError(secSel, laySel, comSel, "peakvolt")/getGain(secSel, laySel, comSel, "peakvolt");
-        this.MIPMatchingTileserrgain_mV[secSel][laySel][comSel]=MIPMatchingTilesgain_mV[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
-        
-        //if (histogramsFTHodo.testMode)
-        System.out.println("New Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
-        this.setGGraphGain();
-        this.updateTable();
-        if (!drawByElec)
-            drawCanvasMIPgain();
-        else
-            drawCanvasMIPgainElec(secSel,laySel,comSel );
-    }
-    public void adjustMIPchargeMatchingTilesFit() {
-        System.out.println("Adjusting MIP charge fit for Matching Tiles Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        H1F hvolpeak =  histogramsFTHodo.H_MIP_Q_MatchingTiles.get(secSel, laySel, comSel);
-        F1D fvolpeak = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel);
-        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
-        
-        if (histogramsFTHodo.testMode)
-            System.out.println("Old Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
-        this.canvasNoise.update();
-    }
-    public void adjustMIPchargeMatchingTilesFitConstants() {
-        System.out.println("Adjusting MIP charge Constants Matching Tiles for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        //if (histogramsFTHodo.testMode)
-        System.out.println("Old Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
-        this.MIPS_pC_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(1);
-        this.MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(2);
-        this.MIPMatchingTilesgain[secSel][laySel][comSel]=MIPS_pC_MatchingTiles[secSel][laySel][comSel]/gain[secSel][laySel][comSel];
-        
-        double n1Error = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(1);
-        double n2Error =getGainError(secSel, laySel, comSel, "charge")/getGain(secSel, laySel, comSel, "charge");
-        this.MIPMatchingTileserrgain[secSel][laySel][comSel]=MIPMatchingTilesgain[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
-        
-        //if (histogramsFTHodo.testMode)
-        System.out.println("New Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
-        this.setGGraphGain();
-        this.updateTable();
-        if (!drawByElec)
-            drawCanvasMIPgain();
-        else
-            drawCanvasMIPgainElec(secSel,laySel,comSel );
-    }
-    
+//
+//    public void adjustNoisemvFit() {
+//        System.out.println("Adjusting Noise mV fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        H1F hvolpeak =  histogramsFTHodo.H_NOISE_V.get(secSel, laySel, comSel);
+//        F1D fvolpeak = histogramsFTHodo.fV2.get(secSel, laySel, comSel);
+//        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
+//
+//        if (histogramsFTHodo.testMode)
+//            System.out.println("Old Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
+//        //this.canvasNoise.update();
+//    }
+//    public void adjustNoisemVFitConstants() {
+//        System.out.println("Adjusting noise mV Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        //if (histogramsFTHodo.testMode)
+//            System.out.println("Old Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
+//        this.gain_mV[secSel][laySel][comSel]=histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(1);
+//        double gainError=histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error()+histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error();
+//        this.errGain_mV[secSel][laySel][comSel] = sqrt(gainError);
+//        //if (histogramsFTHodo.testMode)
+//            System.out.println("New Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
+//        this.setGGraphGain();
+//        this.updateTable();
+//        if (!drawByElec)
+//            drawCanvasGain();
+//        else
+//            drawCanvasGainElec(secSel,laySel,comSel );
+//    }
+//    public void adjustNoisechargeFit() {
+//        System.out.println("Adjusting Noise charge fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        H1F hvolpeak =  histogramsFTHodo.H_NOISE_Q.get(secSel, laySel, comSel);
+//        F1D fvolpeak = histogramsFTHodo.fQ2.get(secSel, laySel, comSel);
+//        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
+//
+//        if (histogramsFTHodo.testMode)
+//            System.out.println("Old Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
+//        //this.canvasNoise.update();
+//    }
+//    public void adjustNoisechargeFitConstants() {
+//        System.out.println("Adjusting noise charge Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("Old Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
+//        this.gain[secSel][laySel][comSel]=histogramsFTHodo.fQ2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fQ2.get(secSel, laySel, comSel).getParameter(1);
+//        double gainError=histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(1).error()+histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(1).error();
+//        this.errGain[secSel][laySel][comSel] = sqrt(gainError);
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("New Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
+//        this.setGGraphGain();
+//        this.updateTable();
+//        if (!drawByElec)
+//            drawCanvasGain();
+//        else
+//            drawCanvasGainElec(secSel,laySel,comSel );
+//    }
+//
+//    public void adjustMIPmvFit() {
+//        System.out.println("Adjusting MIP mV fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        H1F hvolpeak =  histogramsFTHodo.H_MIP_V.get(secSel, laySel, comSel);
+//        F1D fvolpeak = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel);
+//        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
+//
+//        if (histogramsFTHodo.testMode)
+//            System.out.println("Old Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
+//    }
+//    public void adjustMIPmVFitConstants() {
+//        System.out.println("Adjusting MIP mV Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("Old Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
+//        this.MIPS_maxV_all[secSel][laySel][comSel]=histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(1);
+//        this.MIPSerr_maxV_all[secSel][laySel][comSel]=histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(2);
+//        this.MIPgain_mV[secSel][laySel][comSel]=MIPS_maxV_all[secSel][laySel][comSel]/gain_mV[secSel][laySel][comSel];
+//
+//        double n1Error = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(1);
+//        double n2Error =getGainError(secSel, laySel, comSel, "peakvolt")/getGain(secSel, laySel, comSel, "peakvolt");
+//        this.MIPerrgain_mV[secSel][laySel][comSel]=MIPgain_mV[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+//
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("New Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
+//        this.setGGraphGain();
+//        this.updateTable();
+//        if (!drawByElec)
+//            drawCanvasMIPgain();
+//        else
+//            drawCanvasMIPgainElec(secSel,laySel,comSel );
+//    }
+//    public void adjustMIPchargeFit() {
+//        System.out.println("Adjusting MIP charge fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        H1F hvolpeak =  histogramsFTHodo.H_MIP_Q.get(secSel, laySel, comSel);
+//        F1D fvolpeak = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel);
+//        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
+//
+//        if (histogramsFTHodo.testMode)
+//            System.out.println("Old Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
+//        this.canvasNoise.update();
+//    }
+//    public void adjustMIPchargeFitConstants() {
+//        System.out.println("Adjusting MIP charge Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("Old Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
+//        this.MIPS_pC_all[secSel][laySel][comSel]=histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(1);
+//        this.MIPSerr_pC_all[secSel][laySel][comSel]=histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(2);
+//        this.MIPgain[secSel][laySel][comSel]=MIPS_pC_all[secSel][laySel][comSel]/gain[secSel][laySel][comSel];
+//
+//        double n1Error = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(1);
+//        double n2Error =getGainError(secSel, laySel, comSel, "charge")/getGain(secSel, laySel, comSel, "charge");
+//        this.MIPerrgain[secSel][laySel][comSel]=MIPgain[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+//
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("New Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
+//        this.setGGraphGain();
+//        this.updateTable();
+//        if (!drawByElec)
+//            drawCanvasMIPgain();
+//        else
+//            drawCanvasMIPgainElec(secSel,laySel,comSel );
+//    }
+//
+//    public void adjustMIPmvMatchingTilesFit() {
+//        System.out.println("Adjusting MIP mV fit for Matching Tiles Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        H1F hvolpeak =  histogramsFTHodo.H_MIP_V_MatchingTiles.get(secSel, laySel, comSel);
+//        F1D fvolpeak = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel);
+//        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
+//
+//        if (histogramsFTHodo.testMode)
+//            System.out.println("Old Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
+//    }
+//    public void adjustMIPmVMatchingTilesFitConstants() {
+//        System.out.println("Adjusting MIP mV Constants for Matching Tiles Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("Old Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
+//        this.MIPS_maxV_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+//        this.MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(2);
+//        this.MIPMatchingTilesgain_mV[secSel][laySel][comSel]=MIPS_maxV_MatchingTiles[secSel][laySel][comSel]/gain_mV[secSel][laySel][comSel];
+//        
+//        double n1Error = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+//        double n2Error =getGainError(secSel, laySel, comSel, "peakvolt")/getGain(secSel, laySel, comSel, "peakvolt");
+//        this.MIPMatchingTileserrgain_mV[secSel][laySel][comSel]=MIPMatchingTilesgain_mV[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+//        
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("New Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
+//        this.setGGraphGain();
+//        this.updateTable();
+//        if (!drawByElec)
+//            drawCanvasMIPgain();
+//        else
+//            drawCanvasMIPgainElec(secSel,laySel,comSel );
+//    }
+//    public void adjustMIPchargeMatchingTilesFit() {
+//        System.out.println("Adjusting MIP charge fit for Matching Tiles Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        H1F hvolpeak =  histogramsFTHodo.H_MIP_Q_MatchingTiles.get(secSel, laySel, comSel);
+//        F1D fvolpeak = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel);
+//        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
+//
+//        if (histogramsFTHodo.testMode)
+//            System.out.println("Old Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
+//        this.canvasNoise.update();
+//    }
+//    public void adjustMIPchargeMatchingTilesFitConstants() {
+//        System.out.println("Adjusting MIP charge Constants Matching Tiles for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("Old Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
+//        this.MIPS_pC_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+//        this.MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(2);
+//        this.MIPMatchingTilesgain[secSel][laySel][comSel]=MIPS_pC_MatchingTiles[secSel][laySel][comSel]/gain[secSel][laySel][comSel];
+//
+//        double n1Error = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+//        double n2Error =getGainError(secSel, laySel, comSel, "charge")/getGain(secSel, laySel, comSel, "charge");
+//        this.MIPMatchingTileserrgain[secSel][laySel][comSel]=MIPMatchingTilesgain[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+//
+//        //if (histogramsFTHodo.testMode)
+//        System.out.println("New Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
+//        this.setGGraphGain();
+//        this.updateTable();
+//        if (!drawByElec)
+//            drawCanvasMIPgain();
+//        else
+//            drawCanvasMIPgainElec(secSel,laySel,comSel );
+//    }
+//
 
     
     public void readCCDBconstants(){

@@ -119,60 +119,63 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
         menuBar.add(file);
         
         JMenu fit = new JMenu("Fit");
-        menuItem = new JMenuItem("Adjust Noise mV fit...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
+        menuItem = new JMenuItem("Adjust fit...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for distribution in Tab");
         menuItem.addActionListener(this);
         fit.add(menuItem);
-        menuItem = new JMenuItem("Update Noise mV constants...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        menuItem = new JMenuItem("Adjust Noise charge fit...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        menuItem = new JMenuItem("Update Noise charge constants...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
+        menuItem = new JMenuItem("Update constants...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit");
         menuItem.addActionListener(this);
         fit.add(menuItem);
         
-        
-        menuItem = new JMenuItem("Adjust MIP mV fit...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        menuItem = new JMenuItem("Update MIP mV constants...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        menuItem = new JMenuItem("Adjust MIP charge fit...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        menuItem = new JMenuItem("Update MIP charge constants...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        
-        menuItem = new JMenuItem("Adjust MIP mV Matching Tiles fit...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        menuItem = new JMenuItem("Update MIP mV Matching Tiles constants...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        menuItem = new JMenuItem("Adjust MIP charge Matching Tiles fit...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        menuItem = new JMenuItem("Update MIP charge Matching Tiles constants...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
-        menuItem.addActionListener(this);
-        fit.add(menuItem);
-        
-        
-        
+//        menuItem = new JMenuItem("Adjust Noise mV fit...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Update Noise mV constants...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Adjust Noise charge fit...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Update Noise charge constants...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Adjust MIP mV fit...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Update MIP mV constants...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Adjust MIP charge fit...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Update MIP charge constants...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Adjust MIP mV Matching Tiles fit...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Update MIP mV Matching Tiles constants...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Adjust MIP charge Matching Tiles fit...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
+//        menuItem = new JMenuItem("Update MIP charge Matching Tiles constants...");
+//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
+//        menuItem.addActionListener(this);
+//        fit.add(menuItem);
         
         this.menuBar.add(fit);
         
@@ -245,59 +248,65 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
     public void actionPerformed(ActionEvent e) {
         System.out.println("FTViewer ACTION = " + e.getActionCommand());
         if(e.getActionCommand().compareTo("Open evio files...")==0) this.readFiles();
-        
-        if(e.getActionCommand() == "Adjust Noise mV fit...") {
+
+        if(e.getActionCommand() == "Adjust fit...") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustNoisemvFit();
+            moduleFTHODO.adjustFit();
         }
-        if(e.getActionCommand() == "Update Noise mV constants...") {
+        if(e.getActionCommand() == "Update constants...") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustNoisemVFitConstants();
-        }
-        if(e.getActionCommand() == "Adjust Noise charge fit...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustNoisechargeFit();
-        }
-        if(e.getActionCommand() == "Update Noise charge constants...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustNoisechargeFitConstants();
+            moduleFTHODO.adjustFitConstants();
         }
         
-        
-        
-        
-        if(e.getActionCommand() == "Adjust MIP mV fit...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustMIPmvFit();
-        }
-        if(e.getActionCommand() == "Update MIP mV constants...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustMIPmVFitConstants();
-        }
-        if(e.getActionCommand() == "Adjust MIP charge fit...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustMIPchargeFit();
-        }
-        if(e.getActionCommand() == "Update MIP charge constants...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustMIPchargeFitConstants();
-        }
-        if(e.getActionCommand() == "Adjust MIP mV Matching Tiles fit...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustMIPmvMatchingTilesFit();
-        }
-        if(e.getActionCommand() == "Update MIP mV Matching Tiles constants...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustMIPmVMatchingTilesFitConstants();
-        }
-        if(e.getActionCommand() == "Adjust MIP charge Matching Tiles fit...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustMIPchargeMatchingTilesFit();
-        }
-        if(e.getActionCommand() == "Update MIP charge Matching Tiles constants...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            moduleFTHODO.adjustMIPchargeMatchingTilesFitConstants();
-        }
+//        if(e.getActionCommand() == "Adjust Noise mV fit...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustNoisemvFit();
+//        }
+//        if(e.getActionCommand() == "Update Noise mV constants...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustNoisemVFitConstants();
+//        }
+//        if(e.getActionCommand() == "Adjust Noise charge fit...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustNoisechargeFit();
+//        }
+//        if(e.getActionCommand() == "Update Noise charge constants...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustNoisechargeFitConstants();
+//        }
+//
+//        if(e.getActionCommand() == "Adjust MIP mV fit...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustMIPmvFit();
+//        }
+//        if(e.getActionCommand() == "Update MIP mV constants...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustMIPmVFitConstants();
+//        }
+//        if(e.getActionCommand() == "Adjust MIP charge fit...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustMIPchargeFit();
+//        }
+//        if(e.getActionCommand() == "Update MIP charge constants...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustMIPchargeFitConstants();
+//        }
+//        if(e.getActionCommand() == "Adjust MIP mV Matching Tiles fit...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustMIPmvMatchingTilesFit();
+//        }
+//        if(e.getActionCommand() == "Update MIP mV Matching Tiles constants...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustMIPmVMatchingTilesFitConstants();
+//        }
+//        if(e.getActionCommand() == "Adjust MIP charge Matching Tiles fit...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustMIPchargeMatchingTilesFit();
+//        }
+//        if(e.getActionCommand() == "Update MIP charge Matching Tiles constants...") {
+//            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+//            moduleFTHODO.adjustMIPchargeMatchingTilesFitConstants();
+//        }
         
         
         if(e.getActionCommand().compareTo("Choose work directory...")==0) {
