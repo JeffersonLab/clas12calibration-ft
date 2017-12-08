@@ -167,6 +167,13 @@ public class FTCalNoiseModule extends FTModule {
     public void setCanvasBookData() {
         this.getCanvasBook().setData(this.getDataGroup(), 1);
     }    
+    
+    @Override
+    public void saveConstants(String filename) {
+        for(int component : this.getDetector().getDetectorComponents()) {
+            System.out.println(this.getDataGroup().getItem(1,1,component).getH1F("Pedestal_" + component).getMean());                
+        }
+    }
 }
     
     

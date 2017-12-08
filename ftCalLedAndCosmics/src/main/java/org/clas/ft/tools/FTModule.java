@@ -259,6 +259,10 @@ public class FTModule {
         this.detector.repaint();
     }
     
+    public void saveConstants(String filename) {
+        System.out.println("Function not implemented in current module");                           
+    }
+    
     public void setAnalysisParameters() {
                
     }
@@ -309,8 +313,10 @@ public class FTModule {
     
     public void writeDataGroup(TDirectory dir) {
         String folder = "/" + this.name;
+        dir.pwd();
         dir.mkdir(folder);
-        dir.cd(folder);                  
+        dir.cd(folder);        
+        dir.pwd();
         Map<Long, DataGroup> map = this.getDataGroup().getMap();
         for( Map.Entry<Long, DataGroup> entry : map.entrySet()) {
             DataGroup group = entry.getValue();
@@ -322,6 +328,7 @@ public class FTModule {
                 for(IDataSet ds : dsList){
                     System.out.println("\t --> " + ds.getName());
                     dir.addDataSet(ds);
+                    System.out.println("\t --> " + ds.getName());
                 }
             }
         }

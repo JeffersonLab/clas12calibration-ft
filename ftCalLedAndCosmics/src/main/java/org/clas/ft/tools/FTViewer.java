@@ -210,6 +210,21 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
             }
             this.saveTable(fileName);
         }
+        // Table menu bar
+        if(e.getActionCommand()=="Save constants...") {
+            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
+            String fileName = "ftCal_" + this.getModules().get(moduleTabSelect).getName() + "_" + this.runNumber + "_" + df.format(new Date()) + ".txt";
+            JFileChooser fc = new JFileChooser();
+            File workingDirectory = new File(this.workDir);
+            fc.setCurrentDirectory(workingDirectory);
+            File file = new File(fileName);
+            fc.setSelectedFile(file);
+            int returnValue = fc.showSaveDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+               fileName = fc.getSelectedFile().getAbsolutePath();            
+            }
+            this.getModules().get(moduleTabSelect).saveConstants(fileName);
+        }
         if(e.getActionCommand()=="Clear table") {
             this.resetTable();
         }
@@ -331,6 +346,10 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         menuItem.getAccessibleContext().setAccessibleDescription("Save table content to file");
         menuItem.addActionListener(this);
         table.add(menuItem);
+        menuItem = new JMenuItem("Save constants...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Save constants to file");
+        menuItem.addActionListener(this);
+        table.add(menuItem);
         menuItem = new JMenuItem("Clear table");
         menuItem.getAccessibleContext().setAccessibleDescription("Clear table content");
         menuItem.addActionListener(this);
@@ -372,7 +391,6 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
     public void dataEventAction(DataEvent event) {
 
         if (event.getType() == DataEventType.EVENT_START) {
-//            resetEventListener();
             processEvent(event);
 	} else if (event.getType() == DataEventType.EVENT_SINGLE) {
             processEvent(event);
@@ -391,8 +409,8 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
                 this.getDetector().repaint();
             }
 	} 
-        if(this.getModules().get(moduleSelect).getType())         this.getModules().get(moduleSelect).plotDataGroup();
-        if(this.getModules().get(this.moduleParSelect).getType()) this.getDetector().repaint();
+//        if(this.getModules().get(moduleSelect).getType())         this.getModules().get(moduleSelect).plotDataGroup();
+//        if(this.getModules().get(this.moduleParSelect).getType()) this.getDetector().repaint();
 
     }
 
@@ -610,11 +628,13 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
     public void saveHistosToFile(String fileName) {
         // TXT table summary FILE //
         TDirectory dir = new TDirectory();
+        dir.pwd();
         for(int k=0; k<this.getModules().size(); k++) {
             this.getModules().get(k).writeDataGroup(dir);
         }
         System.out.println("Saving histograms to file " + fileName);
         dir.writeFile(fileName);
+        dir.pwd(); dir.clear(); dir.pwd();
     }
    
     public void saveTable(String name) {
