@@ -42,7 +42,6 @@ public class FTHodoHistograms {
     DetectorCollection<H1F> H_MIP_V_MatchingTiles = new DetectorCollection<H1F>();
     DetectorCollection<H2F> H_MAXV_VS_T = new DetectorCollection<H2F>();
     DetectorCollection<H2F> H_T1_T2 = new DetectorCollection<H2F>();
-    DetectorCollection<H1F> H_COSMIC_fADC = new DetectorCollection<H1F>();
     // Fit Functions
     DetectorCollection<F1D> fPed = new DetectorCollection<F1D>();
     DetectorCollection<F1D> fQ2 = new DetectorCollection<F1D>();
@@ -136,7 +135,7 @@ public class FTHodoHistograms {
     double LSB = 0.4884;
     double vPedOffset = 5.0;
     double PedOffset = 10.0;
-    double triggerDelay = 190.0;
+    double triggerDelay = 125.0;//double triggerDelay = 190.0;
     
     ////MALAKIES for coloring the detector should be replaced with TET
     final double thrshNoiseNPE = 0.5;
@@ -156,7 +155,7 @@ public class FTHodoHistograms {
     // = 51
     double threshD = nThrshNPE*10.0/(LSB);
     public int threshold;
-    public int matchingTilesThreshold=600; // Threshold to look for match tiles above this.
+    public int matchingTilesThreshold=600; // Threshold to look for match tiles above this in fADC channels.
     public boolean SingleMatchedTile=true;
     public boolean ledAnalysis=false;
     double nsPerSample = 4.0;
@@ -180,7 +179,7 @@ public class FTHodoHistograms {
     int[] NBinsNoiseV = {0, 50, 50};
     final int NBinsPed = 200;
     //pedestal min and max bin values for histogram
-    int[] PedQX = {100, 500};
+    int[] PedQX = {50, 500};
     double PedBinWidth = (PedQX[1] - PedQX[0]) / (1.0 * NBinsPed);
     final int nPointsPed = 200; //number of entries in the PedGraph
     double[] px_H_PED_VS_EVENT = new double[nPointsPed];
@@ -220,30 +219,24 @@ public class FTHodoHistograms {
 //        G_FADC_ANALYSIS.get(HP.getS(), HP.getL(), HP.getC()).setMarkerSize(2); // size in points on the screen
 //        G_FADC_ANALYSIS.get(HP.getS(), HP.getL(), HP.getC()).addPoint(0, 200, 0, 0);
 //        G_FADC_ANALYSIS.get(HP.getS(), HP.getL(), HP.getC()).addPoint(100, 200, 0, 0);
-        H_VT.add(HP.getS(), HP.getL(), HP.getC(), new H1F(DetectorDescriptor.getName("H_VT", HP.getS(), HP.getL(),HP.getC()),
-                         HP.getTitle(), 100, 0.0, 400.0));
+        H_VT.add(HP.getS(), HP.getL(), HP.getC(), new H1F(DetectorDescriptor.getName("H_VT", HP.getS(), HP.getL(),HP.getC()),HP.getTitle(), 100, 0.0, 400.0));
         H_VT.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_VT.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Time (ns)");
         H_VT.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Voltage - ped sub (mV)");
-        H_NPE.add(HP.getS(), HP.getL(), HP.getC(),
-                  new H1F(DetectorDescriptor.
-                          getName("H_NPE", HP.getS(),HP.getL(), HP.getC()),
-                          HP.getTitle(), 100, 0.0, 400.0));
+        H_NPE.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_NPE", HP.getS(),HP.getL(), HP.getC()),HP.getTitle(), 100, 0.0, 400.0));
         H_NPE.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_NPE.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Time (ns)");
         H_NPE.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Photoelectrons (amp mV/spe mV");
         //----------------------------
         // Accumulated Histograms
         // PEDESTAL CANVAS
-        H_PED.add(HP.getS(), HP.getL(), HP.getC(),
-                  new H1F(DetectorDescriptor.getName("H_PED", HP.getS(),HP.getL(),HP.getC()), HP.getTitle(),NBinsPed*2, PedQX[0], PedQX[1]));
+        H_PED.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_PED", HP.getS(),HP.getL(),HP.getC()), HP.getTitle(),NBinsPed*2, PedQX[0], PedQX[1]));
         H_PED.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_PED.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Pedestal");
         H_PED.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
         String namePed = HP.getTitle() + " for 100 events";
         String namePed2 = HP.getTitle() + " every 100 events";
-        H_PED_TEMP.add(HP.getS(), HP.getL(), HP.getC(),
-                       new H1F(DetectorDescriptor.getName("H_PED_TEMP",HP.getS(),HP.getL(),HP.getC()), namePed, NBinsPed, PedQX[0], PedQX[1]));
+        H_PED_TEMP.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_PED_TEMP",HP.getS(),HP.getL(),HP.getC()), namePed, NBinsPed, PedQX[0], PedQX[1]));
         H_PED_TEMP.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_PED_TEMP.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Pedestal");
         H_PED_TEMP.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
@@ -253,24 +246,20 @@ public class FTHodoHistograms {
             //py_H_PED_VS_EVENT[i] = 0.0;
             //pey_H_PED_VS_EVENT[i] = 0.0;
         }
-        H_PED_VS_EVENT.add(HP.getS(), HP.getL(), HP.getC(),new GraphErrors(namePed2,
-                 px_H_PED_VS_EVENT, py_H_PED_VS_EVENT[HP.getS() - 1][HP.getL() - 1][HP.getC() - 1],  pex_H_PED_VS_EVENT, pey_H_PED_VS_EVENT[HP.getS() - 1][HP.getL() - 1][HP.getC() - 1]));
+        H_PED_VS_EVENT.add(HP.getS(), HP.getL(), HP.getC(),new GraphErrors(namePed2,px_H_PED_VS_EVENT, py_H_PED_VS_EVENT[HP.getS() - 1][HP.getL() - 1][HP.getC() - 1],  pex_H_PED_VS_EVENT, pey_H_PED_VS_EVENT[HP.getS() - 1][HP.getL() - 1][HP.getC() - 1]));
         H_PED_VS_EVENT.get(HP.getS(), HP.getL(), HP.getC()).setTitle(namePed);
         H_PED_VS_EVENT.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Event Index");
         H_PED_VS_EVENT.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Average Pedestal");
         H_PED_VS_EVENT.get(HP.getS(), HP.getL(), HP.getC()).setMarkerSize(5);
-        H_MIP_Q.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Cosmic Charge",HP.getS(),HP.getL(),HP.getC()),
-                 "Charge "+HP.getTitle(),NBinsCosmic,CosmicQXMin[HP.getL()],CosmicQXMax[HP.getL()]));
+        H_MIP_Q.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Cosmic Charge",HP.getS(),HP.getL(),HP.getC()),"Charge "+HP.getTitle(),NBinsCosmic,CosmicQXMin[HP.getL()],CosmicQXMax[HP.getL()]));
         H_MIP_Q.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_MIP_Q.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Charge (pC)");
         H_MIP_Q.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
-        H_MIP_Q_MatchingTiles.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("MIP Charge Matching Tiles",HP.getS(),HP.getL(),HP.getC()),
-                "Charge "+HP.getTitle(),NBinsCosmic,CosmicQXMin[HP.getL()],CosmicQXMax[HP.getL()]));
+        H_MIP_Q_MatchingTiles.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("MIP Charge Matching Tiles",HP.getS(),HP.getL(),HP.getC()),"Charge "+HP.getTitle(),NBinsCosmic,CosmicQXMin[HP.getL()],CosmicQXMax[HP.getL()]));
         H_MIP_Q_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_MIP_Q_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Charge (pC)");
         H_MIP_Q_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
-        H_NOISE_Q.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Noise Charge",HP.getS(),HP.getL(),HP.getC()),
-                "Charge "+HP.getTitle(),NBinsNoiseQ[HP.getL()],NoiseQXMin[HP.getL()],NoiseQXMax[HP.getL()]));
+        H_NOISE_Q.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Noise Charge",HP.getS(),HP.getL(),HP.getC()),"Charge "+HP.getTitle(),NBinsNoiseQ[HP.getL()],NoiseQXMin[HP.getL()],NoiseQXMax[HP.getL()]));
         H_NOISE_Q.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_NOISE_Q.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Charge (pC)");
         H_NOISE_Q.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
@@ -299,11 +288,11 @@ public class FTHodoHistograms {
         H_MIP_V_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_MIP_V_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Waveform Max (mV)");
         H_MIP_V_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
-        H_T_MODE3.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE3",HP.getS(), HP.getL(), HP.getC()),
-                HP.getTitle(), 100, 0.0, 400));
+        H_T_MODE3.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE3",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(), 100, 0.0, 400));
         H_T_MODE3.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(4);
         H_T_MODE3.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 3 Time (ns)");
         H_T_MODE3.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
+       
         // simulated data
         timeMin[1] = -15.0;
         timeMin[2] = -15.0;
@@ -314,42 +303,30 @@ public class FTHodoHistograms {
         timeMin[2] += triggerDelay;
         timeMax[1] += triggerDelay;
         timeMax[2] += triggerDelay;
-        H_MAXV_VS_T.add(HP.getS(),HP.getL(),HP.getC(), new H2F(DetectorDescriptor.getName("H_MAXV_VS_T",HP.getS(), HP.getL(), HP.getC()),
-             HP.getTitle(),64, timeMin[HP.getL()], timeMax[HP.getL()],64, 0., 2000.));
+        H_MAXV_VS_T.add(HP.getS(),HP.getL(),HP.getC(), new H2F(DetectorDescriptor.getName("H_MAXV_VS_T",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(),64, timeMin[HP.getL()], timeMax[HP.getL()],64, 0., 2000.));
         H_MAXV_VS_T.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 7 Time (ns)");
         H_MAXV_VS_T.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Peak Voltage (mV)");
-        H_T_MODE3.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE3",HP.getS(), HP.getL(), HP.getC()),
-                              HP.getTitle(), 32, timeMin[HP.getL()], timeMax[HP.getL()]));
-        H_T_MODE3.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(4);
-        H_T_MODE3.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 3 (ns)");
-        H_T_MODE3.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Counts");
-        H_T_MODE7.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE7",HP.getS(), HP.getL(), HP.getC()),
-                              HP.getTitle(), 64, timeMin[HP.getL()], timeMax[HP.getL()]));
+//        H_T_MODE3.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE3",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(), 32, timeMin[HP.getL()], timeMax[HP.getL()]));
+//        H_T_MODE3.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(4);
+//        H_T_MODE3.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 3 (ns)");
+//        H_T_MODE3.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Counts");
+        H_T_MODE7.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE7",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(), 64, timeMin[HP.getL()], timeMax[HP.getL()]));
         H_T_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(4);
         H_T_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setLineColor(1);
         H_T_MODE7.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 7 Time (ns)");
         H_T_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Counts");
-        
         if (HP.getL() == 1) {
-            H_T1_T2.add(HP.getS(),HP.getL(),HP.getC(),new H2F(DetectorDescriptor.getName("H_T1_T2",HP.getS(), HP.getL(), HP.getC()),
-                                HP.getTitle(),64, timeMin[1], timeMax[1],64, timeMin[2], timeMax[2]));
-            
+            H_T1_T2.add(HP.getS(),HP.getL(),HP.getC(),new H2F(DetectorDescriptor.getName("H_T1_T2",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(),64, timeMin[1], timeMax[1],64, timeMin[2], timeMax[2]));
             H_T1_T2.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 7 Time (ns) [thin layer]");
             H_T1_T2.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Mode 7 Time (ns) [thick layer]");
-            // DT
-            H_DT_MODE7.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_DT_MODE7",HP.getS(), HP.getL(), HP.getC()),
-                                   HP.getTitle(), 64, -15., 15.));
+            
+            H_DT_MODE7.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_DT_MODE7",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(), 64, -15., 15.));
             H_DT_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(4);
             H_DT_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setLineColor(1);
             H_DT_MODE7.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 7 Time difference (ns)");
             H_DT_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Counts");
         }
         
-        H_COSMIC_fADC.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Cosmic fADC",HP.getS(), HP.getL(), HP.getC()),
-                                  HP.getTitle(), 100, 0.0, 100.0));
-        H_COSMIC_fADC.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(3);
-        H_COSMIC_fADC.get(HP.getS(), HP.getL(),HP.getC()).setTitleX("fADC Sample");
-        H_COSMIC_fADC.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("fADC Counts");
     }
     
     public void InitFunctions() {
