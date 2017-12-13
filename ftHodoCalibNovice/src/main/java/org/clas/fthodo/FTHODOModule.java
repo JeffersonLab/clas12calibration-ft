@@ -15,6 +15,9 @@ import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.JFileChooser;
+import javax.swing.JToggleButton;
+import javax.swing.JLabel;
+import javax.swing.JComboBox;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.FileNotFoundException;
@@ -72,22 +75,16 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     CalibrationConstants       CCDBTableCharge2Energy = null;
     CalibrationConstants       CCDBTableCharge2EnergyMatchingTiles = null;
     CalibrationConstants       CCDBTablefACD = null;
+    CalibrationConstants       FADC250ft3TablePED = null;
     CalibrationConstants       GAINandMIPSTableOverview = null;
-
     EmbeddedCanvas canvasEvent = new EmbeddedCanvas();
     EmbeddedCanvas canvasPed = new EmbeddedCanvas();
     EmbeddedCanvas canvasNoise = new EmbeddedCanvas();
-    EmbeddedCanvas canvasGain = new EmbeddedCanvas();
+    EmbeddedCanvas canvasNoiseAnalysis = new EmbeddedCanvas();
     EmbeddedCanvas canvasMIPsignal = new EmbeddedCanvas();
-    EmbeddedCanvas canvasMIPgain = new EmbeddedCanvas();
-
-//    EmbeddedCanvas canvasCharge = new EmbeddedCanvas();
-//    EmbeddedCanvas canvasVoltage = new EmbeddedCanvas();
-//    EmbeddedCanvas canvasMIP = new EmbeddedCanvas();
-//    EmbeddedCanvas canvasMatch = new EmbeddedCanvas();
-//    EmbeddedCanvas canvasTime = new EmbeddedCanvas();
-    // Gagik to implement
-    // view.addChangeListener(this);
+    EmbeddedCanvas canvasMIPAnalysis = new EmbeddedCanvas();
+    EmbeddedCanvas canvasTime = new EmbeddedCanvas();
+    EmbeddedCanvas canvasTimeAnalysis = new EmbeddedCanvas();
     ColorPalette palette = new ColorPalette();
     FTHodoHistograms histogramsFTHodo = new FTHodoHistograms();
     //=================================
@@ -96,16 +93,14 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     private double[][][] status;
     private double[][][] thrshNPE;
     private double[][][] pedMean;
+    private double[][] pedValues4SlotChan;
     private double[][][] pedEvent;
     private double[][][] pedPreviousEvent;
-
     private double[][][] pedRMS;
-    // save the pedestal of the previous event
     private double[][][] gain;
     private double[][][] errGain;
     private double[][][] gain_mV;
     private double[][][] errGain_mV;
-    
     private double[][][] MIPgain;
     private double[][][] MIPerrgain;
     private double[][][] MIPgain_mV;
@@ -114,17 +109,14 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     private double[][][] MIPMatchingTileserrgain;
     private double[][][] MIPMatchingTilesgain_mV;
     private double[][][] MIPMatchingTileserrgain_mV;
-    
     private double[][][] MIPS_pC_all;
     private double[][][] MIPS_pC_MatchingTiles;
     private double[][][] MIPS_maxV_all;
     private double[][][] MIPS_maxV_MatchingTiles;
-
     private double[][][] MIPSerr_pC_all;
     private double[][][] MIPSerr_pC_MatchingTiles;
     private double[][][] MIPSerr_maxV_all;
     private double[][][] MIPSerr_maxV_MatchingTiles;
-    
     private double[][][] meanNPE;
     private double[][][] errNPE;
     private double[][][] sigNPE;
@@ -140,7 +132,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     private double[][][] vMax;
     private double[][][] vMaxEvent;
     private double[][][] qMax;
-    
     private double[][][] ped_fadcCCDB;
     private double[][][] ped_noiseCCDB;
     private double[][][] pedrms_noiseCCDB;
@@ -149,18 +140,14 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     private double[][][] MIPS_pC_C2ECCDB;
     private double[][][] npeThreshold_NoiseCCDB;
     private int[][][] status_CCDB;
-
     //Indexed table to read in constants from ccdb
     IndexedTable geometryTable = null;
-    IndexedTable daqFADCTable = null;
+    IndexedTable calibrationfADC = null;
     IndexedTable calibrationNoiseTable = null;
     IndexedTable calibrationStatusTable = null;
     IndexedTable calibrationChargeToEnergyTable = null;
-    IndexedTable calibrationfADC = null;
-
-//    String geomFileName = "./Tables/fthodo_geometry.txt";
-//    String noisFileName = "./Tables/fthodo_noise.txt";
-    String ccdbFileName = "./Tables/fthodo_ccdb.txt";
+    IndexedTable calibrationTranslationTable = null;
+    IndexedTable InverseTranslationTable = null;
     boolean debugging_mode = false;
     boolean setConstantsToCCDB = false;
     boolean pedMeanGood = false;
@@ -179,34 +166,42 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     private boolean useGain_mV = true;
     private boolean matchingTiles = false;
     private boolean plotNPE = true;
+    private boolean useGainCCDB = false;
 
     private int plotVoltageChargeBoth=1; //1==voltage 2 is Charge, 3 is both
     JPanel rBPaneGain;
     JPanel rBPaneMIP;
     JPanel rBPaneMIPgain;
+    JToggleButton toggleMIPMatchingTilesBtn, toggleMIPGainMatchingTilesBtn, toggleMIPLEDBtn, toggleMIPGainLEDBtn;
+    JToggleButton toggleNPEBtn;
+    JToggleButton toggleGainCCDBBtn;
+    JLabel LabelMIPMatchingTiles, LabelMIPGainMatchingTiles, LabelNPE, LabelMIPLED, LabelMIPGainLED, LabelGainCCDB;
+    
+    JComboBox MIP_ch_mv_chmvList;
+    JComboBox NoiseAnalysis_ch_mv_List;
+    JComboBox MIPAnalysis_ch_mv_List;
+    JComboBox NoiseAnalysis_DetElec_List;
+    JComboBox MIPAnalysis_DetElec_List;
 
+    
     int previousTabSel = 0;
     private int tabSel = 0;
-    private int timerUpdate = 1000;
-
+    private int tabSelDetectorView = 0;
+    private int timerUpdate = 1000; //1 second
     // the following indices must correspond
     // to the order the canvased are added
     // to 'tabbedPane'
     final private int tabIndexEvent = 0;
     final private int tabIndexPed = 1;
     final private int tabIndexNoise = 2;
-    final private int tabIndexGain = 3;
+    final private int tabIndexNoiseAnalysis = 3;
     final private int tabIndexMIPsignal = 4;
-    final private int tabIndexMIPgain = 5;
-    final private int tabIndexTable = 6;
+    final private int tabIndexMIPAnalysis = 5;
+    final private int tabIndexTime = 6;
+    final private int tabIndexTimeAnalysis = 7;
+    final private int tabIndexTable = 8;
     public String workDir         = null;
 
-//    final private int tabIndexCharge = 4;
-//    final private int tabIndexVoltage = 5;
-//    final private int tabIndexMIP = 6;
-//    final private int tabIndexMatch = 7;
-//    final private int tabIndexTime = 8;
-//    final private int tabIndexTable = 9;
 
     public void initPanel() {
 //        canvasTable.addListener(this);
@@ -218,19 +213,12 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         tabbedPane.add("Event", this.canvasEvent);
         tabbedPane.add("Pedestal", this.canvasPed);
         tabbedPane.add("Noise Signal", this.canvasNoise);
-        tabbedPane.add("Noise Gain", this.canvasGain);
-        tabbedPane.add("MIP signal", this.canvasMIPsignal);
-        tabbedPane.add("MIP gain", this.canvasMIPgain);
+        tabbedPane.add("Noise Analysis", this.canvasNoiseAnalysis);
+        tabbedPane.add("MIP Signal", this.canvasMIPsignal);
+        tabbedPane.add("MIP Analysis", this.canvasMIPAnalysis);
+        tabbedPane.add("Time", this.canvasTime);
+        tabbedPane.add("Time Analysis", this.canvasTimeAnalysis);
         tabbedPane.add("Table", this.canvasTable);
-
-//        tabbedPane.add("Charge", this.canvasCharge);
-//        tabbedPane.add("Voltage", this.canvasVoltage);
-//        tabbedPane.add("MIP", this.canvasMIP);
-//        tabbedPane.add("Match", this.canvasMatch);
-//        tabbedPane.add("Time", this.canvasTime);
-//        tabbedPane.add("Table", canvasTable);
-        
-        
         
         tabbedPane.addChangeListener(this);
         tabbedPane.setSelectedIndex(this.tabSel);
@@ -240,9 +228,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         JButton fitBtn = new JButton("Calibrate");
         fitBtn.addActionListener(this);
         buttonPane.add(fitBtn);
-//        JButton constantsBtn = new JButton("Check Constants");
-//        constantsBtn.addActionListener(this);
-//        buttonPane.add(constantsBtn);
 
         JButton saveBtn = new JButton("Save Calibration Constants");
         saveBtn.addActionListener(this);
@@ -256,161 +241,138 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         resetBtn.addActionListener(this);
         buttonPane.add(resetBtn);
         
-//        JButton fitBtn = new JButton("Fit");
-//        fitBtn.addActionListener(this);
-//        buttonPane.add(fitBtn);
-//
-//        JButton constantsBtn = new JButton("Constants");
-//        constantsBtn.addActionListener(this);
-//        buttonPane.add(constantsBtn);
-//
-//        JButton printBtn = new JButton("Print");
-//        printBtn.addActionListener(this);
-//        buttonPane.add(printBtn);
-//
-//        JButton readBtn = new JButton("Read");
-//        readBtn.addActionListener(this);
-//        buttonPane.add(readBtn);
-//
-//        JButton pedBtn = new JButton("Ped");
-//        pedBtn.addActionListener(this);
-//        buttonPane.add(pedBtn);
-
-        //====        
-        ButtonGroup group1 = new ButtonGroup();
-        ButtonGroup group2 = new ButtonGroup();
+        
+        toggleGainCCDBBtn = new JToggleButton("Use CCDB SiPM gain");
+        buttonPane.add(toggleGainCCDBBtn);
+        toggleGainCCDBBtn.addActionListener(this);
+        toggleGainCCDBBtn.setSelected(useGainCCDB);
+        if (useGainCCDB){
+            LabelGainCCDB = new JLabel ( "ON" ) ;
+        }
+        else{
+            LabelGainCCDB = new JLabel ( "OFF" ) ;
+        }
+        buttonPane.add(LabelGainCCDB);
+        
+        
+        
+   
         rBPaneGain = new JPanel();
         rBPaneGain.setLayout(new FlowLayout());
         
-        JRadioButton rBDetect = new JRadioButton("Detector View");
-        group1.add(rBDetect);
-        rBPaneGain.add(rBDetect);
-        rBDetect.addActionListener(this);
-        JRadioButton rBElec = new JRadioButton("Electronics View");
-        group1.add(rBElec);
-        rBPaneGain.add(rBElec);
-        rBElec.addActionListener(this);
-        if (this.drawByElec)
-            rBElec.setSelected(true);
+        String[] NoiseAnalysis_DetElec_Strings = { "Detector View", "Electronics View"};
+        NoiseAnalysis_DetElec_List = new JComboBox(NoiseAnalysis_DetElec_Strings);
+        rBPaneGain.add(NoiseAnalysis_DetElec_List);
+        if (drawByElec)
+            NoiseAnalysis_DetElec_List.setSelectedIndex(1);
         else
-            rBDetect.setSelected(true);
-            
-        JRadioButton rBGainPeak = new JRadioButton("max Voltage");
-        group2.add(rBGainPeak);
-        rBPaneGain.add(rBGainPeak);
-        rBGainPeak.addActionListener(this);
-        JRadioButton rBGainChrg = new JRadioButton("Charge");
-        group2.add(rBGainChrg);
-        rBPaneGain.add(rBGainChrg);
-        rBGainChrg.addActionListener(this);
+            NoiseAnalysis_DetElec_List.setSelectedIndex(0);
+        NoiseAnalysis_DetElec_List.addActionListener(this);
+  
+        
+        String[] NoiseAnalysis_ch_mv_Strings = { "max Voltage", "Charge"};
+        NoiseAnalysis_ch_mv_List = new JComboBox(NoiseAnalysis_ch_mv_Strings);
+        rBPaneGain.add(NoiseAnalysis_ch_mv_List);
         if (useGain_mV)
-            rBGainPeak.setSelected(true);
+            NoiseAnalysis_ch_mv_List.setSelectedIndex(0);
         else
-            rBGainChrg.setSelected(true);
+            NoiseAnalysis_ch_mv_List.setSelectedIndex(1);
+        NoiseAnalysis_ch_mv_List.addActionListener(this);
         
-        
-        ButtonGroup groupMIPSignal = new ButtonGroup();
-        ButtonGroup groupMIPSignalMatch = new ButtonGroup();
+     
         rBPaneMIP = new JPanel();
         rBPaneMIP.setLayout(new FlowLayout());
+
+        String[] MIP_ch_mv_chmvStrings = { "max Voltage", "Charge", "Voltage & Charge"};
+        MIP_ch_mv_chmvList = new JComboBox(MIP_ch_mv_chmvStrings);
+        rBPaneMIP.add(MIP_ch_mv_chmvList);
+        MIP_ch_mv_chmvList.setSelectedIndex(plotVoltageChargeBoth-1);
+        MIP_ch_mv_chmvList.addActionListener(this);
+   
         
-        JRadioButton rB_MIPmV = new JRadioButton("max Voltage");
-        groupMIPSignal.add(rB_MIPmV);
-        rBPaneMIP.add(rB_MIPmV);
-        rB_MIPmV.addActionListener(this);
-        JRadioButton rB_MIPChrg = new JRadioButton("Charge");
-        groupMIPSignal.add(rB_MIPChrg);
-        rBPaneMIP.add(rB_MIPChrg);
-        rB_MIPChrg.addActionListener(this);
-        JRadioButton rB_MIPmVChrg = new JRadioButton("Voltage & Charge");
-        groupMIPSignal.add(rB_MIPmVChrg);
-        rBPaneMIP.add(rB_MIPmVChrg);
-        rB_MIPmVChrg.addActionListener(this);
-        if (plotVoltageChargeBoth==1)
-            rB_MIPmV.setSelected(true);
-        else if (plotVoltageChargeBoth==2)
-            rB_MIPChrg.setSelected(true);
-        else if (plotVoltageChargeBoth==3)
-            rB_MIPmVChrg.setSelected(true);
+        toggleMIPMatchingTilesBtn = new JToggleButton("Matching Tiles Analysis:");
+        rBPaneMIP.add(toggleMIPMatchingTilesBtn);
+        toggleMIPMatchingTilesBtn.addActionListener(this);
+        toggleMIPMatchingTilesBtn.setSelected(matchingTiles);
+        if (matchingTiles){
+            LabelMIPMatchingTiles = new JLabel ( "ON" ) ;
+        }
+        else{
+            LabelMIPMatchingTiles = new JLabel ( "OFF" ) ;
+        }
+        rBPaneMIP.add(LabelMIPMatchingTiles);
+
+        toggleMIPLEDBtn = new JToggleButton("LED Analysis:");
+        rBPaneMIP.add(toggleMIPLEDBtn);
+        toggleMIPLEDBtn.addActionListener(this);
+        toggleMIPLEDBtn.setSelected(histogramsFTHodo.ledAnalysis);
+        if (histogramsFTHodo.ledAnalysis){
+            LabelMIPLED = new JLabel ( "ON" ) ;
+        }
+        else{
+            LabelMIPLED = new JLabel ( "OFF" ) ;
+        }
+        rBPaneMIP.add(LabelMIPLED);
         
-        
-        JRadioButton rB_MIPAllSign = new JRadioButton("All Signals");
-        groupMIPSignalMatch.add(rB_MIPAllSign);
-        rBPaneMIP.add(rB_MIPAllSign);
-        rB_MIPAllSign.addActionListener(this);
-        JRadioButton rB_MIPMatchingTiles = new JRadioButton("Matching Tiles");
-        groupMIPSignalMatch.add(rB_MIPMatchingTiles);
-        rBPaneMIP.add(rB_MIPMatchingTiles);
-        rB_MIPMatchingTiles.addActionListener(this);
-        if (matchingTiles)
-            rB_MIPMatchingTiles.setSelected(true);
-        else
-            rB_MIPAllSign.setSelected(true);
-        
-        ButtonGroup groupMIPgainView = new ButtonGroup();
-        ButtonGroup groupMIPgainmVpC = new ButtonGroup();
-        ButtonGroup groupMIPgainNPESig = new ButtonGroup();
-        ButtonGroup groupMIPgainTileMatch = new ButtonGroup();
+ 
         rBPaneMIPgain = new JPanel();
         rBPaneMIPgain.setLayout(new FlowLayout());
-        
-        JRadioButton rBMIPGainDetect = new JRadioButton("Detector View");
-        groupMIPgainView.add(rBMIPGainDetect);
-        rBPaneMIPgain.add(rBMIPGainDetect);
-        rBMIPGainDetect.addActionListener(this);
-        JRadioButton rBMIPGainElec = new JRadioButton("Electronics View");
-        groupMIPgainView.add(rBMIPGainElec);
-        rBPaneMIPgain.add(rBMIPGainElec);
-        rBMIPGainElec.addActionListener(this);
-        if (this.drawByElec)
-            rBMIPGainElec.setSelected(true);
+ 
+        String[] MIPAnalysis_DetElec_Strings = { "Detector View", "Electronics View"};
+        MIPAnalysis_DetElec_List = new JComboBox(MIPAnalysis_DetElec_Strings);
+        rBPaneMIPgain.add(MIPAnalysis_DetElec_List);
+        if (drawByElec)
+            MIPAnalysis_DetElec_List.setSelectedIndex(1);
         else
-            rBMIPGainDetect.setSelected(true);
-        
-        JRadioButton rBMIPGainPeak = new JRadioButton("max Voltage");
-        groupMIPgainmVpC.add(rBMIPGainPeak);
-        rBPaneMIPgain.add(rBMIPGainPeak);
-        rBMIPGainPeak.addActionListener(this);
-        JRadioButton rBMIPGainChrg = new JRadioButton("Charge");
-        groupMIPgainmVpC.add(rBMIPGainChrg);
-        rBPaneMIPgain.add(rBMIPGainChrg);
-        rBMIPGainChrg.addActionListener(this);
-        if (useGain_mV)
-            rBMIPGainPeak.setSelected(true);
-        else
-            rBMIPGainChrg.setSelected(true);
+            MIPAnalysis_DetElec_List.setSelectedIndex(0);
+        MIPAnalysis_DetElec_List.addActionListener(this);
 
-        JRadioButton rBMIPGainNPE = new JRadioButton("NPE");
-        groupMIPgainNPESig.add(rBMIPGainNPE);
-        rBPaneMIPgain.add(rBMIPGainNPE);
-        rBMIPGainNPE.addActionListener(this);
-        JRadioButton rBMIPGainSign = new JRadioButton("Signal");
-        groupMIPgainNPESig.add(rBMIPGainSign);
-        rBPaneMIPgain.add(rBMIPGainSign);
-        rBMIPGainSign.addActionListener(this);
-        if (plotNPE)
-            rBMIPGainNPE.setSelected(true);
+
+        String[] MIPAnalysis_ch_mv_Strings = { "max Voltage", "Charge"};
+        MIPAnalysis_ch_mv_List = new JComboBox(MIPAnalysis_ch_mv_Strings);
+        rBPaneMIPgain.add(MIPAnalysis_ch_mv_List);
+        if (useGain_mV)
+            MIPAnalysis_ch_mv_List.setSelectedIndex(0);
         else
-            rBMIPGainSign.setSelected(true);
+            MIPAnalysis_ch_mv_List.setSelectedIndex(1);
+        MIPAnalysis_ch_mv_List.addActionListener(this);
         
+        toggleNPEBtn = new JToggleButton("NPE");
+        rBPaneMIPgain.add(toggleNPEBtn);
+        toggleNPEBtn.addActionListener(this);
+        toggleNPEBtn.setSelected(plotNPE);
+        if (plotNPE){
+            LabelNPE = new JLabel ( "ON" ) ;
+        }
+        else{
+            LabelNPE = new JLabel ( "OFF" ) ;
+        }
+        rBPaneMIPgain.add(LabelNPE);
         
-        JRadioButton rB_MIPgainAllSign = new JRadioButton("All Signals");
-        groupMIPgainTileMatch.add(rB_MIPgainAllSign);
-        rBPaneMIPgain.add(rB_MIPgainAllSign);
-        rB_MIPgainAllSign.addActionListener(this);
-        JRadioButton rB_MIPgainMatchingTiles = new JRadioButton("Matching Tiles");
-        groupMIPgainTileMatch.add(rB_MIPgainMatchingTiles);
-        rBPaneMIPgain.add(rB_MIPgainMatchingTiles);
-        rB_MIPgainMatchingTiles.addActionListener(this);
-        if (matchingTiles)
-            rB_MIPgainMatchingTiles.setSelected(true);
-        else
-            rB_MIPgainAllSign.setSelected(true);
+        toggleMIPGainMatchingTilesBtn = new JToggleButton("Matching Tiles Analysis:");
+        rBPaneMIPgain.add(toggleMIPGainMatchingTilesBtn);
+        toggleMIPGainMatchingTilesBtn.addActionListener(this);
+        toggleMIPGainMatchingTilesBtn.setSelected(matchingTiles);
+        if (matchingTiles){
+            LabelMIPGainMatchingTiles = new JLabel ( "ON" ) ;
+        }
+        else{
+            LabelMIPGainMatchingTiles = new JLabel ( "OFF" ) ;
+        }
+        rBPaneMIPgain.add(LabelMIPGainMatchingTiles);
         
-        
-        
-        //rBGainPeak.isSelected());
-        //rBGainChrg.setSelected(true);
+        toggleMIPGainLEDBtn = new JToggleButton("LED Analysis:");
+        rBPaneMIPgain.add(toggleMIPGainLEDBtn);
+        toggleMIPGainLEDBtn.addActionListener(this);
+        toggleMIPGainLEDBtn.setSelected(histogramsFTHodo.ledAnalysis);
+        if (histogramsFTHodo.ledAnalysis){
+            LabelMIPGainLED = new JLabel ( "ON" ) ;
+        }
+        else{
+            LabelMIPGainLED = new JLabel ( "OFF" ) ;
+        }
+        rBPaneMIPgain.add(LabelMIPGainLED);
+
         //=================================
         //      PLOTTING OPTIONS
         //=================================
@@ -454,16 +416,16 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         this.canvasNoise.initTimer(timerUpdate);
         drawCanvasNoise(secSel, laySel, comSel);
 
-        this.canvasGain.divide(3, 3);
-        this.canvasGain.setGridX(false);
-        this.canvasGain.setGridY(false);
-        this.canvasGain.setAxisFontSize(10);
-        this.canvasGain.setStatBoxFontSize(2);
-        this.canvasGain.initTimer(timerUpdate);
+        this.canvasNoiseAnalysis.divide(3, 3);
+        this.canvasNoiseAnalysis.setGridX(false);
+        this.canvasNoiseAnalysis.setGridY(false);
+        this.canvasNoiseAnalysis.setAxisFontSize(10);
+        this.canvasNoiseAnalysis.setStatBoxFontSize(2);
+        this.canvasNoiseAnalysis.initTimer(timerUpdate);
         if (drawByElec)
-            drawCanvasGainElec(secSel, laySel, comSel);
+            drawCanvasNoiseAnalysisElec(secSel, laySel, comSel);
         else
-            drawCanvasGain();
+            drawCanvasNoiseAnalysis();
         
         this.canvasMIPsignal.divide(2, 2);
         this.canvasMIPsignal.setGridX(false);
@@ -473,76 +435,43 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         this.canvasMIPsignal.initTimer(timerUpdate);
         drawCanvasMIPsignal(secSel, laySel, comSel);
         
-        this.canvasMIPgain.divide(3, 3);
-        this.canvasMIPgain.setGridX(false);
-        this.canvasMIPgain.setGridY(false);
-        this.canvasMIPgain.setAxisFontSize(10);
-        this.canvasMIPgain.setStatBoxFontSize(2);
-        this.canvasMIPgain.initTimer(timerUpdate);
+        this.canvasMIPAnalysis.divide(3, 3);
+        this.canvasMIPAnalysis.setGridX(false);
+        this.canvasMIPAnalysis.setGridY(false);
+        this.canvasMIPAnalysis.setAxisFontSize(10);
+        this.canvasMIPAnalysis.setStatBoxFontSize(2);
+        this.canvasMIPAnalysis.initTimer(timerUpdate);
         if (drawByElec)
-            drawCanvasMIPgainElec(secSel, laySel, comSel);
+            drawCanvasMIPAnalysisElec(secSel, laySel, comSel);
         else
-            drawCanvasMIPgain();
+            drawCanvasMIPAnalysis();
 
-        //
-//        this.canvasCharge.divide(2, 2);
-//        this.canvasCharge.setGridX(false);
-//        this.canvasCharge.setGridY(false);
-//        this.canvasCharge.setAxisFontSize(10);
-//        this.canvasCharge.setStatBoxFontSize(2);
-//        this.canvasCharge.initTimer(timerUpdate);
-//        drawCanvasCharge(secSel, laySel, comSel);
-//
-//        this.canvasVoltage.divide(2, 2);
-//        this.canvasVoltage.setGridX(false);
-//        this.canvasVoltage.setGridY(false);
-//        this.canvasVoltage.setAxisFontSize(10);
-//        this.canvasVoltage.setStatBoxFontSize(2);
-//        this.canvasVoltage.initTimer(timerUpdate);
-//        drawCanvasVoltage(secSel, laySel, comSel);
-//
-//        this.canvasMIP.divide(3, 3);
-//        this.canvasMIP.setGridX(false);
-//        this.canvasMIP.setGridY(false);
-//        this.canvasMIP.setAxisFontSize(10);
-//        this.canvasMIP.setStatBoxFontSize(2);
-//        this.canvasMIP.initTimer(timerUpdate);
-//        drawCanvasMIPElec(secSel, laySel, comSel);
-//
-//        this.canvasMatch.divide(2, 2);
-//        this.canvasMatch.setGridX(true);
-//        this.canvasMatch.setGridY(true);
-//        this.canvasMatch.setAxisFontSize(10);
-//        this.canvasMatch.setStatBoxFontSize(8);
-//        this.canvasMatch.initTimer(timerUpdate);
-//        drawCanvasMatch(secSel, laySel, comSel);
-//
-//        this.canvasTime.divide(3, 2);
-//        this.canvasTime.setGridX(false);
-//        this.canvasTime.setGridY(false);
-//        this.canvasTime.setAxisFontSize(10);
-//        this.canvasTime.setStatBoxFontSize(8);
-//        this.canvasTime.initTimer(timerUpdate);
-//        drawCanvasTime(secSel, laySel, comSel);
+        this.canvasTime.divide(3, 2);
+        this.canvasTime.setGridX(false);
+        this.canvasTime.setGridY(false);
+        this.canvasTime.setAxisFontSize(10);
+        this.canvasTime.setStatBoxFontSize(8);
+        this.canvasTime.initTimer(timerUpdate);
+        drawCanvasTime(secSel, laySel, comSel);
     }   
     
     
     public void initCCDB() {
-            System.out.println("monitor.initCCDB()"); 
-            ccdb.init(Arrays.asList(new String[]{
-                    "/daq/fadc/fthodo",
-                    "/daq/tt/fthodo",
-                    "/geometry/ft/fthodo",
-                    "/calibration/ft/fthodo/status",
-                    "/calibration/ft/fthodo/noise",
-                "/calibration/ft/fthodo/charge_to_energy"}));
-//            this.getReverseTT(ccdb,"/daq/tt/ftof"); 
-            this.detectorDecoder.getFadcPanel().init(ccdb,this.getRunNumber(),"/daq/fadc/fthodo", 72,3,1);
+        System.out.println("monitor.initCCDB()");
+        ccdb.init(Arrays.asList(new String[]{
+            "/daq/fadc/fthodo",
+            "/daq/tt/fthodo",
+            "/geometry/ft/fthodo",
+            "/calibration/ft/fthodo/status",
+            "/calibration/ft/fthodo/noise",
+            "/calibration/ft/fthodo/charge_to_energy"}));
+        this.detectorDecoder.getFadcPanel().init(ccdb,this.getRunNumber(),"/daq/fadc/fthodo", 72,3,1);
         this.geometryTable = ccdb.getConstants(this.getRunNumber(), "/geometry/ft/fthodo");
-        this.daqFADCTable = ccdb.getConstants(this.getRunNumber(), "/daq/fadc/fthodo");
+        this.calibrationfADC = ccdb.getConstants(this.getRunNumber(), "/daq/fadc/fthodo");
         this.calibrationStatusTable = ccdb.getConstants(this.getRunNumber(), "/calibration/ft/fthodo/status");
         this.calibrationNoiseTable = ccdb.getConstants(this.getRunNumber(), "/calibration/ft/fthodo/noise");
         this.calibrationChargeToEnergyTable=ccdb.getConstants(this.getRunNumber(), "/calibration/ft/fthodo/charge_to_energy");
+        this.calibrationTranslationTable=ccdb.getConstants(this.getRunNumber(), "/daq/tt/fthodo");
     }
 
     private void initConstants() {
@@ -682,8 +611,17 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     CCDBTableNoise.setDoubleValue(0.0,"npe_threshold", sector, layer, component);
                 
                     CCDBTableCharge2Energy.addEntry(sector,layer,component);
-                    CCDBTableCharge2Energy.setDoubleValue(0.0,"mips_charge", sector, layer, component);
-                    CCDBTableCharge2Energy.setDoubleValue(0.0,"mips_energy", sector, layer, component);
+                    double mipscharge=0.0, mipsenergy=0.0;
+//                    if (layer%2!=0){
+//                         mipscharge=1000.0;
+//                         mipsenergy=1.2;
+//                    }
+//                    else{
+//                         mipscharge=2000.0;
+//                         mipsenergy=2.65;
+//                    }
+                    CCDBTableCharge2Energy.setDoubleValue(mipscharge,"mips_charge", sector, layer, component);
+                    CCDBTableCharge2Energy.setDoubleValue(mipsenergy,"mips_energy", sector, layer, component);
 
                     CCDBTableCharge2EnergyMatchingTiles.addEntry(sector,layer,component);
                     CCDBTableCharge2EnergyMatchingTiles.setDoubleValue(0.0,"mips_charge", sector, layer, component);
@@ -704,9 +642,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     GAINandMIPSTableOverview.setDoubleValue(0.0,"mipserr_voltage_MatchingTiles", sector, layer, component);
    
                     ////HERE: Need to look at the order we write this info as GEMC is a bit weird
-                    int craten=72;
-                    int slotn=wireFTHodo.getSlot4SLC(sector, layer, component);
-                    int channeln=wireFTHodo.getChan4SLC(sector, layer, component);
+                    
+                    int craten=InverseTranslationTable.getIntValue("crate", sector,layer,component);
+                    int slotn=InverseTranslationTable.getIntValue("slot", sector,layer,component);//wireFTHodo.getSlot4SLC(sector, layer, component);
+                    int channeln=InverseTranslationTable.getIntValue("chan", sector,layer,component);//wireFTHodo.getChan4SLC(sector, layer, component);
                     CCDBTablefACD.addEntry(craten,slotn,channeln);
                     CCDBTablefACD.setDoubleValue(0.0,"pedestal", craten,slotn,channeln);
                     CCDBTablefACD.setIntValue(10,"nsb", craten,slotn,channeln);
@@ -714,7 +653,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     CCDBTablefACD.setIntValue(10,"tet", craten,slotn,channeln);
                     CCDBTablefACD.setIntValue(940,"window_offset", craten,slotn,channeln);
                     CCDBTablefACD.setIntValue(400,"window_size", craten,slotn,channeln);
-
                 }
             }
         }
@@ -814,118 +752,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         }
         return values;
     }
-    //-----------------------------------------
-//    private void printCCDBTables() {
-//        try {
-//            PrintWriter fout_full;
-//            fout_full = new PrintWriter("./Tables/fthodo_ccdb.txt");
-//            PrintWriter fout_status;
-//            fout_status = new PrintWriter("./Tables/fthodo_status.txt");
-//            PrintWriter fout_noise;
-//            fout_noise = new PrintWriter("./Tables/fthodo_noise.txt");
-//            PrintWriter fout_energy;
-//            fout_energy = new PrintWriter("./Tables/fthodo_energy.txt");
-//            PrintWriter fout_time;
-//            fout_time = new PrintWriter("./Tables/fthodo_time.txt");
-//            String col = "";
-//            for (int c = 0; c < ConstantsTable.getColumnCount(); c++) {
-//                col = ConstantsTable.getColumnName(c);
-//                // create column titles
-//                switch (c) {
-//                    case 0:
-//                        fout_full.printf("s \t");
-//                        fout_status.printf("s \t");
-//                        fout_noise.printf("s \t");
-//                        fout_energy.printf("s \t");
-//                        fout_time.printf("s \t");
-//                        break;
-//                    case 1:
-//                        fout_full.printf("l \t");
-//                        fout_status.printf("l \t");
-//                        fout_noise.printf("l \t");
-//                        fout_time.printf("l \t");
-//                        fout_energy.printf("l \t");
-//                        break;
-//                    case 2:
-//                        fout_full.printf("c \t");
-//                        fout_status.printf("c \t");
-//                        fout_noise.printf("c \t");
-//                        fout_time.printf("c \t");
-//                        fout_energy.printf("c \t");
-//                        break;
-//                    default:
-//                        fout_full.printf(col + "\t");
-//                        break;
-//                }
-//                if (col.equals("status")) {
-//                    fout_status.printf(col + "\t");
-//                } else if (col.equals("ped")
-//                        || col.equals("ped_rms")
-//                        || col.equals("gain_pc")
-//                        || col.equals("gain_mv")
-//                        || col.equals("thr_npe")) {
-//                    fout_noise.printf(col + "\t");
-//                } else if (col.equals("mips_e")
-//                        || col.equals("mips_q")) {
-//                    fout_energy.printf(col + "\t");
-//                } else if (col.equals("t_offset")
-//                        || col.equals("t_rms")) {
-//                    fout_time.printf(col + "\t");
-//                }
-//            }
-//            fout_full.printf("\n");
-//            fout_status.printf("\n");
-//            fout_noise.printf("\n");
-//            fout_energy.printf("\n");
-//            fout_time.printf("\n");
-//
-//            for (int r = 0; r < ConstantsTable.getRowCount(); r++) {
-//                for (int c = 0; c < ConstantsTable.getColumnCount(); c++) {
-//                    col = ConstantsTable.getColumnName(c);
-//                    if (c < 3) {
-//                        fout_full.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                        fout_status.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                        fout_noise.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                        fout_energy.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                        fout_time.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                    } else if (col.equals("status")) {
-//                        Double pp = Double.parseDouble(ConstantsTable.getValueAt(r, c).toString());
-//                        fout_full.printf(pp.intValue() + "\t");
-//                        fout_status.printf(pp.intValue() + "\t");
-//                    } else if (col.equals("ped")
-//                            || col.equals("ped_rms")
-//                            || col.equals("gain_pc")
-//                            || col.equals("gain_mv")
-//                            || col.equals("thr_npe")) {
-//                        fout_full.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                        fout_noise.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                    } else if (col.equals("mips_e")
-//                            || col.equals("mips_q")) {
-//                        fout_full.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                        fout_energy.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                    } else if (col.equals("t_offset")
-//                            || col.equals("t_rms")) {
-//                        fout_full.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                        fout_time.printf(ConstantsTable.getValueAt(r, c) + "\t");
-//                    }
-//                }
-//                fout_full.printf("\n");
-//                fout_status.printf("\n");
-//                fout_noise.printf("\n");
-//                fout_energy.printf("\n");
-//                fout_time.printf("\n");
-//            }
-//            fout_full.close();
-//            fout_status.close();
-//            fout_noise.close();
-//            fout_energy.close();
-//            fout_time.close();
-//            System.out.println("CCDB files written");
-//        } catch (FileNotFoundException ex) {
-//            System.out.println(" Keith Cuthbertson ");
-//        }
-//    }
-
+ 
     public FTHODOModule() {
         System.out.println(" -------------------");
         System.out.println(" FTHODOViewerModule ");
@@ -938,7 +765,63 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     public void initDetector() {
         detectorView.add("Detector", this.drawDetector(0., 0.));
         detectorView.add("Electronics", this.drawChannels(0., 0.));
+        detectorView.addChangeListener(new changeListener());
+        detectorView.setSelectedIndex(this.tabSelDetectorView);
     }
+    class changeListener implements ChangeListener {
+        public void stateChanged(ChangeEvent changeEvent) {
+            JTabbedPane sourceTabbedPane = (JTabbedPane) changeEvent.getSource();
+            int index = sourceTabbedPane.getSelectedIndex();
+            System.out.println("Detector Tab changed to: " + sourceTabbedPane.getTitleAt(index));
+            if ("Detector".equals(sourceTabbedPane.getTitleAt(index))){
+                drawByElec = false;
+                MIPAnalysis_DetElec_List.setSelectedIndex(0);
+                NoiseAnalysis_DetElec_List.setSelectedIndex(0);
+            }else if ("Electronics".equals(sourceTabbedPane.getTitleAt(index))){
+                drawByElec = true;
+                MIPAnalysis_DetElec_List.setSelectedIndex(1);
+                NoiseAnalysis_DetElec_List.setSelectedIndex(1);
+            }
+            
+            if (tabSel == tabIndexNoiseAnalysis) {
+                if (drawByElec == false) {
+                    drawCanvasNoiseAnalysis();
+                } else {
+                    drawCanvasNoiseAnalysisElec(secSel,laySel,comSel);
+                }
+            }else if (tabSel == tabIndexMIPAnalysis){
+                if (drawByElec == false) {
+                    drawCanvasMIPAnalysis();
+                } else {
+                    drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+                }
+            }
+        }
+    }
+//
+//    ChangeListener changeListener = new ChangeListener() {
+//        public void stateChanged(ChangeEvent changeEvent) {
+//            JTabbedPane sourceTabbedPane = (JTabbedPane) changeEvent.getSource();
+//            int index = sourceTabbedPane.getSelectedIndex();
+//            System.out.println("Detector Tab changed to: " + sourceTabbedPane.getTitleAt(index));
+//            if ("Detector".equals(sourceTabbedPane.getTitleAt(index))){
+//                drawByElec = false;
+//                drawCanvasNoiseAnalysis();
+//                drawCanvasMIPAnalysis();
+//                MIPAnalysis_DetElec_List.setSelectedIndex(0);
+//                NoiseAnalysis_DetElec_List.setSelectedIndex(0);
+//            }else if ("Electronics".equals(sourceTabbedPane.getTitleAt(index))){
+//                drawByElec = true;
+//                drawCanvasNoiseAnalysisElec(secSel,laySel,comSel);
+//                drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+//                MIPAnalysis_DetElec_List.setSelectedIndex(1);
+//                NoiseAnalysis_DetElec_List.setSelectedIndex(1);
+//            }
+//        }
+//    };
+
+
+
     public DetectorPane2D drawChannels(double x0, double y0) {
         DetectorPane2D channels = new DetectorPane2D();
         int nChannels = 16;
@@ -1132,7 +1015,47 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     }
 
     public void actionPerformed(ActionEvent e) {
-        System.out.println("ACTION = " + e.getActionCommand());
+        //System.out.println("ACTION = " + e.getActionCommand());
+        if ("comboBoxChanged".equals(e.getActionCommand())) {
+            JComboBox comboBox = (JComboBox) e.getSource();
+            Object selected = comboBox.getSelectedItem();
+            //System.out.println("Selected Item  = " + selected);
+            if ("max Voltage".equals(selected)){
+                this.plotVoltageChargeBoth=1;
+                this.useGain_mV=true;
+                NoiseAnalysis_ch_mv_List.setSelectedIndex(0);
+                MIPAnalysis_ch_mv_List.setSelectedIndex(0);
+            }else  if ("Charge".equals(selected)){
+                this.plotVoltageChargeBoth=2;
+                this.useGain_mV=false;
+                drawCanvasMIPsignal(secSel,laySel,comSel);
+                NoiseAnalysis_ch_mv_List.setSelectedIndex(1);
+                MIPAnalysis_ch_mv_List.setSelectedIndex(1);
+            }else  if ("Voltage & Charge".equals(selected)){
+                this.plotVoltageChargeBoth=3;
+                drawCanvasMIPsignal(secSel,laySel,comSel);
+            }
+            else if ("Detector View".equals(selected)){
+                this.drawByElec=false;
+                MIPAnalysis_DetElec_List.setSelectedIndex(0);
+                NoiseAnalysis_DetElec_List.setSelectedIndex(0);
+            }else if ("Electronics View".equals(selected)){
+                this.drawByElec=true;
+                MIPAnalysis_DetElec_List.setSelectedIndex(1);
+                NoiseAnalysis_DetElec_List.setSelectedIndex(1);
+            }
+
+            MIP_ch_mv_chmvList.setSelectedIndex(this.plotVoltageChargeBoth-1);
+            if (!drawByElec){
+                drawCanvasNoiseAnalysis();
+                drawCanvasMIPAnalysis();
+            }
+            else {
+                drawCanvasNoiseAnalysisElec(secSel,laySel,comSel);
+                drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+            }
+            drawCanvasMIPsignal(secSel,laySel,comSel);
+        }
         if (e.getActionCommand().compareTo("Reset Histograms/Constants") == 0) {
             this.resetHistograms();
             this.setArraysToDefault();
@@ -1149,10 +1072,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             this.setArraysToDefault();
             this.setGGraphGain();
             this.updateTable();
-            
         }
-        
-        
+  
         if (e.getActionCommand().compareTo("Save Calibration Constants") == 0) {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
             String fileName = "ftHodo_Noise_" + this.getRunNumber() + "_" + df.format(new Date()) + ".txt";
@@ -1165,9 +1086,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             int returnValue = fc.showSaveDialog(null);
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 fileName = fc.getSelectedFile().getAbsolutePath();
+                this.saveTable(fileName, CCDBTableNoise);
             }
             //System.out.println(fileName);
-            this.saveTable(fileName, CCDBTableNoise);
             
             fileName = "ftHodo_ChargeToEnergy_" + this.getRunNumber() + "_" + df.format(new Date()) + ".txt";
             fc = new JFileChooser();
@@ -1179,8 +1100,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             returnValue = fc.showSaveDialog(null);
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 fileName = fc.getSelectedFile().getAbsolutePath();
+                this.saveTable(fileName, CCDBTableCharge2Energy);
             }
-            this.saveTable(fileName, CCDBTableCharge2Energy);
 
             fileName = "ftHodo_ChargeToEnergyMatchingTiles_" + this.getRunNumber() + "_" + df.format(new Date()) + ".txt";
             fc = new JFileChooser();
@@ -1192,8 +1113,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             returnValue = fc.showSaveDialog(null);
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 fileName = fc.getSelectedFile().getAbsolutePath();
+                this.saveTable(fileName, CCDBTableCharge2EnergyMatchingTiles);
             }
-            this.saveTable(fileName, CCDBTableCharge2EnergyMatchingTiles);
             
             
             fileName = "ftHodo_fADC_" + this.getRunNumber() + "_" + df.format(new Date()) + ".txt";
@@ -1206,8 +1127,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             returnValue = fc.showSaveDialog(null);
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 fileName = fc.getSelectedFile().getAbsolutePath();
+                this.saveTable(fileName, CCDBTablefACD);
             }
-            this.saveTable(fileName, CCDBTablefACD);
             
             
             fileName = "ftHodo_OverviewFile_" + this.getRunNumber() + "_" + df.format(new Date()) + ".txt";
@@ -1220,163 +1141,208 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             returnValue = fc.showSaveDialog(null);
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 fileName = fc.getSelectedFile().getAbsolutePath();
+                this.saveTable(fileName, GAINandMIPSTableOverview);
             }
-            this.saveTable(fileName, GAINandMIPSTableOverview);
             
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-//        if (e.getActionCommand().compareTo("Constants") == 0) {
-//            updateConstants();
-//        }
-//        if (e.getActionCommand().compareTo("Print") == 0) {
-//            printCCDBTables();
-//        }
-//        if (e.getActionCommand().compareTo("Read") == 0) {
-//            setConstantsToCCDB = true;
-//            System.out.println(" setting constants to CCDB values ");
-//            System.out.println(" and updating the table ");
-//            updateConstants();
-//            setConstantsToCCDB = false;
-//        }
-//        if (e.getActionCommand().compareTo("Fit") == 0) {
-//            this.fitHistograms();
-//        }
-//        if (e.getActionCommand().compareTo("Ped") == 0) {
-//
-//            if (pedMeanGood) {
-//                pedMeanGood = false;
-//                System.out.println("using event by event pedestals only");
-//            } else {
-//                pedMeanGood = true;
-//                System.out.println("using pedestal mean for event "
-//                        + " outliers (not inc. ADC values) ");
-//            }
-//            System.out.println("pedMeanGood = " + pedMeanGood);
-//        }
-        if (e.getActionCommand().compareTo("max Voltage") == 0) {
-            if (this.tabSel==tabIndexGain){
-                this.useGain_mV = true;
-                if (this.drawByElec){
-                    drawCanvasGainElec(secSel,laySel,comSel);
-                }else{
-                    drawCanvasGain();
-                }
-            }
-            if (this.tabSel==tabIndexMIPgain){
-                this.useGain_mV = true;
-                if (this.drawByElec){
-                    drawCanvasMIPgainElec(secSel,laySel,comSel);
-                }else{
-                    drawCanvasMIPgain();
-                }
-            }
-            if (this.tabSel==tabIndexMIPsignal){
-                this.plotVoltageChargeBoth=1;
-                drawCanvasMIPsignal(secSel,laySel,comSel);
+            
+            fileName = "ftHodo_adcft3_ped" + this.getRunNumber() + "_" + df.format(new Date()) + ".txt";
+            String timeSrng= " "+df.format(new Date());
+            fc = new JFileChooser();
+            workingDirectory = new File(this.workDir);
+            System.out.println("Save: "+this.workDir);
+            fc.setCurrentDirectory(workingDirectory);
+            file = new File(fileName);
+            fc.setSelectedFile(file);
+            returnValue = fc.showSaveDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                fileName = fc.getSelectedFile().getAbsolutePath();
+                this.savefADC250ft3PedTable(fileName, timeSrng);
             }
         }
-        if (e.getActionCommand().compareTo("Charge") == 0) {
-            if (this.tabSel==tabIndexGain){
-                this.useGain_mV = false;
-                if (this.drawByElec) {
-                    drawCanvasGainElec(secSel,laySel,comSel);
-                } else{
-                    drawCanvasGain();
-                }
-            }
-            if (this.tabSel==tabIndexMIPgain){
-                this.useGain_mV = false;
-                if (this.drawByElec) {
-                    drawCanvasMIPgainElec(secSel,laySel,comSel);
-                } else{
-                    drawCanvasMIPgain();
-                }
-            }
-            if (this.tabSel==tabIndexMIPsignal){
-                this.plotVoltageChargeBoth=2;
-                drawCanvasMIPsignal(secSel,laySel,comSel);
-            }
-        }
-        if (e.getActionCommand().compareTo("Electronics View") == 0) {
-            this.drawByElec = true;
-            if (this.tabSel==tabIndexGain){
-                drawCanvasGainElec(secSel,laySel,comSel);
-            }
-            else if (this.tabSel==tabIndexMIPgain){
-                drawCanvasMIPgainElec(secSel,laySel,comSel);
-            }
-        }
-        if (e.getActionCommand().compareTo("Detector View") == 0) {
-            this.drawByElec = false;
-            if (this.tabSel==tabIndexGain){
-                drawCanvasGain();
-            }
-            else if (this.tabSel==tabIndexMIPgain){
-                drawCanvasMIPgain();
-            }
-        }
-        if (e.getActionCommand().compareTo("Voltage & Charge") == 0) {
-            this.plotVoltageChargeBoth=3;
-            drawCanvasMIPsignal(secSel,laySel,comSel);
-        }
-        if (e.getActionCommand().compareTo("Matching Tiles") == 0) {
-            this.matchingTiles=true;
-            if (this.tabSel==tabIndexMIPsignal){
-                drawCanvasMIPsignal(secSel,laySel,comSel);
-            }
-            if (this.tabSel==tabIndexMIPgain){
-                if (!this.drawByElec)
-                    drawCanvasMIPgain();
-                else if (this.drawByElec)
-                    drawCanvasMIPgainElec(secSel,laySel,comSel);
-            }
-        }
-        if (e.getActionCommand().compareTo("All Signals") == 0) {
-            this.matchingTiles=false;
-            if (this.tabSel==tabIndexMIPsignal){
-                drawCanvasMIPsignal(secSel,laySel,comSel);
-            }
-            if (this.tabSel==tabIndexMIPgain){
-                if (!this.drawByElec)
-                    drawCanvasMIPgain();
-                else if (this.drawByElec)
-                    drawCanvasMIPgainElec(secSel,laySel,comSel);
-            }
-        }
-        if (e.getActionCommand().compareTo("NPE") == 0) {
-            this.plotNPE=true;
-            if (this.tabSel==tabIndexMIPgain){
-                if (!this.drawByElec)
-                    drawCanvasMIPgain();
-                else if (this.drawByElec)
-                    drawCanvasMIPgainElec(secSel,laySel,comSel);
-            }
-        }
-        if (e.getActionCommand().compareTo("Signal") == 0) {
-            this.plotNPE=false;
-            if (this.tabSel==tabIndexMIPgain){
-                if (!this.drawByElec)
-                    drawCanvasMIPgain();
-                else if (this.drawByElec)
-                    drawCanvasMIPgainElec(secSel,laySel,comSel);
+        if (e.getActionCommand().compareTo("Use CCDB SiPM gain") == 0) {
+            if (this.toggleGainCCDBBtn.isSelected()) {
+                System.out.println("CCDB gain button selected");
+                this.useGainCCDB=true;
+                LabelGainCCDB.setText("ON");
+                this.updateArrays();
+                this.setGGraphGain();
+                this.updateTable();
+            } else {
+                System.out.println("CCDB gain  unselected");
+                this.useGainCCDB=false;
+                LabelGainCCDB.setText("OFF");
+                this.updateArrays();
+                this.setGGraphGain();
+                this.updateTable();
             }
         }
 
+
+//        if (e.getActionCommand().compareTo("max Voltage") == 0) {
+//            if (this.tabSel==tabIndexNoiseAnalysis){
+//                this.useGain_mV = true;
+//                if (this.drawByElec){
+//                    drawCanvasNoiseAnalysisElec(secSel,laySel,comSel);
+//                }else{
+//                    drawCanvasNoiseAnalysis();
+//                }
+//            }
+//            if (this.tabSel==tabIndexMIPAnalysis){
+//                this.useGain_mV = true;
+//                if (this.drawByElec){
+//                    drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+//                }else{
+//                    drawCanvasMIPAnalysis();
+//                }
+//            }
+//            if (this.tabSel==tabIndexMIPsignal){
+//                this.plotVoltageChargeBoth=1;
+//                drawCanvasMIPsignal(secSel,laySel,comSel);
+//            }
+//        }
+//        if (e.getActionCommand().compareTo("Charge") == 0) {
+//            if (this.tabSel==tabIndexNoiseAnalysis){
+//                this.useGain_mV = false;
+//                if (this.drawByElec) {
+//                    drawCanvasNoiseAnalysisElec(secSel,laySel,comSel);
+//                } else{
+//                    drawCanvasNoiseAnalysis();
+//                }
+//            }
+//            if (this.tabSel==tabIndexMIPAnalysis){
+//                this.useGain_mV = false;
+//                if (this.drawByElec) {
+//                    drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+//                } else{
+//                    drawCanvasMIPAnalysis();
+//                }
+//            }
+//            if (this.tabSel==tabIndexMIPsignal){
+//                this.plotVoltageChargeBoth=2;
+//                drawCanvasMIPsignal(secSel,laySel,comSel);
+//            }
+//        }
+//        if (e.getActionCommand().compareTo("Electronics View") == 0) {
+//            this.drawByElec = true;
+//            if (this.tabSel==tabIndexNoiseAnalysis){
+//                drawCanvasNoiseAnalysisElec(secSel,laySel,comSel);
+//            }
+//            else if (this.tabSel==tabIndexMIPAnalysis){
+//                drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+//            }
+//        }
+//        if (e.getActionCommand().compareTo("Detector View") == 0) {
+//            this.drawByElec = false;
+//            if (this.tabSel==tabIndexNoiseAnalysis){
+//                drawCanvasNoiseAnalysis();
+//            }
+//            else if (this.tabSel==tabIndexMIPAnalysis){
+//                drawCanvasMIPAnalysis();
+//            }
+//        }
+//        if (e.getActionCommand().compareTo("Voltage & Charge") == 0) {
+//            this.plotVoltageChargeBoth=3;
+//            drawCanvasMIPsignal(secSel,laySel,comSel);
+//        }
+        if (e.getActionCommand().compareTo("Matching Tiles Analysis:") == 0) {
+            if (this.tabSel==tabIndexMIPsignal){
+                if (this.toggleMIPMatchingTilesBtn.isSelected()) {
+                    System.out.println("Matching Tiles button selected");
+                    this.matchingTiles=true;
+                } else {
+                    System.out.println("Matching Tiles button nunselected");
+                    this.matchingTiles=false;
+                }
+                drawCanvasMIPsignal(secSel,laySel,comSel);
+            }
+            if (this.tabSel==tabIndexMIPAnalysis){
+                if (this.toggleMIPGainMatchingTilesBtn.isSelected()) {
+                    System.out.println("Matching Tiles button selected");
+                    this.matchingTiles=true;
+
+                } else {
+                    System.out.println("Matching Tiles button  unselected");
+                    this.matchingTiles=false;
+                }
+                if (!this.drawByElec)
+                    drawCanvasMIPAnalysis();
+                else if (this.drawByElec)
+                    drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+            }
+        }           
+        if (matchingTiles){
+            LabelMIPMatchingTiles.setText("ON");
+            LabelMIPGainMatchingTiles.setText("ON");
+        }
+        else {
+            LabelMIPMatchingTiles.setText("OFF");
+            LabelMIPGainMatchingTiles.setText("OFF");
+        }
+        toggleMIPGainMatchingTilesBtn.setSelected(matchingTiles);
+        toggleMIPMatchingTilesBtn.setSelected(matchingTiles);
         
+
+        if (e.getActionCommand().compareTo("NPE") == 0) {
+            if (this.toggleNPEBtn.isSelected()) {
+                System.out.println("NPE button selected");
+                this.plotNPE=true;
+            } else {
+                System.out.println("NPE button  unselected");
+                this.plotNPE=false;
+            }
+            if (!this.drawByElec)
+                drawCanvasMIPAnalysis();
+            else if (this.drawByElec)
+                drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+        }
+        if (plotNPE){
+            LabelNPE.setText("ON");
+        }
+        else {
+            LabelNPE.setText("OFF");
+        }
         
+        if (e.getActionCommand().compareTo("LED Analysis:") == 0) {
+            if (this.tabSel==tabIndexMIPsignal){
+                if (this.toggleMIPLEDBtn.isSelected()) {
+                    System.out.println("LED Analysis selected");
+                    histogramsFTHodo.ledAnalysis=true;
+                } else {
+                    System.out.println("LED Analysis unselected");
+                    histogramsFTHodo.ledAnalysis=false;
+                }
+                this.setArraysToDefault();
+                this.setGGraphGain();
+                histogramsFTHodo.InitFunctions();
+                drawCanvasMIPsignal(secSel,laySel,comSel);
+            }
+            if (this.tabSel==tabIndexMIPAnalysis){
+                if (this.toggleMIPGainLEDBtn.isSelected()) {
+                    System.out.println("LED Analysis selected");
+                    histogramsFTHodo.ledAnalysis=true;
+                } else {
+                    System.out.println("LED Analysis selected unselected");
+                    histogramsFTHodo.ledAnalysis=false;
+                }
+                this.setArraysToDefault();
+                this.setGGraphGain();
+                histogramsFTHodo.InitFunctions();
+                if (!this.drawByElec)
+                    drawCanvasMIPAnalysis();
+                else if (this.drawByElec)
+                    drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+            }
+        }
+        if (histogramsFTHodo.ledAnalysis){
+            LabelMIPLED.setText("ON");
+            LabelMIPGainLED.setText("ON");
+        }
+        else {
+            LabelMIPLED.setText("OFF");
+            LabelMIPGainLED.setText("OFF");
+        }
+        toggleMIPGainLEDBtn.setSelected(histogramsFTHodo.ledAnalysis);
+        toggleMIPLEDBtn.setSelected(histogramsFTHodo.ledAnalysis);
     }
 
     private void fitHistograms() {
@@ -1385,10 +1351,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
 
     void drawCanvasEvent(int secSel,int laySel,int comSel) {
         int layCD = laySel - 1;
-        // map [1,2] to [1,0]
-        int oppCD = laySel % 2;
-        // map [1,2] to [2,1]
-        int oppSel = (laySel % 2) + 1;
+        int oppCD = laySel % 2;// map [1,2] to [1,0]
+        int oppSel = (laySel % 2) + 1;        // map [1,2] to [2,1]
         int layCDL = 3 * layCD;
         int oppCDL = 3 * oppCD;
         int layCDM = layCDL+1;
@@ -1465,12 +1429,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     }
 
     void drawCanvasPed(int secSel,int laySel,int comSel) {
-        // map [1,2] to [0,1]
-        int layCD = laySel - 1;
-        // map [1,2] to [1,0]
-        int oppCD = laySel % 2;
-        // map [1,2] to [2,1]
-        int oppSel = (laySel % 2) + 1;
+        int layCD = laySel - 1;        // map [1,2] to [0,1]
+        int oppCD = laySel % 2;        // map [1,2] to [1,0]
+        int oppSel = (laySel % 2) + 1;        // map [1,2] to [2,1]
         int layCDL = 3 * layCD;// 1-->0; 2-->3;
         int oppCDL = 3 * oppCD;// 1-->3; 2-->0;
         int layCDM = layCDL + 1;
@@ -1523,25 +1484,15 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         }
     }
     void drawCanvasNoise(int secSel,int laySel,int comSel) {
-        // map [1,2] to [0,1]
-        int layCD = laySel - 1;
-        // map [1,2] to [1,0]
-        int oppCD = laySel % 2;
-        // map [1,0] to [2,1]
-        int oppSel = oppCD + 1;
-        // map [0,1] to [0,3]
-        int layCDL = 3 * layCD;
-        // map [1,0] to [3,0]
-        int oppCDL = 3 * oppCD;
-        // map [0,3] to [1,4]
-        int layCDM = layCDL + 1;
-        // map [3,0] to [4,1]
-        int oppCDM = oppCDL + 1;
-        // map [0,3] to [2,5]
-        int layCDR = layCDL + 2;
-        // map [3,0] to [5,2]
-        int oppCDR = oppCDL + 2;
-        String style = "S";
+        int layCD = laySel - 1;        // map [1,2] to [0,1]
+        int oppCD = laySel % 2;        // map [1,2] to [1,0]
+        int oppSel = oppCD + 1;        // map [1,0] to [2,1]
+        int layCDL = 3 * layCD;        // map [0,1] to [0,3]
+        int oppCDL = 3 * oppCD;        // map [1,0] to [3,0]
+        int layCDM = layCDL + 1;        // map [0,3] to [1,4]
+        int oppCDM = oppCDL + 1;        // map [3,0] to [4,1]
+        int layCDR = layCDL + 2;        // map [0,3] to [2,5]
+        int oppCDR = oppCDL + 2;        // map [3,0] to [5,2]
         //----------------------------------------
         // left top (bottom) for thin (thick) layer
         // calibrated fADC pulse
@@ -1600,93 +1551,65 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         }
     }
 
-//    void drawCanvasTime(int secSel,
-//            int laySel,
-//            int comSel) {
-//
-//        // map [1,2] to [0,1]
-//        int layCD = laySel - 1;
-//        // map [1,2] to [1,0]
-//        int oppCD = laySel % 2;
-//        // map [1,0] to [2,1]
-//        int oppSel = oppCD + 1;
-//
-//        // map [0,1] to [0,3]
-//        int layCDL = 3 * layCD;
-//        // map [1,0] to [3,0]
-//        int oppCDL = 3 * oppCD;
-//
-//        // map [0,3] to [1,4]
-//        int layCDM = layCDL + 1;
-//        // map [3,0] to [4,1]
-//        int oppCDM = oppCDL + 1;
-//
-//        // map [0,3] to [2,5]
-//        int layCDR = layCDL + 2;
-//        // map [3,0] to [5,2]
-//        int oppCDR = oppCDL + 2;
-//
-//        //----------------------------------------
-//        // left top (bottom) for thin (thick) layer
-//        canvasTime.cd(layCDL);
-//
-//        if (histogramsFTHodo.H_MAXV_VS_T.hasEntry(secSel,laySel,comSel)) {
-//            this.canvasTime.draw(histogramsFTHodo.H_MAXV_VS_T.get(secSel,laySel,comSel));
-//        }
-//        //----------------------------------------
-//        // left top (bottom) for thin (thick) layer
-//        canvasTime.cd(oppCDL);
-//        if (histogramsFTHodo.H_MAXV_VS_T.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasTime.draw(histogramsFTHodo.H_MAXV_VS_T.get(secSel,oppSel,comSel));
-//        }
-//        //----------------------------------------
-//        // middle top
-//        canvasTime.cd(layCDM);
-//        if (histogramsFTHodo.H_T_MODE7.hasEntry(secSel,laySel,comSel)) {
-//            this.canvasTime.draw(histogramsFTHodo.H_T_MODE7.get(secSel,laySel,comSel));
-//            if (histogramsFTHodo.fT.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasTime.draw(histogramsFTHodo.fT.get(secSel,laySel,comSel), "same S");
-//            }
-//        }
-//
-//        //----------------------------------------
-//        // middle bottom
-//        canvasTime.cd(oppCDM);
-//        if (histogramsFTHodo.H_T_MODE7.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasTime.draw(histogramsFTHodo.H_T_MODE7.get(secSel,oppSel,comSel));
-//            if (histogramsFTHodo.fT.hasEntry(secSel,oppSel,comSel)) {
-//                this.canvasTime.draw(histogramsFTHodo.fT.get(secSel,oppSel,comSel), "same S");
-//            }
-//
-//        }
-//        //----------------------------------------
-//        // right top
-//        canvasTime.cd(2);
-//        if (histogramsFTHodo.H_DT_MODE7.hasEntry(secSel,1,comSel)) {
-//            this.canvasTime.draw(histogramsFTHodo.H_DT_MODE7.get(secSel,1,comSel));
-//            //         if(fT.hasEntry(secSel,
-//            //                laySel,
-//            //                comSel))
-//            //                 this.canvasTime.draw(fT.get(secSel,
-//            //                         laySel,
-//            //                         comSel),"same S");
-//        }
-//        //----------------------------------------
-//        // right bottom
-//        canvasTime.cd(5);
-//        if (histogramsFTHodo.H_T1_T2.hasEntry(secSel,1,comSel)) {
-//            this.canvasTime.draw(histogramsFTHodo.H_T1_T2.get(secSel,1,comSel));
-//        }
-//    }
+    void drawCanvasTime(int secSel,int laySel, int comSel) {
+        int layCD = laySel - 1;// map [1,2] to [0,1]
+        int oppCD = laySel % 2; // map [1,2] to [1,0]
+        int oppSel = oppCD + 1;// map [1,0] to [2,1]
+        int layCDL = 3 * layCD; // map [0,1] to [0,3]
+        int oppCDL = 3 * oppCD;// map [1,0] to [3,0]
+        int layCDM = layCDL + 1;// map [0,3] to [1,4]
+        int oppCDM = oppCDL + 1;// map [3,0] to [4,1]
+        int layCDR = layCDL + 2;// map [0,3] to [2,5]
+        int oppCDR = oppCDL + 2;// map [3,0] to [5,2]
+        //----------------------------------------
+        // left top (bottom) for thin (thick) layer
+        canvasTime.cd(layCDL);
+        if (histogramsFTHodo.H_MAXV_VS_T.hasEntry(secSel,laySel,comSel)) {
+            this.canvasTime.draw(histogramsFTHodo.H_MAXV_VS_T.get(secSel,laySel,comSel));
+        }
+        canvasTime.cd(oppCDL);
+        if (histogramsFTHodo.H_MAXV_VS_T.hasEntry(secSel,oppSel,comSel)) {
+            this.canvasTime.draw(histogramsFTHodo.H_MAXV_VS_T.get(secSel,oppSel,comSel));
+        }
+        //----------------------------------------
+        // middle top
+        canvasTime.cd(layCDM);
+        if (histogramsFTHodo.H_T_MODE7.hasEntry(secSel,laySel,comSel)) {
+            this.canvasTime.draw(histogramsFTHodo.H_T_MODE7.get(secSel,laySel,comSel));
+            if (histogramsFTHodo.fT.hasEntry(secSel,laySel,comSel)) {
+                this.canvasTime.draw(histogramsFTHodo.fT.get(secSel,laySel,comSel), "same S");
+            }
+        }
+        canvasTime.cd(oppCDM);
+        if (histogramsFTHodo.H_T_MODE7.hasEntry(secSel,oppSel,comSel)) {
+            this.canvasTime.draw(histogramsFTHodo.H_T_MODE7.get(secSel,oppSel,comSel));
+            if (histogramsFTHodo.fT.hasEntry(secSel,oppSel,comSel)) {
+                this.canvasTime.draw(histogramsFTHodo.fT.get(secSel,oppSel,comSel), "same S");
+            }
+        }
+        //----------------------------------------
+        // right top
+        canvasTime.cd(2);
+        if (histogramsFTHodo.H_DT_MODE7.hasEntry(secSel,1,comSel)) {
+            this.canvasTime.draw(histogramsFTHodo.H_DT_MODE7.get(secSel,1,comSel));
+            //         if(fT.hasEntry(secSel,
+            //                laySel,
+            //                comSel))
+            //                 this.canvasTime.draw(fT.get(secSel,
+            //                         laySel,
+            //                         comSel),"same S");
+        }
+        canvasTime.cd(5);
+        if (histogramsFTHodo.H_T1_T2.hasEntry(secSel,1,comSel)) {
+            this.canvasTime.draw(histogramsFTHodo.H_T1_T2.get(secSel,1,comSel));
+        }
+    }
 
     
     void drawCanvasMIPsignal(int secSel,int laySel,int comSel) {
-        // map [1,2] to [0,1]
-        int layCD = laySel - 1;
-        // map [1,2] to [1,0]
-        int oppCD = laySel % 2;
-        // map [1,2] to [2,1]
-        int oppSel = (laySel % 2) + 1;
+        int layCD = laySel - 1;        // map [1,2] to [0,1]
+        int oppCD = laySel % 2;        // map [1,2] to [1,0]
+        int oppSel = (laySel % 2) + 1;// map [1,2] to [2,1]
         int layCDL = 2 * layCD;
         int oppCDL = 2 * oppCD;
         int layCDR = layCDL + 1;
@@ -1724,9 +1647,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             else {
                 if (histogramsFTHodo.H_MIP_Q_MatchingTiles.hasEntry(secSel,laySel,comSel)) {
                     this.canvasMIPsignal.draw(histogramsFTHodo.H_MIP_Q_MatchingTiles.get(secSel,laySel,comSel));
-                    //if (histogramsFTHodo.fQMIP.hasEntry(secSel,laySel,comSel)) {
-                    //    this.canvasMIPsignal.draw(histogramsFTHodo.fQMIP.get(secSel,laySel,comSel), "same S");
-                    //}
+                    if (histogramsFTHodo.fQMIPMatching.hasEntry(secSel,laySel,comSel)) {
+                        this.canvasMIPsignal.draw(histogramsFTHodo.fQMIPMatching.get(secSel,laySel,comSel), "same S");
+                    }
                 }
             }
             //----------------------------------------
@@ -1743,9 +1666,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             else {
                 if (histogramsFTHodo.H_MIP_Q_MatchingTiles.hasEntry(secSel,oppSel,comSel)) {
                     this.canvasMIPsignal.draw(histogramsFTHodo.H_MIP_Q_MatchingTiles.get(secSel,oppSel,comSel));
-                    //if (histogramsFTHodo.fQMIP.hasEntry(secSel,oppSel,comSel)) {
-                    //    this.canvasMIPsignal.draw(histogramsFTHodo.fQMIP.get(secSel,oppSel,comSel), "same S");
-                    //}
+                    if (histogramsFTHodo.fQMIPMatching.hasEntry(secSel,oppSel,comSel)) {
+                        this.canvasMIPsignal.draw(histogramsFTHodo.fQMIPMatching.get(secSel,oppSel,comSel), "same S");
+                    }
                 }
             }
         }
@@ -1780,9 +1703,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             else {
                 if (histogramsFTHodo.H_MIP_V_MatchingTiles.hasEntry(secSel,laySel,comSel)) {
                     this.canvasMIPsignal.draw(histogramsFTHodo.H_MIP_V_MatchingTiles.get(secSel,laySel,comSel));
-                    //if (histogramsFTHodo.fVMIP.hasEntry(secSel,laySel,comSel)) {
-                    //    this.canvasMIPsignal.draw(histogramsFTHodo.fVMIP.get(secSel,laySel,comSel), "same S");
-                    //}
+                    if (histogramsFTHodo.fVMIPMatching.hasEntry(secSel,laySel,comSel)) {
+                        this.canvasMIPsignal.draw(histogramsFTHodo.fVMIPMatching.get(secSel,laySel,comSel), "same S");
+                    }
                 }
             }
             //----------------------------------------
@@ -1799,9 +1722,9 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             else{
                 if (histogramsFTHodo.H_MIP_V_MatchingTiles.hasEntry(secSel,oppSel,comSel)) {
                     this.canvasMIPsignal.draw(histogramsFTHodo.H_MIP_V_MatchingTiles.get(secSel,oppSel,comSel));
-                    //if (histogramsFTHodo.fVMIP.hasEntry(secSel,oppSel,comSel)) {
-                    //    this.canvasMIPsignal.draw(histogramsFTHodo.fVMIP.get(secSel,oppSel,comSel), "same S");
-                    //}
+                    if (histogramsFTHodo.fVMIPMatching.hasEntry(secSel,oppSel,comSel)) {
+                        this.canvasMIPsignal.draw(histogramsFTHodo.fVMIPMatching.get(secSel,oppSel,comSel), "same S");
+                    }
                 }
             }
         }
@@ -1846,448 +1769,62 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 canvasMIPsignal.cd(layCDL);
                 if (histogramsFTHodo.H_MIP_V_MatchingTiles.hasEntry(secSel,laySel,comSel)) {
                     this.canvasMIPsignal.draw(histogramsFTHodo.H_MIP_V_MatchingTiles.get(secSel,laySel,comSel));
-                    //if (histogramsFTHodo.fVMIP.hasEntry(secSel,laySel,comSel)) {
-                    //    this.canvasMIPsignal.draw(histogramsFTHodo.fVMIP.get(secSel,laySel,comSel), "same S");
-                    //}
+                    if (histogramsFTHodo.fVMIPMatching.hasEntry(secSel,laySel,comSel)) {
+                        this.canvasMIPsignal.draw(histogramsFTHodo.fVMIPMatching.get(secSel,laySel,comSel), "same S");
+                    }
                 }
                 //----------------------------------------
                 // left top (bottom) for thin (thick) layer
                 canvasMIPsignal.cd(oppCDL);
                 if (histogramsFTHodo.H_MIP_V_MatchingTiles.hasEntry(secSel,oppSel,comSel)) {
                     this.canvasMIPsignal.draw(histogramsFTHodo.H_MIP_V_MatchingTiles.get(secSel,oppSel,comSel));
-                    //if (histogramsFTHodo.fVMIP.hasEntry(secSel,oppSel,comSel)) {
-                    //    this.canvasMIPsignal.draw(histogramsFTHodo.fVMIP.get(secSel,oppSel,comSel), "same S");
-                    //}
+                    if (histogramsFTHodo.fVMIPMatching.hasEntry(secSel,oppSel,comSel)) {
+                        this.canvasMIPsignal.draw(histogramsFTHodo.fVMIPMatching.get(secSel,oppSel,comSel), "same S");
+                    }
                 }
                 //----------------------------------------
                 // right top (bottom) for thin (thick) layer
                 canvasMIPsignal.cd(layCDR);
                 if (histogramsFTHodo.H_MIP_Q_MatchingTiles.hasEntry(secSel,laySel,comSel)) {
                     this.canvasMIPsignal.draw(histogramsFTHodo.H_MIP_Q_MatchingTiles.get(secSel,laySel,comSel));
-                    //if (histogramsFTHodo.fQMIP.hasEntry(secSel,laySel,comSel)) {
-                    //    this.canvasMIPsignal.draw(histogramsFTHodo.fQMIP.get(secSel,laySel,comSel), "same S");
-                    //}
+                    if (histogramsFTHodo.fQMIPMatching.hasEntry(secSel,laySel,comSel)) {
+                        this.canvasMIPsignal.draw(histogramsFTHodo.fQMIPMatching.get(secSel,laySel,comSel), "same S");
+                    }
                 }
                 //----------------------------------------
                 // right top (bottom) for thin (thick) layer
                 canvasMIPsignal.cd(oppCDR);
                 if (histogramsFTHodo.H_MIP_Q_MatchingTiles.hasEntry(secSel,oppSel,comSel)) {
                     this.canvasMIPsignal.draw(histogramsFTHodo.H_MIP_Q_MatchingTiles.get(secSel,oppSel,comSel));
-                    //if (histogramsFTHodo.fQMIP.hasEntry(secSel,oppSel,comSel)) {
-                    //    this.canvasMIPsignal.draw(histogramsFTHodo.fQMIP.get(secSel,oppSel,comSel), "same S");
-                    //}
+                    if (histogramsFTHodo.fQMIPMatching.hasEntry(secSel,oppSel,comSel)) {
+                        this.canvasMIPsignal.draw(histogramsFTHodo.fQMIPMatching.get(secSel,oppSel,comSel), "same S");
+                    }
                 }
             }
         }
     }
-    
-//    void drawCanvasCharge(int secSel,
-//            int laySel,
-//            int comSel) {
-//        // map [1,2] to [0,1]
-//        int layCD = laySel - 1;
-//        // map [1,2] to [1,0]
-//        int oppCD = laySel % 2;
-//        // map [1,2] to [2,1]
-//        int oppSel = (laySel % 2) + 1;
-//        int layCDL = 2 * layCD;
-//        int oppCDL = 2 * oppCD;
-//        int layCDR = layCDL + 1;
-//        int oppCDR = oppCDL + 1;
-//
-//        //----------------------------------------
-//        // left top (bottom) for thin (thick) layer
-//        canvasCharge.cd(layCDL);
-//        if (histogramsFTHodo.H_NOISE_Q.hasEntry(secSel, laySel, comSel)) {
-//            this.canvasCharge.draw(histogramsFTHodo.H_NOISE_Q.get(secSel,laySel,comSel));
-//            if (histogramsFTHodo.fQ1.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasCharge.draw(histogramsFTHodo.fQ1.get(secSel,laySel,comSel), "same S");
-//            }
-//            if (histogramsFTHodo.fitTwoPeaksQ
-//                    && histogramsFTHodo.fQ2.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasCharge.draw(histogramsFTHodo.fQ2.get(secSel,laySel,comSel), "same S");
-//            }
-//
-//        }
-//        //----------------------------------------
-//        // left top (bottom) for thin (thick) layer
-//        canvasCharge.cd(oppCDL);
-//        if (histogramsFTHodo.H_NOISE_Q.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasCharge.draw(histogramsFTHodo.H_NOISE_Q.get(secSel,oppSel,comSel));
-//        }
-//        if (histogramsFTHodo.fQ1.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasCharge.draw(histogramsFTHodo.fQ1.get(secSel,oppSel,comSel), "same S");
-//        }
-//        if (histogramsFTHodo.fitTwoPeaksQ
-//                && histogramsFTHodo.fQ2.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasCharge.draw(histogramsFTHodo.fQ2.get(secSel,oppSel,comSel), "same S");
-//        }
-//        //----------------------------------------
-//        // right top (bottom) for thin (thick) layer
-//        canvasCharge.cd(layCDR);
-//        if (histogramsFTHodo.H_MIP_Q.hasEntry(secSel,laySel,comSel)) {
-//            this.canvasCharge.draw(histogramsFTHodo.H_MIP_Q.get(secSel,laySel,comSel));
-//            if (histogramsFTHodo.fQMIP.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasCharge.draw(histogramsFTHodo.fQMIP.get(secSel,laySel,comSel), "same S");
-//            }
-//        }
-//        //----------------------------------------
-//        // right top (bottom) for thin (thick) layer
-//        canvasCharge.cd(oppCDR);
-//        if (histogramsFTHodo.H_MIP_Q.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasCharge.draw(histogramsFTHodo.H_MIP_Q.get(secSel,oppSel,comSel));
-//            if (histogramsFTHodo.fQMIP.hasEntry(secSel,oppSel,comSel)) {
-//                this.canvasCharge.draw(histogramsFTHodo.fQMIP.get(secSel,oppSel,comSel), "same S");
-//            }
-//        }
-//    }
-
-//    void drawCanvasVoltage(int secSel,
-//        int laySel,
-//        int comSel) {
-//        // map [1,2] to [0,1]
-//        int layCD = laySel - 1;
-//        // map [1,2] to [1,0]
-//        int oppCD = laySel % 2;
-//        // map [1,2] to [2,1]
-//        int oppSel = (laySel % 2) + 1;
-//        int layCDL = 2 * layCD;
-//        int oppCDL = 2 * oppCD;
-//        int layCDR = layCDL + 1;
-//        int oppCDR = oppCDL + 1;
-//        //----------------------------------------
-//        // left top (bottom) for thin (thick) layer
-//        canvasVoltage.cd(layCDL);
-//        if (histogramsFTHodo.H_NOISE_V.hasEntry(secSel, laySel, comSel)) {
-//            this.canvasVoltage.draw(histogramsFTHodo.H_NOISE_V.get(secSel,laySel,comSel));
-//            if (histogramsFTHodo.fV1.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasVoltage.draw(histogramsFTHodo.fV1.get(secSel,laySel,comSel), "same S");
-//            }
-//            if (histogramsFTHodo.fitTwoPeaksV
-//                    && histogramsFTHodo.fV2.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasVoltage.draw(histogramsFTHodo.fV2.get(secSel,laySel,comSel), "same S");
-//            }
-//        }
-//        //----------------------------------------
-//        // left top (bottom) for thin (thick) layer
-//        canvasVoltage.cd(oppCDL);
-//        if (histogramsFTHodo.H_NOISE_V.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasVoltage.draw(histogramsFTHodo.H_NOISE_V.get(secSel,oppSel,comSel));
-//        }
-//        if (histogramsFTHodo.fV1.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasVoltage.draw(histogramsFTHodo.fV1.get(secSel,oppSel,comSel), "same S");
-//        }
-//        if (histogramsFTHodo.fitTwoPeaksV
-//                && histogramsFTHodo.fV2.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasVoltage.draw(histogramsFTHodo.fV2.get(secSel,oppSel,comSel), "same S");
-//        }
-//
-//        //----------------------------------------
-//        // right top (bottom) for thin (thick) layer
-//        canvasVoltage.cd(layCDR);
-//        if (histogramsFTHodo.H_MIP_V.hasEntry(secSel,laySel,comSel)) {
-//            this.canvasVoltage.draw(histogramsFTHodo.H_MIP_V.get(secSel,laySel,comSel));
-//            if (histogramsFTHodo.fVMIP.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasVoltage.draw(histogramsFTHodo.fVMIP.get(secSel,laySel,comSel), "same S");
-//            }
-//        }
-//        //----------------------------------------
-//        // right top (bottom) for thin (thick) layer
-//        canvasVoltage.cd(oppCDR);
-//        if (histogramsFTHodo.H_MIP_V.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasVoltage.draw(histogramsFTHodo.H_MIP_V.get(secSel,oppSel,comSel));
-//            if (histogramsFTHodo.fVMIP.hasEntry(secSel,oppSel,comSel)) {
-//                this.canvasVoltage.draw(histogramsFTHodo.fVMIP.get(secSel,oppSel,comSel), "same S");
-//            }
-//        }
-//    }
-
-//    void drawCanvasMatch(int secSel,int laySel,int comSel) {
-//        // map [1,2] to [0,1]
-//        int layCD = laySel - 1;
-//        // map [1,2] to [1,0]
-//        int oppCD = laySel % 2;
-//        // map [1,2] to [2,1]
-//        int oppSel = (laySel % 2) + 1;
-//        int layCDL = 2 * layCD;
-//        int oppCDL = 2 * oppCD;
-//        int layCDR = layCDL + 1;
-//        int oppCDR = oppCDL + 1;
-//        //----------------------------------------
-//        // left top (bottom) for thin (thick) layer
-//        canvasMatch.cd(layCDL);
-//        if (histogramsFTHodo.H_NOISE_Q.hasEntry(secSel, laySel, comSel)) {
-//            this.canvasMatch.draw(histogramsFTHodo.H_NOISE_Q.get(secSel,laySel,comSel));
-//            if (histogramsFTHodo.fQ1.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasMatch.draw(histogramsFTHodo.fQ1.get(secSel,laySel,comSel), "same S");
-//            }
-//            if (histogramsFTHodo.fitTwoPeaksQ
-//                    && histogramsFTHodo.fQ2.hasEntry(secSel,laySel,comSel)) {
-//                this.canvasMatch.draw(histogramsFTHodo.fQ2.get(secSel,laySel,comSel), "same S");
-//            }
-//
-//        }
-//        //----------------------------------------
-//        // left top (bottom) for thin (thick) layer
-//        canvasMatch.cd(oppCDL);
-//        if (histogramsFTHodo.H_NOISE_Q.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasMatch.draw(histogramsFTHodo.H_NOISE_Q.get(secSel,oppSel,comSel));
-//        }
-//        if (histogramsFTHodo.fQ1.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasMatch.draw(histogramsFTHodo.fQ1.get(secSel,oppSel,comSel), "same S");
-//        }
-//        if (histogramsFTHodo.fitTwoPeaksQ
-//                && histogramsFTHodo.fQ2.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasMatch.draw(histogramsFTHodo.fQ2.get(secSel,oppSel,comSel), "same S");
-//        }
-//
-//        //----------------------------------------
-//        // right top (bottom) for thin (thick) layer
-//        canvasMatch.cd(layCDR);
-//        if (histogramsFTHodo.H_NPE_MATCH.hasEntry(secSel,laySel,comSel)) {
-//            this.canvasMatch.draw(histogramsFTHodo.H_NPE_MATCH.get(secSel,laySel,comSel));
-//        }
-//        //----------------------------------------
-//        // right top (bottom) for thin (thick) layer
-//        canvasMatch.cd(oppCDR);
-//        if (histogramsFTHodo.H_NPE_MATCH.hasEntry(secSel,oppSel,comSel)) {
-//            this.canvasMatch.draw(histogramsFTHodo.H_NPE_MATCH.get(secSel,oppSel,comSel));
-//        }
-//    }
-
-
-//    void drawCanvasMIP(int secSel,int laySel,int comSel) {
-//        if (secSel == 0) {
-//            return;
-//        }
-//        int sector2CD[] = {4, 0, 1, 2, 5, 8, 7, 6, 3};
-//        canvasMIP.cd(sector2CD[secSel]);
-//        GraphErrors[] G_NPE;
-//        int p30EvenI[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-//        int p15EvenI[] = {13, 14, 15, 16, 17, 18, 19, 20};
-//        int p30OddI[] = {2, 4, 5, 6, 7, 8};
-//        int p15OddI[] = {1, 3, 9};
-//        double p30EvenD[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-//        double p15EvenD[] = {13, 14, 15, 16, 17, 18, 19, 20};
-//        double p30OddD[] = {2, 4, 5, 6, 7, 8};
-//        double p15OddD[] = {1, 3, 9};
-//        // Was a P30 or a P15 tile selected?
-//        boolean plotP30 = true;
-//        boolean evenSecSelect = true;
-//        if (secSel % 2 == 1) {
-//            evenSecSelect = false;
-//        }
-//
-//        if (evenSecSelect) {
-//            for (int i = 0; i < p15EvenI.length; i++) {
-//                if (comSel == p15EvenI[i]) {
-//                    plotP30 = false;
-//                    break;
-//                }
-//            }
-//        } else {
-//            for (int i = 0; i < p15OddI.length; i++) {
-//                if (comSel == p15OddI[i]) {
-//                    plotP30 = false;
-//                    break;
-//                }
-//            }
-//        }
-//
-//        double p30EvenE[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-//        double p15EvenE[] = {0, 0, 0, 0, 0, 0, 0, 0};
-//        double p30OddE[] = {0, 0, 0, 0, 0, 0};
-//        double p15OddE[] = {0, 0, 0};
-//
-//        double p30EvenNPE[][] = new double[2][12];
-//        double p30EvenERR[][] = new double[2][12];
-//        double p15EvenNPE[][] = new double[2][8];
-//        double p15EvenERR[][] = new double[2][8];
-//        double p30OddNPE[][] = new double[2][6];
-//        double p30OddERR[][] = new double[2][6];
-//        double p15OddNPE[][] = new double[2][3];
-//        double p15OddERR[][] = new double[2][3];
-//
-//        if (useGain_mV) {
-//            for (int lM = 0; lM < 2; lM++) {
-//                for (int c = 0; c < p30EvenI.length; c++) {
-//                    p30EvenNPE[lM][c] = meanNPE_mV[secSel][lM + 1][p30EvenI[c]];
-//                    p30EvenERR[lM][c] = errNPE_mV[secSel][lM + 1][p30EvenI[c]];
-//                }
-//                for (int c = 0; c < p15EvenI.length; c++) {
-//                    p15EvenNPE[lM][c] = meanNPE_mV[secSel][lM + 1][p15EvenI[c]];
-//                    p15EvenERR[lM][c] = errNPE_mV[secSel][lM + 1][p15EvenI[c]];
-//                }
-//
-//                for (int c = 0; c < p30OddI.length; c++) {
-//                    p30OddNPE[lM][c] = meanNPE_mV[secSel][lM + 1][p30OddI[c]];
-//                    p30OddERR[lM][c] = errNPE_mV[secSel][lM + 1][p30OddI[c]];
-//                }
-//                for (int c = 0; c < p15OddI.length; c++) {
-//                    p15OddNPE[lM][c] = meanNPE_mV[secSel][lM + 1][p15OddI[c]];
-//                    p15OddERR[lM][c] = errNPE_mV[secSel][lM + 1][p15OddI[c]];
-//                }
-//            }
-//        } else {
-//            for (int lM = 0; lM < 2; lM++) {
-//                for (int c = 0; c < p30EvenI.length; c++) {
-//                    p30EvenNPE[lM][c] = meanNPE[secSel][lM + 1][p30EvenI[c]];
-//                    p30EvenERR[lM][c] = errNPE[secSel][lM + 1][p30EvenI[c]];
-//                }
-//                for (int c = 0; c < p15EvenI.length; c++) {
-//                    p15EvenNPE[lM][c] = meanNPE[secSel][lM + 1][p15EvenI[c]];
-//                    p15EvenERR[lM][c] = errNPE[secSel][lM + 1][p15EvenI[c]];
-//                }
-//
-//                for (int c = 0; c < p30OddI.length; c++) {
-//                    p30OddNPE[lM][c] = meanNPE[secSel][lM + 1][p30OddI[c]];
-//                    p30OddERR[lM][c] = errNPE[secSel][lM + 1][p30OddI[c]];
-//                }
-//                for (int c = 0; c < p15OddI.length; c++) {
-//                    p15OddNPE[lM][c] = meanNPE[secSel][lM + 1][p15OddI[c]];
-//                    p15OddERR[lM][c] = errNPE[secSel][lM + 1][p15OddI[c]];
-//                }
-//            }
-//        }
-//
-//        G_NPE = new GraphErrors[2];
-//        for (int layerM = 0; layerM < 2; layerM++) {
-//            if (plotP30) {
-//                if (evenSecSelect) {
-//                    G_NPE[layerM] = new GraphErrors("p30Even",
-//                            p30EvenD,
-//                            p30EvenNPE[layerM],
-//                            p30EvenE,
-//                            p30EvenERR[layerM]);
-//                } else {
-//                    G_NPE[layerM] = new GraphErrors("p30Odd",
-//                            p30OddD,
-//                            p30OddNPE[layerM],
-//                            p30OddE,
-//                            p30OddERR[layerM]);
-//                }
-//            } else {
-//                if (evenSecSelect) {
-//                    G_NPE[layerM] = new GraphErrors("p15Even",
-//                            p15EvenD,
-//                            p15EvenNPE[layerM],
-//                            p15EvenE,
-//                            p15EvenERR[layerM]);
-//                } else {
-//                    G_NPE[layerM] = new GraphErrors("p15Odd",
-//                            p15OddD,
-//                            p15OddNPE[layerM],
-//                            p15OddE,
-//                            p15OddERR[layerM]);
-//                }
-//            }
-//
-//            String title;
-//            title = "sector " + secSel;
-//            G_NPE[layerM].setTitle(title);
-//            G_NPE[layerM].setTitleX("component");
-//            G_NPE[layerM].setTitleY("NPE mean ");
-//            G_NPE[layerM].setMarkerSize(5);
-//            G_NPE[layerM].setMarkerColor(layerM + 1); // 0-9 for given palette
-//            G_NPE[layerM].setMarkerStyle(layerM + 1); // 1 or 2
-//            G_NPE[layerM].setMarkerSize(10); // 1 or 2
-//
-//        }
-//        canvasMIP.draw(G_NPE[0]);
-//        canvasMIP.draw(G_NPE[1], "same");
-//        System.out.println(" Marker Size = " + G_NPE[0].getMarkerSize());
-//    }
-
-//    void drawCanvasMIPElec(int s, int l, int c) {
-//        if (s == 0 || l == 0) {
-//            return;
-//        }
-//        canvasMIP.divide(1, 1);
-//        GraphErrors G_NPE;
-//
-//        int mezSel = wireFTHodo.getMezz4SLC(s, l, c);
-//
-//        double[] chanArr = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-//        double[] chanErr ={0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0};
-//        double[] npeArr = new double[16];
-//        double[] npeErr = new double[16];
-//
-//        int sect;
-//        int comp;
-//        int laye;
-//
-//        if (useGain_mV) {
-//            for (int chan = 0; chan < 16; chan++) {
-//                sect = wireFTHodo.getSect4ChMez(chan, mezSel);
-//                comp = wireFTHodo.getComp4ChMez(chan, mezSel);
-//                laye = chan / 8 + 1;
-//
-//                npeArr[chan] = meanNPE_mV[sect][laye][comp];
-//                npeErr[chan] = errNPE_mV[sect][laye][comp];
-//
-//            }
-//        } else {
-//            for (int chan = 0; chan < 16; chan++) {
-//                sect = wireFTHodo.getSect4ChMez(chan, mezSel);
-//                comp = wireFTHodo.getComp4ChMez(chan, mezSel);
-//                laye = chan / 8 + 1;
-//
-//                npeArr[chan] = getNPEMean(sect, laye, comp);
-//                npeErr[chan] = getNPEError(sect, laye, comp);
-//            }
-//        }
-//
-//        for (int chan = 0; chan < 16; chan++) {
-//            if (npeErr[chan] > 20.0
-//                    || npeArr[chan] < 20.0) {
-//
-//                npeErr[chan] = 20.0;
-//
-//                if (chan < 8) {
-//                    npeArr[chan] = 40.0;
-//                } else {
-//                    npeArr[chan] = 60.0;
-//                }
-//            }
-//        }
-//
-//        G_NPE = new GraphErrors("G_NPE", chanArr, npeArr,
-//                chanErr, npeErr);
-//
-//        String title;
-//        title = "mezzanine " + mezSel;
-//        G_NPE.setTitle(title);
-//        G_NPE.setTitleX("channel");
-//        G_NPE.setTitleY("NPE mean");
-//        G_NPE.setMarkerSize(5);
-//        G_NPE.setMarkerColor(1);
-//        G_NPE.setMarkerStyle(1);
-//        G_NPE.setMarkerSize(10);
-//        canvasMIP.draw(G_NPE);
-//
-//    }
-
-    void drawCanvasGain() {
-        this.canvasGain.divide(3, 3);
+  
+    void drawCanvasNoiseAnalysis() {
+        this.canvasNoiseAnalysis.divide(3, 3);
         int sector2CD[] = {0,1,2,5,8,7,6,3};
         for (int isec=0; isec<8; isec++){
-            canvasGain.cd(sector2CD[isec]);
+            canvasNoiseAnalysis.cd(sector2CD[isec]);
       
             if (useGain_mV){
                if (isec%2==0)
-                    canvasGain.draw( histogramsFTHodo.H_EMPTYGAIN_MV9);
+                    canvasNoiseAnalysis.draw( histogramsFTHodo.H_EMPTYGAIN_MV9);
                else
-                    canvasGain.draw(histogramsFTHodo.H_EMPTYGAIN_MV20);
-                canvasGain.draw(histogramsFTHodo.GGgainDetectorV[0][isec],"same");
-                canvasGain.draw(histogramsFTHodo.GGgainDetectorV[1][isec],"same");
+                    canvasNoiseAnalysis.draw(histogramsFTHodo.H_EMPTYGAIN_MV20);
+                canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainDetectorV[0][isec],"same");
+                canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainDetectorV[1][isec],"same");
             }
             else {
                 if (isec%2==0)
-                    canvasGain.draw(histogramsFTHodo.H_EMPTYGAIN_PC9);
+                    canvasNoiseAnalysis.draw(histogramsFTHodo.H_EMPTYGAIN_PC9);
                else
-                    canvasGain.draw(histogramsFTHodo.H_EMPTYGAIN_PC20);
-                canvasGain.draw(histogramsFTHodo.GGgainDetectorC[0][isec],"same");
-                canvasGain.draw(histogramsFTHodo.GGgainDetectorC[1][isec],"same");
+                    canvasNoiseAnalysis.draw(histogramsFTHodo.H_EMPTYGAIN_PC20);
+                canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainDetectorC[0][isec],"same");
+                canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainDetectorC[1][isec],"same");
             }
         }
     }
@@ -2295,153 +1832,148 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     
     
     
-    void drawCanvasMIPgain() {
+    void drawCanvasMIPAnalysis() {
         //System.out.println("Mathcing:" +matchingTiles+" mv: "+useGain_mV);
-        this.canvasMIPgain.divide(3, 3);
+        this.canvasMIPAnalysis.divide(3, 3);
         int sector2CD[] = {0,1,2,5,8,7,6,3};
         for (int isec=0; isec<8; isec++){
-            canvasMIPgain.cd(sector2CD[isec]);
+            canvasMIPAnalysis.cd(sector2CD[isec]);
             if (plotNPE){
                 if (!matchingTiles){
                     if (useGain_mV){
                         if (isec%2==0)
-                            canvasMIPgain.draw( histogramsFTHodo.H_EMPTYMIPGAIN_MV9);
+                            canvasMIPAnalysis.draw( histogramsFTHodo.H_EMPTYMIPGAIN_MV9);
                         else
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_MV20);
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPgainDetectorV[0][isec],"same");
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPgainDetectorV[1][isec],"same");
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_MV20);
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainDetectorV[0][isec],"same");
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainDetectorV[1][isec],"same");
                     }
                     else {
                         if (isec%2==0)
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_PC9);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_PC9);
                         else
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_PC20);
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPgainDetectorC[0][isec],"same");
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPgainDetectorC[1][isec],"same");
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_PC20);
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainDetectorC[0][isec],"same");
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainDetectorC[1][isec],"same");
                     }
                 }else  if (matchingTiles){
                     if (useGain_mV){
                         if (isec%2==0)
-                            canvasMIPgain.draw( histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_MV9);
+                            canvasMIPAnalysis.draw( histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_MV9);
                         else
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_MV20);
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPgainDetector_matchingTilesV[0][isec],"same");
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPgainDetector_matchingTilesV[1][isec],"same");
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_MV20);
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainDetector_matchingTilesV[0][isec],"same");
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainDetector_matchingTilesV[1][isec],"same");
                     }
                     else {
                         if (isec%2==0)
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_PC9);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_PC9);
                         else
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_PC20);
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPgainDetector_matchingTilesC[0][isec],"same");
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPgainDetector_matchingTilesC[1][isec],"same");
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_PC20);
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainDetector_matchingTilesC[0][isec],"same");
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainDetector_matchingTilesC[1][isec],"same");
                     }
                 }
             }else {
                 if (!matchingTiles){
                     if (useGain_mV){
                         if (isec%2==0)
-                            canvasMIPgain.draw( histogramsFTHodo.H_EMPTYMIPSIGN_MV9);
+                            canvasMIPAnalysis.draw( histogramsFTHodo.H_EMPTYMIPSIGN_MV9);
                         else
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_MV20);
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPsignDetectorV[0][isec],"same");
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPsignDetectorV[1][isec],"same");
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_MV20);
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignDetectorV[0][isec],"same");
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignDetectorV[1][isec],"same");
                     }
                     else {
                         if (isec%2==0)
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_PC9);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_PC9);
                         else
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_PC20);
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPsignDetectorC[0][isec],"same");
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPsignDetectorC[1][isec],"same");
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_PC20);
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignDetectorC[0][isec],"same");
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignDetectorC[1][isec],"same");
                     }
                 }else  if (matchingTiles){
                     if (useGain_mV){
                         if (isec%2==0)
-                            canvasMIPgain.draw( histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_MV9);
+                            canvasMIPAnalysis.draw( histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_MV9);
                         else
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_MV20);
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPsignDetector_matchingTilesV[0][isec],"same");
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPsignDetector_matchingTilesV[1][isec],"same");
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_MV20);
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignDetector_matchingTilesV[0][isec],"same");
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignDetector_matchingTilesV[1][isec],"same");
                     }
                     else {
                         if (isec%2==0)
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_PC9);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_PC9);
                         else
-                            canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_PC20);
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPsignDetector_matchingTilesC[0][isec],"same");
-                        canvasMIPgain.draw(histogramsFTHodo.GGMIPsignDetector_matchingTilesC[1][isec],"same");
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_PC20);
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignDetector_matchingTilesC[0][isec],"same");
+                        canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignDetector_matchingTilesC[1][isec],"same");
                     }
                 }
             }
         }
     }
     
-    void drawCanvasMIPgainElec(int secSel,int laySel,int comSel) {
+    void drawCanvasMIPAnalysisElec(int secSel,int laySel,int comSel) {
         if (secSel == 0 || laySel == 0) {
             return;
         }
         //System.out.println("Mathcing:" +matchingTiles+" mv: "+useGain_mV);
-        canvasMIPgain.divide(1, 1);
+        canvasMIPAnalysis.divide(1, 1);
         int mezz = wireFTHodo.getMezz4SLC(secSel, laySel, comSel);
-        canvasMIPgain.cd(0);
+        canvasMIPAnalysis.cd(0);
         if (plotNPE){
             if (!matchingTiles){
                 if (useGain_mV){
                     histogramsFTHodo.H_EMPTYMIPGAIN_ELE_MV.setTitle("Mezzanine "+mezz);
-                    canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_ELE_MV);
-                    canvasMIPgain.draw(histogramsFTHodo.GGMIPgainElectronicsV[mezz],"same");
+                    canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_ELE_MV);
+                    canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainElectronicsV[mezz],"same");
                 }
                 else{
                     histogramsFTHodo.H_EMPTYMIPGAIN_ELE_PC.setTitle("Mezzanine "+mezz);
-                    canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_ELE_PC);
-                    canvasMIPgain.draw(histogramsFTHodo.GGMIPgainElectronicsC[mezz],"same");
+                    canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_ELE_PC);
+                    canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainElectronicsC[mezz],"same");
                 }
             }else if (matchingTiles){
                 if (useGain_mV){
                     histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_MV.setTitle("Mezzanine "+mezz);
-                    canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_MV);
-                    canvasMIPgain.draw(histogramsFTHodo.GGMIPgainElectronics_matchingTilesV[mezz],"same");
+                    canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_MV);
+                    canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainElectronics_matchingTilesV[mezz],"same");
                 }
                 else{
                     histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_PC.setTitle("Mezzanine "+mezz);
-                    canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_PC);
-                    canvasMIPgain.draw(histogramsFTHodo.GGMIPgainElectronics_matchingTilesC[mezz],"same");
+                    canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_PC);
+                    canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainElectronics_matchingTilesC[mezz],"same");
                 }
             }
         }else {
             if (!matchingTiles){
                 if (useGain_mV){
                     histogramsFTHodo.H_EMPTYMIPSIGN_ELE_MV.setTitle("Mezzanine "+mezz);
-                    canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_ELE_MV);
-                    canvasMIPgain.draw(histogramsFTHodo.GGMIPsignElectronicsV[mezz],"same");
+                    canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_ELE_MV);
+                    canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignElectronicsV[mezz],"same");
                 }
                 else{
                     histogramsFTHodo.H_EMPTYMIPSIGN_ELE_PC.setTitle("Mezzanine "+mezz);
-                    canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_ELE_PC);
-                    canvasMIPgain.draw(histogramsFTHodo.GGMIPsignElectronicsC[mezz],"same");
+                    canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_ELE_PC);
+                    canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignElectronicsC[mezz],"same");
                 }
             }else if (matchingTiles){
                 if (useGain_mV){
                     histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_MV.setTitle("Mezzanine "+mezz);
-                    canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_MV);
-                    canvasMIPgain.draw(histogramsFTHodo.GGMIPsignElectronics_matchingTilesV[mezz],"same");
+                    canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_MV);
+                    canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignElectronics_matchingTilesV[mezz],"same");
                 }
                 else{
                     histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_PC.setTitle("Mezzanine "+mezz);
-                    canvasMIPgain.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_PC);
-                    canvasMIPgain.draw(histogramsFTHodo.GGMIPsignElectronics_matchingTilesC[mezz],"same");
+                    canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_PC);
+                    canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignElectronics_matchingTilesC[mezz],"same");
                 }
             }
         }
     }
     
-    
-    
-    
-    
-    
-    
+
     void setGGraphGain(){
         for (int mezz = 0; mezz < 15; mezz++) {
             int sectI;
@@ -2484,7 +2016,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 gainErrArr[ii] = errGain[sectI][layeI][compI];
                 gainArrmV[ii] = gain_mV[sectI][layeI][compI];
                 gainErrArrmV[ii] = errGain_mV[sectI][layeI][compI];
-                
+
                 MIPgainArr[ii] = MIPgain[sectI][layeI][compI];
                 MIPgainErrArr[ii] = MIPerrgain[sectI][layeI][compI];
                 MIPgainArrmV[ii] = MIPgain_mV[sectI][layeI][compI];
@@ -2790,24 +2322,27 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         }
     }
     
-    void drawCanvasGainElec(int secSel,int laySel,int comSel) {
+    void drawCanvasNoiseAnalysisElec(int secSel,int laySel,int comSel) {
         if (secSel == 0 || laySel == 0) {
             return;
         }
-        canvasGain.divide(1, 1);
+        canvasNoiseAnalysis.divide(1, 1);
         int mezz = wireFTHodo.getMezz4SLC(secSel, laySel, comSel);
-        canvasGain.cd(0);
+        canvasNoiseAnalysis.cd(0);
         if (useGain_mV){
             histogramsFTHodo.H_EMPTYGAIN_ELE_MV.setTitle("Mezannine "+mezz);
-            canvasGain.draw(histogramsFTHodo.H_EMPTYGAIN_ELE_MV);
-            canvasGain.draw(histogramsFTHodo.GGgainElectronicsV[mezz],"same");
+            canvasNoiseAnalysis.draw(histogramsFTHodo.H_EMPTYGAIN_ELE_MV);
+            canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainElectronicsV[mezz],"same");
         }
         else{
             histogramsFTHodo.H_EMPTYGAIN_ELE_PC.setTitle("Mezannine "+mezz);
-            canvasGain.draw(histogramsFTHodo.H_EMPTYGAIN_ELE_PC);
-            canvasGain.draw(histogramsFTHodo.GGgainElectronicsC[mezz],"same");
+            canvasNoiseAnalysis.draw(histogramsFTHodo.H_EMPTYGAIN_ELE_PC);
+            canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainElectronicsC[mezz],"same");
         }
     }
+    
+    
+    
 //=======================================================
 //    public Color getComponentStatus(int sec, int lay, int com) {
 //        int index = com;
@@ -2913,31 +2448,12 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             }
         } else if (tabSel == tabIndexNoise) {
             shape.setColor(noiseColor.getRed(),noiseColor.getGreen(),noiseColor.getBlue());
-        } else if (tabSel == tabIndexGain) {
+        } else if (tabSel == tabIndexNoiseAnalysis) {
             shape.setColor(gainColor.getRed(),gainColor.getGreen(),gainColor.getBlue());
         } else if (tabSel == tabIndexMIPsignal){
             shape.setColor(voltColor.getRed(),voltColor.getGreen(),voltColor.getBlue());
         }
         
-//        else if (tabSel == tabIndexVoltage) {
-//            shape.setColor(voltColor.getRed(),
-//                    voltColor.getGreen(),
-//                    voltColor.getBlue());
-//        }
-//        else if (tabSel == tabIndexCharge) {
-//            shape.setColor(qColor.getRed(),
-//                    qColor.getGreen(),
-//                    qColor.getBlue());
-//        }  else if (tabSel == tabIndexMIP
-//                || tabSel == tabIndexCharge) {
-//            if (waveMax > histogramsFTHodo.cosmicsThrsh) {
-//                shape.setColor(0, 255, 0, (256 / 4) - 1);
-//            } else if (waveMax > histogramsFTHodo.cosmicsThrsh * 1.5) {
-//                shape.setColor(0, 255, 0, (256 / 2) - 1);
-//            } else if (waveMax > histogramsFTHodo.cosmicsThrsh * 2.0) {
-//                shape.setColor(0, 255, 0, 255);
-//            }
-//        }
     } // end of : public void update(Detec
 
     //--------------------------------------------
@@ -2981,21 +2497,24 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         return histogramsFTHodo.nThrshNPE;
     }
 
-
-
     private void setPedestal(int s, int l, int c) {
+        int slot=InverseTranslationTable.getIntValue("slot", s,l,c);//wireFTHodo.getSlot4SLC(s,l,c);
+        int chan=InverseTranslationTable.getIntValue("chan", s,l,c);//wireFTHodo.getChan4SLC(s,l,c);
         if (histogramsFTHodo.fPed.hasEntry(s, l, c)) {
             pedMean[s][l][c] = histogramsFTHodo.fPed.get(s, l, c).getParameter(1);
             pedRMS[s][l][c] = histogramsFTHodo.fPed.get(s, l, c).getParameter(2);
+            pedValues4SlotChan[slot][chan]=pedMean[s][l][c];
         } else {
             pedMean[s][l][c] = histogramsFTHodo.nPedMean;
             pedRMS[s][l][c] = histogramsFTHodo.nPedRMS;
+            pedValues4SlotChan[slot][chan]=500.0;
         }
     }
  
-       private double getPedMean(int s, int l, int c) {
+    private double getPedMean(int s, int l, int c) {
         return pedMean[s][l][c];
     }
+    
     private double getPedRMS(int s, int l, int c) {
         return pedRMS[s][l][c];
     }
@@ -3004,6 +2523,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         double thisGain = 0.0;
         double gainError = 0.0;
 
+        if (!this.useGainCCDB){
         if (histogramsFTHodo.fQ2.hasEntry(s, l, c)) {
             double n2 = histogramsFTHodo.fQ2.get(s, l, c).getParameter(4);
             double n1 = histogramsFTHodo.fQ2.get(s, l, c).getParameter(1);
@@ -3041,101 +2561,24 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         else {
             gainError = 10.0;
         }
-        gain_mV[s][l][c] = thisGain;
-        errGain_mV[s][l][c] = gainError;
+            gain_mV[s][l][c] = thisGain;
+            errGain_mV[s][l][c] = gainError;
+    }else {
+        gain[s][l][c] = gain_pc_NoiseCCDB[s][l][c];
+        errGain[s][l][c] = 0.0;
+        gain_mV[s][l][c] = gain_mV_NoiseCCDB[s][l][c];
+        errGain_mV[s][l][c] = 0.0;
+    }
     }
     
     
-    
-//
-//    private void setGain(int s, int l, int c, String gainstring) {
-//        double thisGain = 0.0;
-//        if (histogramsFTHodo.useDefaultGain) {
-//            if (gainstring=="charge")
-//                thisGain = histogramsFTHodo.nGain;
-//            else if (gainstring=="peakvolt")
-//                thisGain = histogramsFTHodo.nGain_mV;
-//        }
-//        else {
-//            if (gainstring=="charge"){
-//                if (histogramsFTHodo.fQ2.hasEntry(s, l, c)) {
-//                    double n2 = histogramsFTHodo.fQ2.get(s, l, c).getParameter(4);
-//                    double n1 = histogramsFTHodo.fQ2.get(s, l, c).getParameter(1);
-//                    thisGain = n2 - n1;
-//                }
-//                else {
-//                    thisGain = 0.0;
-//                }
-//            }
-//            else if (gainstring=="peakvolt"){
-//                if (histogramsFTHodo.fV2.hasEntry(s, l, c)) {
-//                    double n2 = histogramsFTHodo.fV2.get(s, l, c).getParameter(4);
-//                    double n1 = histogramsFTHodo.fV2.get(s, l, c).getParameter(1);
-//                    thisGain = n2 - n1;
-//                }
-//                else {
-//                    thisGain = 0.0;
-//                }
-//            }
-//        }
-//        if (gainstring=="charge"){
-//            gain[s][l][c] = thisGain;
-//            if (thisGain < 15.0|| thisGain > 30.0) {
-//                //setStatus(s, l, c);
-//            }
-//        }
-//        else if (gainstring=="peakvolt"){
-//            gain_mV[s][l][c] = thisGain;
-//            if (thisGain < 7.0|| thisGain > 15.0) {
-//                setStatus(s, l, c);
-//            }
-//        }
-//    }
-
     private double getGain(int s, int l, int c, String gainstring) {
         if (gainstring=="charge")
             return gain[s][l][c];
         else
             return gain_mV[s][l][c];
     }
-    
-//
-//    private void setGainError(int s, int l, int c, String gainstring) {
-//        double gainError = 0.0;
-//        if (histogramsFTHodo.useDefaultGain) {
-//            gainError = 0.0;
-//        } else {
-//            if (gainstring=="charge"){
-//                if (histogramsFTHodo.fQ2.hasEntry(s, l, c)
-//                    && getGain(s, l, c, "charge") > 0.0) {
-//                    double n2Error = histogramsFTHodo.fQ2.get(s, l, c).parameter(4).error();
-//                    double n1Error = histogramsFTHodo.fQ2.get(s, l, c).parameter(1).error();
-//                    gainError = n2Error * n2Error + n1Error * n1Error;
-//                    gainError = sqrt(gainError);
-//                }
-//                else {
-//                    gainError = 0.0;
-//                }
-//            }
-//            else if (gainstring=="peakvolt"){
-//                if (histogramsFTHodo.fV2.hasEntry(s, l, c)
-//                    && getGain(s, l, c, "peakvolt") > 0.0) {
-//                    double n2Error = histogramsFTHodo.fV2.get(s, l, c).parameter(4).error();
-//                    double n1Error = histogramsFTHodo.fV2.get(s, l, c).parameter(1).error();
-//                    gainError = n2Error * n2Error + n1Error * n1Error;
-//                    gainError = sqrt(gainError);
-//                }
-//                else {
-//                    gainError = 0.0;
-//                }
-//            }
-//        }
-//        if (gainstring=="charge")
-//            errGain[s][l][c] = gainError;
-//        else if (gainstring=="peakvolt")
-//            errGain_mV[s][l][c] = gainError;
-//    }
-//
+   
     private double getGainError(int s, int l, int c, String gainstring) {
         if (gainstring=="charge")
             return errGain[s][l][c];
@@ -3151,7 +2594,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         if (histogramsFTHodo.fQMIP.hasEntry(s, l, c)){
             double n1 = histogramsFTHodo.fQMIP.get(s, l, c).getParameter(1);
             MIPS_pC_all[s][l][c]=n1;
-            thisGain=n1/gain[s][l][c];
+            if (gain[s][l][c]>0)
+                thisGain=n1/gain[s][l][c];
+            else
+                thisGain=0.0;
         }
         else {
             MIPS_pC_all[s][l][c]=0.0;
@@ -3173,7 +2619,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         if (histogramsFTHodo.fQMIPMatching.hasEntry(s, l, c)){
             double n1 = histogramsFTHodo.fQMIPMatching.get(s, l, c).getParameter(1);
             MIPS_pC_MatchingTiles[s][l][c]=n1;
-            thisGain=n1/gain[s][l][c];
+            if (gain[s][l][c]>0)
+                thisGain=n1/gain[s][l][c];
+            else
+                thisGain=0.0;
         }
         else {
             MIPS_pC_MatchingTiles[s][l][c]=0.0;
@@ -3194,7 +2643,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         if (histogramsFTHodo.fVMIP.hasEntry(s, l, c)){
             double n1 = histogramsFTHodo.fVMIP.get(s, l, c).getParameter(1);
             MIPS_maxV_all[s][l][c]=n1;
-            thisGain=n1/gain[s][l][c];
+            if (gain_mV[s][l][c]>0)
+                thisGain=n1/gain_mV[s][l][c];
+            else
+                thisGain=0.0;
         }
         else {
             MIPS_maxV_all[s][l][c]=0.0;
@@ -3214,7 +2666,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         if (histogramsFTHodo.fVMIPMatching.hasEntry(s, l, c)){
             double n1 = histogramsFTHodo.fVMIPMatching.get(s, l, c).getParameter(1);
             MIPS_maxV_MatchingTiles[s][l][c]=n1;
-            thisGain=n1/gain[s][l][c];
+            if (gain_mV[s][l][c]>0)
+                thisGain=n1/gain_mV[s][l][c];
+            else
+                thisGain=0.0;
         }
         else {
             MIPS_maxV_MatchingTiles[s][l][c]=0.0;
@@ -3234,58 +2689,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         MIPMatchingTileserrgain_mV[s][l][c]=gainError;
     }
 
-    
-//    private void setMIPNPE(int s, int l, int c, String gainstring) {
-//        double thisGain = 0.0;
-//        if (gainstring=="charge"){
-//            if (histogramsFTHodo.fQMIP.hasEntry(s, l, c)){
-//                double n1 = histogramsFTHodo.fQMIP.get(s, l, c).getParameter(1);
-//                MIPS_pC_all[s][l][c]=n1;
-//                thisGain=n1/gain[s][l][c];
-//                MIPgain[s][l][c]=thisGain;
-//            }
-//            else {
-//                MIPS_pC_all[s][l][c]=0.0;
-//                thisGain=0.0;
-//                MIPgain[s][l][c]=thisGain;
-//            }
-//            if (histogramsFTHodo.fQMIPMatching.hasEntry(s, l, c)){
-//                double n1 = histogramsFTHodo.fQMIPMatching.get(s, l, c).getParameter(1);
-//                MIPS_pC_MatchingTiles[s][l][c]=n1;
-//                thisGain=n1/gain[s][l][c];
-//                MIPMatchingTilesgain[s][l][c]=thisGain;
-//            }
-//            else {
-//                MIPS_pC_MatchingTiles[s][l][c]=0.0;
-//                thisGain=0.0;
-//                MIPMatchingTilesgain[s][l][c]=thisGain;
-//            }
-//        } else if (gainstring=="peakvolt"){
-//            if (histogramsFTHodo.fVMIP.hasEntry(s, l, c)){
-//                double n1 = histogramsFTHodo.fVMIP.get(s, l, c).getParameter(1);
-//                MIPS_maxV_all[s][l][c]=n1;
-//                thisGain=n1/gain[s][l][c];
-//                MIPgain_mV[s][l][c]=thisGain;
-//            }
-//            else {
-//                MIPS_maxV_all[s][l][c]=0.0;
-//                thisGain=0.0;
-//                MIPgain_mV[s][l][c]=thisGain;
-//            }
-//            if (histogramsFTHodo.fVMIPMatching.hasEntry(s, l, c)){
-//                double n1 = histogramsFTHodo.fVMIPMatching.get(s, l, c).getParameter(1);
-//                MIPS_maxV_MatchingTiles[s][l][c]=n1;
-//                thisGain=n1/gain[s][l][c];
-//                MIPMatchingTilesgain_mV[s][l][c]=thisGain;
-//            }
-//            else {
-//                MIPS_maxV_MatchingTiles[s][l][c]=0.0;
-//                thisGain=0.0;
-//                MIPMatchingTilesgain_mV[s][l][c]=thisGain;
-//            }
-//        }
-//    }
-
+   
     private double getMIPsignal(int s, int l, int c, String gainstring) {
         if (gainstring=="charge")
             return MIPS_pC_all[s][l][c];
@@ -3314,8 +2718,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             return MIPSerr_maxV_MatchingTiles[s][l][c];
     }
     
-    
-    
     private double getMIPNPE(int s, int l, int c, String gainstring) {
         if (gainstring=="charge")
             return MIPgain[s][l][c];
@@ -3330,37 +2732,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             return MIPMatchingTilesgain_mV[s][l][c];
     }
     
-//    private void setMIPNPEError(int s, int l, int c, String gainstring) {
-//        double gainError = 0.0;
-//         if (gainstring=="charge"){
-//             if (histogramsFTHodo.fQMIP.hasEntry(s, l, c) && getMIPNPE(s, l, c, "charge") > 0.0) {
-//                 double n1Error = histogramsFTHodo.fQMIP.get(s, l, c).parameter(1).error()/histogramsFTHodo.fQMIP.get(s, l, c).getParameter(1);
-//                 double n2Error =getGainError(s, l, c, "charge")/getGain(s, l, c, "charge");
-//                 gainError=getMIPNPE(s, l, c, "charge")*sqrt(n1Error*n1Error+n2Error*n2Error);
-//                 MIPerrgain[s][l][c]=gainError;
-//             }
-//             if (histogramsFTHodo.fQMIPMatching.hasEntry(s, l, c) && getMIPMatchingNPE(s, l, c, "charge") > 0.0) {
-//                 double n1Error = histogramsFTHodo.fQMIPMatching.get(s, l, c).parameter(1).error()/histogramsFTHodo.fQMIPMatching.get(s, l, c).getParameter(1);
-//                 double n2Error =getGainError(s, l, c, "charge")/getGain(s, l, c, "charge");
-//                 gainError=getMIPMatchingNPE(s, l, c, "charge")*sqrt(n1Error*n1Error+n2Error*n2Error);
-//                 MIPMatchingTileserrgain[s][l][c]=gainError;
-//             }
-//         }
-//         else  if (gainstring=="peakvolt"){
-//             if (histogramsFTHodo.fVMIP.hasEntry(s, l, c) && getMIPNPE(s, l, c, "peakvolt") > 0.0) {
-//                 double n1Error = histogramsFTHodo.fVMIP.get(s, l, c).parameter(1).error()/histogramsFTHodo.fVMIP.get(s, l, c).getParameter(1);
-//                 double n2Error =getGainError(s, l, c, "peakvolt")/getGain(s, l, c, "peakvolt");
-//                 gainError=getMIPNPE(s, l, c, "peakvolt")*sqrt(n1Error*n1Error+n2Error*n2Error);
-//                 MIPerrgain_mV[s][l][c]=gainError;
-//             }
-//             if (histogramsFTHodo.fVMIPMatching.hasEntry(s, l, c) && getMIPMatchingNPE(s, l, c, "peakvolt") > 0.0) {
-//                 double n1Error = histogramsFTHodo.fVMIPMatching.get(s, l, c).parameter(1).error()/histogramsFTHodo.fVMIPMatching.get(s, l, c).getParameter(1);
-//                 double n2Error =getGainError(s, l, c, "peakvolt")/getGain(s, l, c, "peakvolt");
-//                 gainError=getMIPMatchingNPE(s, l, c, "peakvolt")*sqrt(n1Error*n1Error+n2Error*n2Error);
-//                 MIPMatchingTileserrgain_mV[s][l][c]=gainError;
-//             }
-//         }
-//    }
     private double getMIPNPEError(int s, int l, int c, String gainstring) {
         if (gainstring=="charge")
             return MIPerrgain[s][l][c];
@@ -3374,63 +2745,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             return MIPMatchingTileserrgain_mV[s][l][c];
     }
     
-    
-    
-    
-//        if (histogramsFTHodo.useDefaultGain) {
-//            gainError = 0.0;
-//        } else {
-//            if (gainstring=="charge"){
-//                if (histogramsFTHodo.fQ2.hasEntry(s, l, c)
-//                    && getGain(s, l, c, "charge") > 0.0) {
-//                    double n2Error = histogramsFTHodo.fQ2.get(s, l, c).parameter(4).error();
-//                    double n1Error = histogramsFTHodo.fQ2.get(s, l, c).parameter(1).error();
-//                    gainError = n2Error * n2Error + n1Error * n1Error;
-//                    gainError = sqrt(gainError);
-//                }
-//                else {
-//                    gainError = 0.0;
-//                }
-//            }
-//            else if (gainstring=="peakvolt"){
-//                if (histogramsFTHodo.fV2.hasEntry(s, l, c)
-//                    && getGain(s, l, c, "peakvolt") > 0.0) {
-//                    double n2Error = histogramsFTHodo.fV2.get(s, l, c).parameter(4).error();
-//                    double n1Error = histogramsFTHodo.fV2.get(s, l, c).parameter(1).error();
-//                    gainError = n2Error * n2Error + n1Error * n1Error;
-//                    gainError = sqrt(gainError);
-//                }
-//                else {
-//                    gainError = 0.0;
-//                }
-//            }
-//        }
-//        if (gainstring=="charge")
-//            errGain[s][l][c] = gainError;
-//        else if (gainstring=="peakvolt")
-//            errGain_mV[s][l][c] = gainError;
-//    }
-//
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     private double getE(int s, int l, int c) {
         return histogramsFTHodo.nMipE[l];
     }
@@ -3447,27 +2761,19 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     }
 
     private double getVMean(int s, int l, int c) {
-
         double vMean = 0.0;
-
         if (histogramsFTHodo.fVMIP.hasEntry(s, l, c)) {
             vMean = histogramsFTHodo.fVMIP.get(s, l, c).getParameter(1);
         }
-
         return vMean;
-
     }
 
     private double getQMeanError(int s, int l, int c) {
-
         double qMeanError = 0.0;
-
         if (histogramsFTHodo.fQMIP.hasEntry(s, l, c)) {
             qMeanError = histogramsFTHodo.fQMIP.get(s, l, c).parameter(1).error();
         }
-
         return qMeanError;
-
     }
 
     private double getTMean(int s, int l, int c) {
@@ -3483,109 +2789,21 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     }
 
     private double getTSigma(int s, int l, int c) {
-
         double tSigma = 0.0;
-
         if (histogramsFTHodo.fT.hasEntry(s, l, c)) {
             tSigma = histogramsFTHodo.fT.get(s, l, c).getParameter(2);
         }
-
         return tSigma;
-
     }
 
     private double getVMeanError(int s, int l, int c) {
-
         double vMeanError = 0.0;
-
         if (histogramsFTHodo.fVMIP.hasEntry(s, l, c)) {
             vMeanError = histogramsFTHodo.fVMIP.get(s, l, c).parameter(1).error();
         }
-
         return vMeanError;
-
     }
 
-//    private void setNPEMean(int s, int l, int c) {
-//        if (getGain(s, l, c) > 0.0) {
-//            meanNPE[s][l][c] = getQMean(s, l, c) / getGain(s, l, c);
-//        } else {
-//            meanNPE[s][l][c] = 0.0;
-//        }
-//    }
-//
-//    private double getNPEMean(int s, int l, int c) {
-//        return meanNPE[s][l][c];
-//    }
-//
-//    private void setSigNPE(int s, int l, int c) {
-//        sigNPE[s][l][c] = 10.0;
-//    }
-//
-//    private double getSigNPE(int s, int l, int c) {
-//        return sigNPE[s][l][c];
-//    }
-//
-//    private void setNPEError(int s, int l, int c) {
-//
-//        double npeError = 0.0;
-//
-//        if (getQMean(s, l, c) > 0.0
-//                && getGain(s, l, c) > 0.0) {
-//
-//            npeError = getQMeanError(s, l, c) * getQMeanError(s, l, c);
-//
-//            npeError = npeError / (getQMean(s, l, c) * getQMean(s, l, c));
-//            npeError = npeError
-//                    + (getGainError(s, l, c) * getGainError(s, l, c)
-//                    / (getGain(s, l, c) * getGain(s, l, c)));
-//
-//            npeError = sqrt(npeError);
-//            npeError = getNPEMean(s, l, c) * npeError;
-//        }
-//        errNPE[s][l][c] = npeError;
-//    }
-//
-//    private double getNPEError(int s, int l, int c) {
-//        return errNPE[s][l][c];
-//    }
-//
-//    private void setNPEMean_mV(int s, int l, int c) {
-//        if (getGain_mV(s, l, c) > 0.0) {
-//            meanNPE_mV[s][l][c] = getVMean(s, l, c) / getGain_mV(s, l, c);
-//        } else {
-//            meanNPE_mV[s][l][c] = 0.0;
-//        }
-//    }
-//
-//    private double getNPEMean_mV(int s, int l, int c) {
-//        return meanNPE_mV[s][l][c];
-//    }
-//
-//    private double getNPEErr_mV(int s, int l, int c) {
-//        return errNPE_mV[s][l][c];
-//    }
-//    private void setNPEErr_mV(int s, int l, int c) {
-//
-//        double npeErr_mV = 0.0;
-//
-//        if (getVMean(s, l, c) > 0.0
-//                && getGain_mV(s, l, c) > 0.0) {
-//
-//            npeErr_mV = getVMeanError(s, l, c) * getVMeanError(s, l, c);
-//
-//            npeErr_mV = npeErr_mV / (getVMean(s, l, c) * getVMean(s, l, c));
-//            npeErr_mV = npeErr_mV
-//                    + (getGainErr_mV(s, l, c) * getGainErr_mV(s, l, c)
-//                    / (getGain_mV(s, l, c) * getGain_mV(s, l, c)));
-//
-//            npeErr_mV = sqrt(npeErr_mV);
-//            npeErr_mV = getNPEMean_mV(s, l, c) * npeErr_mV;
-//        }
-//
-//        errNPE_mV[s][l][c] = npeErr_mV;
-//
-//    }
 
     public void updateArrays() {
         System.out.println(" Setting arrays");
@@ -3643,11 +2861,12 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 CCDBTableCharge2EnergyMatchingTiles.setDoubleValue(2.65,"mips_energy",s, l, c);
             }
             
-            int craten=72;
-            int slotn=wireFTHodo.getSlot4SLC(s, l, c);
-            int channeln=wireFTHodo.getChan4SLC(s, l, c);
+            int craten=InverseTranslationTable.getIntValue("crate", s,l,c);//craten=72;
+            int slotn=InverseTranslationTable.getIntValue("slot", s,l,c);//wireFTHodo.getSlot4SLC(s, l, c);
+            int channeln=InverseTranslationTable.getIntValue("chan", s,l,c);//wireFTHodo.getChan4SLC(s, l, c);
             CCDBTablefACD.setDoubleValue(getPedMean(s, l, c),"pedestal",craten, slotn, channeln);
-            int tetVal=(int) (getGain(s, l, c,"peakvolt")*histogramsFTHodo.nThrshNPE/histogramsFTHodo.LSB);
+            double tetValD=getGain(s, l, c,"peakvolt")*histogramsFTHodo.nThrshNPE/histogramsFTHodo.LSB;
+            int tetVal=(int) tetValD;
             CCDBTablefACD.setIntValue(tetVal,"tet",craten, slotn, channeln);
 
             GAINandMIPSTableOverview.setDoubleValue(getGain(s, l, c,"charge"),"gain_pc",s, l, c);
@@ -3673,90 +2892,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     
     
     
-    
-//    public void updateConstants() {
-//
-//        int index;
-//        double mipE = 0.0;
-//        double mipC = 0.0;
-//        String values[];
-//        for (int s = 1; s < 9; s++) {
-//            for (int l = 1; l < 3; l++) {
-//                for (int c = 1; c < 21; c++) {
-//                    if (s % 2 == 1 && c > 9) {
-//                        continue;
-//                    }
-//                    index = getIndex4SLC(s, l, c);
-//                    //------------------------------
-//                    // set constants
-//                    //------------------------------
-//                    setPedestal(s, l, c);
-//                    setNPEMean(s, l, c);
-//                    setNPEError(s, l, c);
-//                    setSigNPE(s, l, c);
-//                    setNPEMean_mV(s, l, c);
-//                    setNPEErr_mV(s, l, c);
-//                    //setGain(s, l, c);
-//                    //setGainError(s, l, c);
-//                    //setGainError(s, l, c);
-//                    //setGain_mV(s, l, c);
-//                    //setGainErr_mV(s, l, c);
-//                    //setGain(s, l, c);
-//                    //
-//                    setStatus(s, l, c);
-//                    //---------------------------------
-//                    // Update the table
-//                    ConstantsTable.setDoubleValue(
-//                            getStatus(s, l, c),
-//                            "status",
-//                            s, l, c);
-//                    ConstantsTable.setDoubleValue(
-//                            getPedMean(s, l, c),
-//                            "ped",
-//                            s, l, c);
-//
-//                    ConstantsTable.setDoubleValue(
-//                            getPedRMS(s, l, c),
-//                            "ped_rms",
-//                            s, l, c);
-//                    ConstantsTable.setDoubleValue(
-//                            getGain(s, l, c),
-//                            "gain_pc",
-//                            s, l, c);
-//                    ConstantsTable.setDoubleValue(
-//                            getGain_mV(s, l, c),
-//                            "gain_mv",
-//                            s, l, c);
-//                    ConstantsTable.setDoubleValue(
-//                            getThrshNPE(s, l, c),
-//                            "thr_npe",
-//                            s, l, c);
-//                    ConstantsTable.setDoubleValue(
-//                            getE(s, l, c),
-//                            "mips_e",
-//                            s, l, c);
-//                    ConstantsTable.setDoubleValue(
-//                            getQMean(s, l, c),
-//                            "mips_q",
-//                            s, l, c);
-//                    ConstantsTable.setDoubleValue(
-//                            getTMean(s, l, c),
-//                            "t_offset",
-//                            s, l, c);
-//                    ConstantsTable.setDoubleValue(
-//                            getTSigma(s, l, c),
-//                            "t_rms",
-//                            s, l, c);
-//                }
-//            }
-//        }
-//        ConstantsTable.fireTableDataChanged();
-//        if (histogramsFTHodo.testMode) {
-//            ConstantsTable.show();
-//        }
-//        this.detectorView.repaint();
-//    } // end of: private void updateTable() {
-
     public void stateChanged(ChangeEvent e) {
         JTabbedPane sourceTabbedPane = (JTabbedPane) e.getSource();
         tabSel = sourceTabbedPane.getSelectedIndex();
@@ -3764,20 +2899,44 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         if ((this.previousTabSel == this.tabIndexMIPsignal && tabSel != this.tabIndexMIPsignal)) {
             this.canvasPane.remove(rBPaneMIP);
         }
-        if ((this.previousTabSel == this.tabIndexMIPgain && tabSel != this.tabIndexMIPgain)) {
+        if ((this.previousTabSel == this.tabIndexMIPAnalysis && tabSel != this.tabIndexMIPAnalysis)) {
             this.canvasPane.remove(rBPaneMIPgain);
         }
-        if ((this.previousTabSel == this.tabIndexGain && tabSel != this.tabIndexGain)){
+        if ((this.previousTabSel == this.tabIndexNoiseAnalysis && tabSel != this.tabIndexNoiseAnalysis)){
             this.canvasPane.remove(rBPaneGain);
         }
-        if (tabSel == this.tabIndexGain) {
+        if (tabSel == this.tabIndexNoiseAnalysis) {
             this.canvasPane.add(rBPaneGain, BorderLayout.NORTH);
         }
-        if (tabSel ==  this.tabIndexMIPgain ){
+        if (tabSel ==  this.tabIndexMIPAnalysis ){
             this.canvasPane.add(rBPaneMIPgain, BorderLayout.NORTH);
         }
         if (tabSel == this.tabIndexMIPsignal  ) {
             this.canvasPane.add(rBPaneMIP, BorderLayout.NORTH);
+        }
+
+        if (tabSel == this.tabIndexEvent) {
+            drawCanvasEvent(secSel,laySel,comSel);
+        } else if (tabSel == this.tabIndexPed) {
+            drawCanvasPed(secSel,laySel,comSel);
+        } else if (tabSel == this.tabIndexNoise) {
+            drawCanvasNoise(secSel,laySel,comSel);
+        } else if (tabSel == this.tabIndexNoiseAnalysis) {
+            if (drawByElec == false) {
+                drawCanvasNoiseAnalysis();
+            } else {
+                drawCanvasNoiseAnalysisElec(secSel,laySel,comSel);
+            }
+        }else if (tabSel == this.tabIndexMIPsignal){
+            drawCanvasMIPsignal(secSel,laySel,comSel);
+        }else if (tabSel == this.tabIndexMIPAnalysis){
+            if (drawByElec == false) {
+                drawCanvasMIPAnalysis();
+            } else {
+                drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
+            }
+        }else if (tabSel == this.tabIndexTime){
+            drawCanvasTime(secSel,laySel,comSel);
         }
         
         System.out.println("Tab changed to: "+ sourceTabbedPane.getTitleAt(tabSel)+ " with index " + tabSel);
@@ -3791,13 +2950,14 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     }
 
     public void resetHistograms() {
-        histogramsFTHodo.resetHistograms();
+        histogramsFTHodo.InitHistograms();
     }
 
     public void initArrays() {
         status = new double[9][3][21];
         thrshNPE = new double[9][3][21];
         pedMean = new double[9][3][21];
+        pedValues4SlotChan= new double[20][16];
         pedEvent = new double[9][3][21];
         pedRMS = new double[9][3][21];
         pedPreviousEvent = new double[9][3][21];
@@ -3845,6 +3005,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     this.status[s][l][c] = histogramsFTHodo.nStatus;
                     this.thrshNPE[s][l][c] = histogramsFTHodo.nThrshNPE;
                     this.pedMean[s][l][c] = histogramsFTHodo.nPedMean;
+                    
                     this.pedEvent[s][l][c] = 0;
                     this.pedPreviousEvent[s][l][c] = 0;
                     this.pedRMS[s][l][c] = histogramsFTHodo.nPedRMS;
@@ -3884,6 +3045,12 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 } // end: for ( int c = 0 ; c...
             } // end: for (int l = 0; l < 3; l...
         } // end: for (int s = 0; s...
+        
+        for (int s = 0; s < 20; s++) {
+            for (int c = 0; c < 16; c++) {
+                this.pedValues4SlotChan[s][c]=500.0;
+            }
+        }
     }// end: public void initArra....
     
     public void processDecodedSimEvent(DetectorCollection<Double> adc, DetectorCollection<Double> tdc) {
@@ -4109,9 +3276,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     int sec = counter.getDescriptor().getSector();
                     int lay = counter.getDescriptor().getLayer();
                     int com = counter.getDescriptor().getComponent();
-// 	    String xyzwd[] = readTable(sec,lay,com,
-// 				       "./Tables/fthodo_geometry.txt",
-// 				       8);
+
                     int maxPedbin = 0;
                     double avePed = 0.0;
                     double nEventsAvePed = 0;
@@ -4135,7 +3300,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     histogramsFTHodo.H_FADC_RAW.get(sec, lay, com).reset();
                     histogramsFTHodo.H_FADC_RAW_PED.get(sec, lay, com).reset();
                     histogramsFTHodo.H_FADC_RAW_PUL.get(sec, lay, com).reset();
-//                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).reset();
+                    //histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).reset();
                     histogramsFTHodo.H_VT.get(sec, lay, com).reset();
                     histogramsFTHodo.H_NPE.get(sec, lay, com).reset();
                     
@@ -4155,11 +3320,11 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     histogramsFTHodo.H_PED.get(sec, lay, com).fill(compEvntPed);
                     // Maybe this can be of number of events in histogram instead.. 
                     // however all histograms should have ped for every event
-//                    if (abs(counter.getADCData(0).getPedestal()
-//                            - pedMean[sec][lay][com]) > 5.
-//                            && pedMeanGood) {
-//                        compEvntPed = pedMean[sec][lay][com];
-//                    }
+                    //                    if (abs(counter.getADCData(0).getPedestal()
+                    //                            - pedMean[sec][lay][com]) > 5.
+                    //                            && pedMeanGood) {
+                    //                        compEvntPed = pedMean[sec][lay][com];
+                    //                    }
                     if (nDecodedProcessed / 100 < histogramsFTHodo.nPointsPed) {
                         eventloop = nDecodedProcessed;
                     } else {
@@ -4203,17 +3368,17 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                             && pedMeanGood) {
                         compEvntPed = pedMean[sec][lay][com];
                     }
-//                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(ped_i1+1.5,counter.getADCData(0).getPedestal(),0,0);
-//                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(ped_i2+0.5,counter.getADCData(0).getPedestal(),0,0);
-//                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(pul_i1+0.5,counter.getADCData(0).getPulseValue(pul_i1),0,0);
-//                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(pul_i2+0.5,counter.getADCData(0).getPulseValue(pul_i2),0,0);
-//                    if(counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal()>this.detectorDecoder.getFadcPanel().tet){
-//                        histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(counter.getADCData(0).getThresholdCrossing()+0.5,counter.getADCData(0).
-//                              getPulseValue(counter.getADCData(0).getThresholdCrossing()),0,0);
-//                        histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(counter.getADCData(0).getTime()/histogramsFTHodo.nsPerSample +0.5,
-//                                                                                    (counter.getADCData(0).getHeight()+ counter.getADCData(0).getPedestal())/2,0,0);
-//                        histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(counter.getADCData(0).getPosition()+0.5,counter.getADCData(0).getHeight(),0,0);
-//                    }
+                    //                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(ped_i1+1.5,counter.getADCData(0).getPedestal(),0,0);
+                    //                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(ped_i2+0.5,counter.getADCData(0).getPedestal(),0,0);
+                    //                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(pul_i1+0.5,counter.getADCData(0).getPulseValue(pul_i1),0,0);
+                    //                    histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(pul_i2+0.5,counter.getADCData(0).getPulseValue(pul_i2),0,0);
+                    //                    if(counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal()>this.detectorDecoder.getFadcPanel().tet){
+                    //                        histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(counter.getADCData(0).getThresholdCrossing()+0.5,counter.getADCData(0).
+                    //                              getPulseValue(counter.getADCData(0).getThresholdCrossing()),0,0);
+                    //                        histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(counter.getADCData(0).getTime()/histogramsFTHodo.nsPerSample +0.5,
+                    //                                                                                    (counter.getADCData(0).getHeight()+ counter.getADCData(0).getPedestal())/2,0,0);
+                    //                        histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).addPoint(counter.getADCData(0).getPosition()+0.5,counter.getADCData(0).getHeight(),0,0);
+                    //                    }
                     
                     // Loop through fADC bins filling event-by-event histograms
                     for (int i = 0;i < min(pulse.length, histogramsFTHodo.H_FADC.get(sec, lay, com).getAxis().getNBins()); i++) {
@@ -4265,7 +3430,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     }
                     // Fill Charge Histograms
                     histogramsFTHodo.H_MIP_Q.get(sec, lay, com).fill(counter.getADCData(0).getADC() * histogramsFTHodo.LSB * histogramsFTHodo.nsPerSample / 50);
-                    //HERE: To clean up NoiseQ histogram from noise that comes too late.
                     if (counter.getADCData(0).getPosition()>15 && counter.getADCData(0).getPosition()<60)
                         histogramsFTHodo.H_NOISE_Q.get(sec, lay, com).fill(counter.getADCData(0).getADC() * histogramsFTHodo.LSB * histogramsFTHodo.nsPerSample / 50);
                     
@@ -4338,22 +3502,14 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                         if ((sec) % 2 == 1 && com > 9) {
                             continue;
                         }
-                        if (time_M3[sec][2][com] > 0
-                                && time_M3[sec][1][com] > 0) {
+                        if (time_M3[sec][2][com] > 0 && time_M3[sec][1][com] > 0) {
                             dT_M3[sec][com] = -time_M3[sec][2][com];
                             dT_M3[sec][com] += time_M3[sec][1][com];
-
                             histogramsFTHodo.H_T_MODE3.get(sec, 1, com).fill(dT_M3[sec][com]);
-
                             if (time_M7[sec][2][com] > 0&& time_M7[sec][1][com] > 0) {
-
                                 dT_M7[sec][com] = -time_M7[sec][2][com];
                                 dT_M7[sec][com] += time_M7[sec][1][com];
-
-                                if (vMaxEvent[sec][1][com] > 200.
-                                        && vMaxEvent[sec][1][com] < 1550.
-                                        && vMaxEvent[sec][2][com] > 400.
-                                        && vMaxEvent[sec][2][com] < 1550.) {
+                                if (vMaxEvent[sec][1][com] > 200.&& vMaxEvent[sec][1][com] < 1550.&& vMaxEvent[sec][2][com] > 400.&& vMaxEvent[sec][2][com] < 1550.) {
                                     histogramsFTHodo.H_T_MODE7.get(sec, 1, com).fill(time_M7[sec][1][com]);
                                     histogramsFTHodo.H_T_MODE7.get(sec, 2, com).fill(time_M7[sec][2][com]);
                                     histogramsFTHodo.H_DT_MODE7.get(sec, 1, com).fill(dT_M7[sec][com]);
@@ -4363,33 +3519,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                         }
                     }
                 }
-                //=======================================================
-                //             DRAW HISTOGRAMS PER EVENT
-                //=======================================================
-//                int layCD = laySel - 1;
-//                // map [1,2] to [1,0]
-//                int oppCD = laySel % 2;
-//                // map [1,2] to [2,1]
-//                int oppSel = (laySel % 2) + 1;
-//                int layCDL = 3 * layCD;
-//                int oppCDL = 3 * oppCD;
-//                int layCDM = layCDL+1;
-//                int oppCDM = oppCDL+1;
-//                int layCDR = layCDM+1;
-//                int oppCDR = oppCDM+1;
-                //   User chooses which histogram/s to display
-                // map [1,2] to [0,1]
-                //int layCD = laySel - 1;
-                // map [1,2] to [1,0]
-                //int oppCD = laySel % 2;
-                // map [1,2] to [2,1]
-                //int oppSel = (laySel % 2) + 1;
-                
-                //int layCDL = 2 * layCD;
-                //int oppCDL = 2 * oppCD;
 
-                //int layCDR = layCDL + 1;
-                //int oppCDR = oppCDL + 1;
 
                 if (laySel == 0) {
                     return;
@@ -4453,104 +3583,192 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         System.out.println(" Sector = "+ secSel+ ", Layer = "+ laySel+ ", Component = "+ comSel);
         System.out.println(" Channel = "+ wireFTHodo.getChan4SLC(secSel, laySel, comSel));
         System.out.println(" Mezzanine = "+ wireFTHodo.getMezz4SLC(secSel, laySel, comSel));
-//        // map [1,2] to [0,1]
-//        int layCD = laySel - 1;
-//        // map [1,2] to [1,0]
-//        int oppCD = laySel % 2;
-//        // map [1,2] to [2,1]
-//        int oppSel = (laySel % 2) + 1;
-//        // indices for paddles
-//        if (calSel) {
-//            layCD = 0;
-//            oppCD = 1;
-//            oppSel = 0;
-//        }
-//        int layCDL = 2 * layCD;
-//        int oppCDL = 2 * oppCD;
-//        int layCDR = layCDL + 1;
-//        int oppCDR = oppCDL + 1;
-        // end of FTViewer (Combined view tab)
-        //============================================================
-        //============================================================
-        // FTHODOViewer
+
         if (tabSel == this.tabIndexEvent) {
             drawCanvasEvent(secSel,laySel,comSel);
         } else if (tabSel == this.tabIndexPed) {
             drawCanvasPed(secSel,laySel,comSel);
         } else if (tabSel == this.tabIndexNoise) {
             drawCanvasNoise(secSel,laySel,comSel);
-        } else if (tabSel == this.tabIndexGain) {
+        } else if (tabSel == this.tabIndexNoiseAnalysis) {
             if (drawByElec == false) {
-                drawCanvasGain();
+                drawCanvasNoiseAnalysis();
             } else {
-                //this.canvasGain.divide(1, 1);
-                drawCanvasGainElec(secSel,laySel,comSel);
+                //this.canvasNoiseAnalysis.divide(1, 1);
+                drawCanvasNoiseAnalysisElec(secSel,laySel,comSel);
             }
         }else if (tabSel == this.tabIndexMIPsignal){
                 drawCanvasMIPsignal(secSel,laySel,comSel);
-        }else if (tabSel == this.tabIndexMIPgain){
+        }else if (tabSel == this.tabIndexMIPAnalysis){
             if (drawByElec == false) {
-                drawCanvasMIPgain();
+                drawCanvasMIPAnalysis();
             } else {
-                drawCanvasMIPgainElec(secSel,laySel,comSel);
+                drawCanvasMIPAnalysisElec(secSel,laySel,comSel);
             }
+        }else if (tabSel == this.tabIndexTime){
+                drawCanvasTime(secSel,laySel,comSel);
         }
-//        else if (tabSel == this.tabIndexCharge) {
-//            drawCanvasCharge(secSel,
-//                    laySel,
-//                    comSel);
-//
-//        } else if (tabSel == this.tabIndexVoltage) {
-//            drawCanvasVoltage(secSel,
-//                    laySel,
-//                    comSel);
-//        } else if (tabSel == this.tabIndexMIP) {
-//            if (drawByElec == false) {
-//                drawCanvasMIP(secSel,
-//                        laySel,
-//                        comSel);
-//            } else {
-//                drawCanvasMIPElec(secSel,
-//                        laySel,
-//                        comSel);
-//            }
-//        } else if (tabSel == this.tabIndexMatch) {
-//            drawCanvasMatch(secSel,
-//                    laySel,
-//                    comSel);
-//        } else if (tabSel == this.tabIndexTime) {
-//            drawCanvasTime(secSel,
-//                    laySel,
-//                    comSel);
-//        }
     }
     public void constantsEvent(CalibrationConstants cc, int i, int i1) {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
     public void adjustFit() {
-        System.out.println("Adjusting fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        H1F hvolpeak =  histogramsFTHodo.H_NOISE_V.get(secSel, laySel, comSel);
-        F1D fvolpeak = histogramsFTHodo.fV2.get(secSel, laySel, comSel);
-        FTAdjustFit cfit = new FTAdjustFit(hvolpeak, fvolpeak, "LRQ");
-        
-        if (histogramsFTHodo.testMode)
-            System.out.println("Old Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
-        this.canvasNoise.update();
+        if (this.tabSel==tabIndexPed){
+            System.out.println("Adjusting Ped fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+            H1F histtofit =  histogramsFTHodo.H_PED.get(secSel, laySel, comSel);
+            F1D ftofit = histogramsFTHodo.fPed.get(secSel, laySel, comSel);
+            FTAdjustFit cfit = new FTAdjustFit(histtofit, ftofit, "LRQ");
+        }
+        else if (this.tabSel==tabIndexNoise){
+            System.out.println("Adjusting Noise fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+            H1F histtofit1 =  histogramsFTHodo.H_NOISE_Q.get(secSel, laySel, comSel);
+            F1D ftofit1 = histogramsFTHodo.fQ2.get(secSel, laySel, comSel);
+            FTAdjustFit cfit1 = new FTAdjustFit(histtofit1, ftofit1, "LRQ");
+            
+            H1F histtofit2 =  histogramsFTHodo.H_NOISE_V.get(secSel, laySel, comSel);
+            F1D ftofit2 = histogramsFTHodo.fV2.get(secSel, laySel, comSel);
+            FTAdjustFit cfit2 = new FTAdjustFit(histtofit2, ftofit2, "LRQ");
+        }else if (this.tabSel==tabIndexMIPsignal){
+            if (!matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP mV fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+                    H1F histtofit =  histogramsFTHodo.H_MIP_V.get(secSel, laySel, comSel);
+                    F1D ftofit = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel);
+                    FTAdjustFit cfit = new FTAdjustFit(histtofit, ftofit, "LRQ");
+                }
+                if (plotVoltageChargeBoth==2 ||plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP pC fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+                    H1F histtofit1 =  histogramsFTHodo.H_MIP_Q.get(secSel, laySel, comSel);
+                    F1D ftofit1 = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel);
+                    FTAdjustFit cfit1 = new FTAdjustFit(histtofit1, ftofit1, "LRQ");
+                }
+            }else if (matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP Matching Tiles mV fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+                    H1F histtofit =  histogramsFTHodo.H_MIP_V_MatchingTiles.get(secSel, laySel, comSel);
+                    F1D ftofit = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel);
+                    FTAdjustFit cfit = new FTAdjustFit(histtofit, ftofit, "LRQ");
+                }
+                if (plotVoltageChargeBoth==2 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP Matching Tiles pC fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
+                    H1F histtofit1 =  histogramsFTHodo.H_MIP_Q_MatchingTiles.get(secSel, laySel, comSel);
+                    F1D ftofit1 = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel);
+                    FTAdjustFit cfit1 = new FTAdjustFit(histtofit1, ftofit1, "LRQ");
+                }
+            }
+        }
     }
+    
     public void adjustFitConstants() {
-        System.out.println("Adjusting Constants for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
-        //if (histogramsFTHodo.testMode)
+        if (this.tabSel==tabIndexPed){
+            System.out.println("Old Mean:"+pedMean[secSel][laySel][comSel] +" "+ pedRMS[secSel][laySel][comSel]);
+            this.pedMean[secSel][laySel][comSel]=histogramsFTHodo.fPed.get(secSel, laySel, comSel).getParameter(1);
+            this.pedRMS[secSel][laySel][comSel]=histogramsFTHodo.fPed.get(secSel, laySel, comSel).getParameter(2);
+            System.out.println("New Mean:"+pedMean[secSel][laySel][comSel] +" "+ pedRMS[secSel][laySel][comSel]);
+
+            this.updateTable();
+        }
+        else if (this.tabSel==tabIndexNoise){
             System.out.println("Old Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
-        this.gain_mV[secSel][laySel][comSel]=histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(1);
-        double gainError=histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error()+histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error();
-        this.errGain_mV[secSel][laySel][comSel] = sqrt(gainError);
-        //if (histogramsFTHodo.testMode)
+            this.gain_mV[secSel][laySel][comSel]=histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fV2.get(secSel, laySel, comSel).getParameter(1);
+            double gainError=histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error()*histogramsFTHodo.fV2.get(secSel, laySel, comSel).parameter(1).error();
+            this.errGain_mV[secSel][laySel][comSel] = sqrt(gainError);
             System.out.println("New Mean:"+gain_mV[secSel][laySel][comSel] +" "+ errGain_mV[secSel][laySel][comSel]);
-        this.setGGraphGain();
-        this.updateTable();
-        drawCanvasGain();
+            
+            System.out.println("Old Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
+            this.gain[secSel][laySel][comSel]=histogramsFTHodo.fQ2.get(secSel, laySel, comSel).getParameter(4)-histogramsFTHodo.fQ2.get(secSel, laySel, comSel).getParameter(1);
+            gainError=histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(4).error()*histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(4).error()+histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(1).error()*histogramsFTHodo.fQ2.get(secSel, laySel, comSel).parameter(1).error();
+            this.errGain[secSel][laySel][comSel] = sqrt(gainError);
+            System.out.println("New Mean:"+gain[secSel][laySel][comSel] +" "+ errGain[secSel][laySel][comSel]);
+            
+            this.setGGraphGain();
+            this.updateTable();
+            if (!drawByElec)
+                drawCanvasNoiseAnalysis();
+            else
+                drawCanvasNoiseAnalysisElec(secSel,laySel,comSel );
+        }else if (this.tabSel==tabIndexMIPsignal){
+            if (!matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Old Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
+                    this.MIPS_maxV_all[secSel][laySel][comSel]=histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(1);
+                    this.MIPSerr_maxV_all[secSel][laySel][comSel]=histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(2);
+                    if (gain_mV[secSel][laySel][comSel]>0)
+                        this.MIPgain_mV[secSel][laySel][comSel]=MIPS_maxV_all[secSel][laySel][comSel]/gain_mV[secSel][laySel][comSel];
+                    else
+                        this.MIPgain_mV[secSel][laySel][comSel]=0.0;
+                    if (MIPgain_mV[secSel][laySel][comSel]>0){
+                        double n1Error = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fVMIP.get(secSel, laySel, comSel).getParameter(1);
+                        double n2Error =getGainError(secSel, laySel, comSel, "peakvolt")/getGain(secSel, laySel, comSel, "peakvolt");
+                        this.MIPerrgain_mV[secSel][laySel][comSel]=MIPgain_mV[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+                    }else {
+                        this.MIPerrgain_mV[secSel][laySel][comSel]=100.0;
+                    }
+                    System.out.println("New Mean:"+MIPS_maxV_all[secSel][laySel][comSel] +" "+ MIPSerr_maxV_all[secSel][laySel][comSel]);
+                }
+                if (plotVoltageChargeBoth==2 || plotVoltageChargeBoth==3){
+                    System.out.println("Old Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
+                    this.MIPS_pC_all[secSel][laySel][comSel]=histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(1);
+                    this.MIPSerr_pC_all[secSel][laySel][comSel]=histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(2);
+                    if (gain[secSel][laySel][comSel]>0)
+                        this.MIPgain[secSel][laySel][comSel]=MIPS_pC_all[secSel][laySel][comSel]/gain[secSel][laySel][comSel];
+                    else
+                        this.MIPgain[secSel][laySel][comSel]=0.0;
+                    if (MIPgain[secSel][laySel][comSel]>0){
+                        double n1Error = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fQMIP.get(secSel, laySel, comSel).getParameter(1);
+                        double n2Error =getGainError(secSel, laySel, comSel, "charge")/getGain(secSel, laySel, comSel, "charge");
+                        this.MIPerrgain[secSel][laySel][comSel]=MIPgain[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+                    }else
+                        this.MIPerrgain[secSel][laySel][comSel]=100.0;
+                    System.out.println("New Mean:"+MIPS_pC_all[secSel][laySel][comSel] +" "+ MIPSerr_pC_all[secSel][laySel][comSel]);
+                }
+            }else if (matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Old Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
+                    this.MIPS_maxV_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+                    this.MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(2);
+                    if (gain_mV[secSel][laySel][comSel]>0)
+                        this.MIPMatchingTilesgain_mV[secSel][laySel][comSel]=MIPS_maxV_MatchingTiles[secSel][laySel][comSel]/gain_mV[secSel][laySel][comSel];
+                    else
+                        this.MIPMatchingTilesgain_mV[secSel][laySel][comSel]=0.0;
+                    if (this.MIPMatchingTilesgain_mV[secSel][laySel][comSel]>0){
+                        double n1Error = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+                        double n2Error =getGainError(secSel, laySel, comSel, "peakvolt")/getGain(secSel, laySel, comSel, "peakvolt");
+                        this.MIPMatchingTileserrgain_mV[secSel][laySel][comSel]=MIPMatchingTilesgain_mV[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+                    }else {
+                        this.MIPMatchingTileserrgain_mV[secSel][laySel][comSel]=100.0;
+                    }
+                    System.out.println("New Mean:"+MIPS_maxV_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_maxV_MatchingTiles[secSel][laySel][comSel]);
+                }
+                if (plotVoltageChargeBoth==2 || plotVoltageChargeBoth==3){
+                    System.out.println("Old Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
+                    this.MIPS_pC_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+                    this.MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]=histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(2);
+                    if (gain[secSel][laySel][comSel]>0)
+                        this.MIPMatchingTilesgain[secSel][laySel][comSel]=MIPS_pC_MatchingTiles[secSel][laySel][comSel]/gain[secSel][laySel][comSel];
+                    else
+                        this.MIPMatchingTilesgain[secSel][laySel][comSel]=0.0;
+                    if (this.MIPMatchingTilesgain[secSel][laySel][comSel]>0){
+                        double n1Error = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).parameter(1).error()/histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel).getParameter(1);
+                        double n2Error =getGainError(secSel, laySel, comSel, "charge")/getGain(secSel, laySel, comSel, "charge");
+                        this.MIPMatchingTileserrgain[secSel][laySel][comSel]=MIPMatchingTilesgain[secSel][laySel][comSel]*sqrt(n1Error*n1Error+n2Error*n2Error);
+                    }else {
+                        this.MIPMatchingTileserrgain[secSel][laySel][comSel]=100.0;
+                    }
+                    System.out.println("New Mean:"+MIPS_pC_MatchingTiles[secSel][laySel][comSel] +" "+ MIPSerr_pC_MatchingTiles[secSel][laySel][comSel]);
+                }
+            }
+            this.setGGraphGain();
+            this.updateTable();
+            if (!drawByElec)
+                drawCanvasMIPAnalysis();
+            else
+                drawCanvasMIPAnalysisElec(secSel,laySel,comSel );
+        }
     }
+
+    
     public void readCCDBconstants(){
         int s,l,c, chan, slot;
         int crate=72;
@@ -4563,14 +3781,34 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         this.npeThreshold_NoiseCCDB= new double[9][3][21];
         this.status_CCDB=new int[9][3][21];
         
+        InverseTranslationTable = new CalibrationConstants(3,
+                                                  "crate/I:" +//3
+                                                  "slot/I:"+//4
+                                                  "chan/I");
+        for (int slotn = 3; slotn < 20; slotn++) {
+            for (int chann = 0; chann < 16; chann++) {
+                if (!calibrationTranslationTable.hasEntry(crate, slotn, chann))
+                    continue;
+                int secn = calibrationTranslationTable.getIntValue("sector", crate, slotn, chann);
+                int layn = calibrationTranslationTable.getIntValue("layer", crate, slotn, chann);
+                int compn = calibrationTranslationTable.getIntValue("component", crate, slotn, chann);
+                //System.out.println("about to add Entry "+secn+" "+layn+" "+compn);
+                InverseTranslationTable.addEntry(secn,layn,compn);
+                InverseTranslationTable.setIntValue(crate,"crate", secn,layn,compn);
+                InverseTranslationTable.setIntValue(slotn,"slot", secn,layn,compn);
+                InverseTranslationTable.setIntValue(chann,"chan", secn,layn,compn);
+                //System.out.println("Added Entry "+secn+" "+layn+" "+compn);
+            }
+        }
+        
         for (int index = 0; index < 232; index++) {
             histogramsFTHodo.HP.setAllParameters(index, 'h');
             s=histogramsFTHodo.HP.getS();
             l=histogramsFTHodo.HP.getL();
             c=histogramsFTHodo.HP.getC();
-            chan=wireFTHodo.getChan4SLC(s,l,c);
-            slot=wireFTHodo.getSlot4SLC(s,l,c);
-            this.ped_fadcCCDB[s][l][c]=daqFADCTable.getDoubleValue("pedestal", crate, slot, chan);
+            chan=InverseTranslationTable.getIntValue("chan", s,l,c);//wireFTHodo.getChan4SLC(s,l,c);
+            slot=InverseTranslationTable.getIntValue("slot", s,l,c);//wireFTHodo.getSlot4SLC(s,l,c);
+            this.ped_fadcCCDB[s][l][c]=calibrationfADC.getDoubleValue("pedestal", crate, slot, chan);
             this.status_CCDB[s][l][c]=calibrationStatusTable.getIntValue("status", s,l,c);
             this.ped_noiseCCDB[s][l][c]=calibrationNoiseTable.getDoubleValue("pedestal", s,l,c);
             this.pedrms_noiseCCDB[s][l][c]=calibrationNoiseTable.getDoubleValue("pedestal_rms", s,l,c);
@@ -4578,9 +3816,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             this.gain_mV_NoiseCCDB[s][l][c]=calibrationNoiseTable.getDoubleValue("gain_mv", s,l,c);
             this.npeThreshold_NoiseCCDB[s][l][c]=calibrationNoiseTable.getDoubleValue("npe_threshold", s,l,c);
             this.MIPS_pC_C2ECCDB[s][l][c]=calibrationChargeToEnergyTable.getDoubleValue("mips_charge", s,l,c);
-            //System.out.println("Ped: "+ped_fadcCCDB[s][l][c]);
+            //System.out.println(InverseTranslationTable.getIntValue("crate", s,l,c)+" "+InverseTranslationTable.getIntValue("slot", s,l,c)+" "+InverseTranslationTable.getIntValue("chan", s,l,c)+" "+s+" "+l+" "+c+" ");
         }
     }
+    
     public void saveTable(String name, CalibrationConstants calibConstants) {
         try {
             // Open the output file
@@ -4602,16 +3841,71 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             outputBw.close();
             System.out.println("Constants saved to'" + name);
         } catch (IOException ex) {
-            System.out.println(
-                               "Error writing file '"
-                               + name + "'");
+            System.out.println("Error writing file '"+ name + "'");
             // Or we could just do this:
             ex.printStackTrace();
         }
     }
+    
+    
+    public void savefADC250ft3PedTable(String name, String time) {
+        try {
+            // Open the output file
+            File outputFile = new File(name);
+            FileWriter outputFw = new FileWriter(outputFile.getAbsoluteFile());
+            BufferedWriter outputBw = new BufferedWriter(outputFw);
+            String line = new String();
+            line ="#";
+            outputBw.write(line);
+            outputBw.newLine();
+            line = new String();
+            line ="# File generated automatically by FTHodo Calib at "+time;
+            outputBw.write(line);
+            outputBw.newLine();
+            line = new String();
+            line ="#";
+            outputBw.write(line);
+            outputBw.newLine();
+            line = new String();
+            line ="FADC250_CRATE adcft3";
+            outputBw.write(line);
+            outputBw.newLine();
+            for (int i = 3; i < 20; i++) {
+                if (i==11||i==12)
+                    continue;
+                line = new String();
+                line ="FADC250_SLOT " +i;
+                outputBw.write(line);
+                outputBw.newLine();
+                line = new String();
+                line ="FADC250_ALLCH_PED ";
+                for (int j = 0; j < 16; j++) {
+                    line = line +  String.format("%.3f", pedValues4SlotChan[i][j]);
+                    if (j < 15) {
+                        line = line + " ";
+                    }
+                }
+                outputBw.write(line);
+                outputBw.newLine();
+            }
+            line = new String();
+            line ="FADC250_CRATE end";
+            outputBw.write(line);
+            outputBw.newLine();
+            outputBw.close();
+            System.out.println("Constants saved to'" + name);
+        } catch (IOException ex) {
+            System.out.println("Error writing file '"+ name + "'");
+            ex.printStackTrace();
+        }
+    }
+    
+    
+    
     public void setRunNumber(int runNumber) {
         this.runNumber = runNumber;
     }
+    
     public int getRunNumber() {
         return runNumber;
     }
@@ -4640,7 +3934,12 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
     private void setPedestalDefault(int s, int l,int c){
         pedMean[s][l][c]=ped_fadcCCDB[s][l][c];
         pedRMS[s][l][c]=pedrms_noiseCCDB[s][l][c];
+        int slot=InverseTranslationTable.getIntValue("slot", s,l,c);//wireFTHodo.getSlot4SLC(s,l,c);
+        int chan=InverseTranslationTable.getIntValue("chan", s,l,c);//wireFTHodo.getChan4SLC(s,l,c);
+        //System.out.println(slot+" "+InverseTranslationTable.getIntValue("slot", s,l,c)+" "+chan+" "+InverseTranslationTable.getIntValue("chan", s,l,c));
+        pedValues4SlotChan[slot][chan]=ped_fadcCCDB[s][l][c];
     }
+    
     private void setGainAllDefault(int s, int l,int c){
         gain[s][l][c]=gain_pc_NoiseCCDB[s][l][c];
         errGain[s][l][c]=0.0;
