@@ -59,6 +59,7 @@ public class FTHodoHistograms {
     GraphErrors[] GGgainElectronicsC=new GraphErrors[15];
     GraphErrors[][] GGgainDetectorV=new GraphErrors[2][8];
     GraphErrors[][] GGgainDetectorC=new GraphErrors[2][8];
+    
     GraphErrors[] GGMIPgainElectronicsV=new GraphErrors[15];
     GraphErrors[] GGMIPgainElectronicsC=new GraphErrors[15];
     GraphErrors[][] GGMIPgainDetectorV=new GraphErrors[2][8];
@@ -67,6 +68,7 @@ public class FTHodoHistograms {
     GraphErrors[] GGMIPgainElectronics_matchingTilesC=new GraphErrors[15];
     GraphErrors[][] GGMIPgainDetector_matchingTilesV=new GraphErrors[2][8];
     GraphErrors[][] GGMIPgainDetector_matchingTilesC=new GraphErrors[2][8];
+    
     GraphErrors[] GGMIPsignElectronicsV=new GraphErrors[15];
     GraphErrors[] GGMIPsignElectronicsC=new GraphErrors[15];
     GraphErrors[][] GGMIPsignDetectorV=new GraphErrors[2][8];
@@ -579,6 +581,7 @@ public class FTHodoHistograms {
         }
         System.out.println(" Fitting Histograms complete");
     }
+    
     private void fitPedestals(int s, int l, int c, String fitOption) {
         if (testMode)  System.out.println(" Fitting Pedestal (S,L,C) = ("+ s + "," + l + "," + c + ")");
         
