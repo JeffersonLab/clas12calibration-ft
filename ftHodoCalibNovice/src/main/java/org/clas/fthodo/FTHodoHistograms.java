@@ -1,9 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
 
- */
 package org.clas.fthodo;
 
 import org.jlab.detector.base.DetectorCollection;
@@ -47,7 +42,6 @@ public class FTHodoHistograms {
     DetectorCollection<H1F> H_MIP_V_MatchingTiles = new DetectorCollection<H1F>();
     DetectorCollection<H2F> H_MAXV_VS_T = new DetectorCollection<H2F>();
     DetectorCollection<H2F> H_T1_T2 = new DetectorCollection<H2F>();
-    DetectorCollection<H1F> H_COSMIC_fADC = new DetectorCollection<H1F>();
     // Fit Functions
     DetectorCollection<F1D> fPed = new DetectorCollection<F1D>();
     DetectorCollection<F1D> fQ2 = new DetectorCollection<F1D>();
@@ -65,39 +59,31 @@ public class FTHodoHistograms {
     GraphErrors[] GGgainElectronicsC=new GraphErrors[15];
     GraphErrors[][] GGgainDetectorV=new GraphErrors[2][8];
     GraphErrors[][] GGgainDetectorC=new GraphErrors[2][8];
-
+    
     GraphErrors[] GGMIPgainElectronicsV=new GraphErrors[15];
     GraphErrors[] GGMIPgainElectronicsC=new GraphErrors[15];
     GraphErrors[][] GGMIPgainDetectorV=new GraphErrors[2][8];
     GraphErrors[][] GGMIPgainDetectorC=new GraphErrors[2][8];
-    
     GraphErrors[] GGMIPgainElectronics_matchingTilesV=new GraphErrors[15];
     GraphErrors[] GGMIPgainElectronics_matchingTilesC=new GraphErrors[15];
     GraphErrors[][] GGMIPgainDetector_matchingTilesV=new GraphErrors[2][8];
     GraphErrors[][] GGMIPgainDetector_matchingTilesC=new GraphErrors[2][8];
     
-    
     GraphErrors[] GGMIPsignElectronicsV=new GraphErrors[15];
     GraphErrors[] GGMIPsignElectronicsC=new GraphErrors[15];
     GraphErrors[][] GGMIPsignDetectorV=new GraphErrors[2][8];
     GraphErrors[][] GGMIPsignDetectorC=new GraphErrors[2][8];
-    
     GraphErrors[] GGMIPsignElectronics_matchingTilesV=new GraphErrors[15];
     GraphErrors[] GGMIPsignElectronics_matchingTilesC=new GraphErrors[15];
     GraphErrors[][] GGMIPsignDetector_matchingTilesV=new GraphErrors[2][8];
     GraphErrors[][] GGMIPsignDetector_matchingTilesC=new GraphErrors[2][8];
-    
-    
-    
-    
-    //Histograms to plot GraphErrors as placeholders
+
     H1F H_EMPTYGAIN_MV9 = null;
     H1F H_EMPTYGAIN_MV20= null;
     H1F H_EMPTYGAIN_PC9= null;
     H1F H_EMPTYGAIN_PC20=null;
     H1F H_EMPTYGAIN_ELE_PC=null;
     H1F H_EMPTYGAIN_ELE_MV=null;
-
     H1F H_EMPTYMIPGAIN_MV9 = null;
     H1F H_EMPTYMIPGAIN_MV20= null;
     H1F H_EMPTYMIPGAIN_PC9= null;
@@ -110,7 +96,6 @@ public class FTHodoHistograms {
     H1F H_EMPTYMIPGAIN_matchingTiles_PC20=null;
     H1F H_EMPTYMIPGAIN_matchingTiles_ELE_PC=null;
     H1F H_EMPTYMIPGAIN_matchingTiles_ELE_MV=null;
-    
     H1F H_EMPTYMIPSIGN_MV9 = null;
     H1F H_EMPTYMIPSIGN_MV20= null;
     H1F H_EMPTYMIPSIGN_PC9= null;
@@ -123,7 +108,6 @@ public class FTHodoHistograms {
     H1F H_EMPTYMIPSIGN_matchingTiles_PC20=null;
     H1F H_EMPTYMIPSIGN_matchingTiles_ELE_PC=null;
     H1F H_EMPTYMIPSIGN_matchingTiles_ELE_MV=null;
-    
     
     H1F H_W_MAX = null;
     H1F H_V_MAX = null;
@@ -153,7 +137,7 @@ public class FTHodoHistograms {
     double LSB = 0.4884;
     double vPedOffset = 5.0;
     double PedOffset = 10.0;
-    double triggerDelay = 190.0;
+    double triggerDelay = 125.0;//double triggerDelay = 190.0;
     
     ////MALAKIES for coloring the detector should be replaced with TET
     final double thrshNoiseNPE = 0.5;
@@ -173,8 +157,9 @@ public class FTHodoHistograms {
     // = 51
     double threshD = nThrshNPE*10.0/(LSB);
     public int threshold;
-    public int matchingTilesThreshold=600; // Threshold to look for match tiles above this.
+    public int matchingTilesThreshold=600; // Threshold to look for match tiles above this in fADC channels.
     public boolean SingleMatchedTile=true;
+    public boolean ledAnalysis=false;
     double nsPerSample = 4.0;
 
     final boolean fitBackground = false;
@@ -196,7 +181,7 @@ public class FTHodoHistograms {
     int[] NBinsNoiseV = {0, 50, 50};
     final int NBinsPed = 200;
     //pedestal min and max bin values for histogram
-    int[] PedQX = {100, 500};
+    int[] PedQX = {50, 500};
     double PedBinWidth = (PedQX[1] - PedQX[0]) / (1.0 * NBinsPed);
     final int nPointsPed = 200; //number of entries in the PedGraph
     double[] px_H_PED_VS_EVENT = new double[nPointsPed];
@@ -236,30 +221,24 @@ public class FTHodoHistograms {
 //        G_FADC_ANALYSIS.get(HP.getS(), HP.getL(), HP.getC()).setMarkerSize(2); // size in points on the screen
 //        G_FADC_ANALYSIS.get(HP.getS(), HP.getL(), HP.getC()).addPoint(0, 200, 0, 0);
 //        G_FADC_ANALYSIS.get(HP.getS(), HP.getL(), HP.getC()).addPoint(100, 200, 0, 0);
-        H_VT.add(HP.getS(), HP.getL(), HP.getC(), new H1F(DetectorDescriptor.getName("H_VT", HP.getS(), HP.getL(),HP.getC()),
-                         HP.getTitle(), 100, 0.0, 400.0));
+        H_VT.add(HP.getS(), HP.getL(), HP.getC(), new H1F(DetectorDescriptor.getName("H_VT", HP.getS(), HP.getL(),HP.getC()),HP.getTitle(), 100, 0.0, 400.0));
         H_VT.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_VT.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Time (ns)");
         H_VT.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Voltage - ped sub (mV)");
-        H_NPE.add(HP.getS(), HP.getL(), HP.getC(),
-                  new H1F(DetectorDescriptor.
-                          getName("H_NPE", HP.getS(),HP.getL(), HP.getC()),
-                          HP.getTitle(), 100, 0.0, 400.0));
+        H_NPE.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_NPE", HP.getS(),HP.getL(), HP.getC()),HP.getTitle(), 100, 0.0, 400.0));
         H_NPE.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_NPE.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Time (ns)");
         H_NPE.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Photoelectrons (amp mV/spe mV");
         //----------------------------
         // Accumulated Histograms
         // PEDESTAL CANVAS
-        H_PED.add(HP.getS(), HP.getL(), HP.getC(),
-                  new H1F(DetectorDescriptor.getName("H_PED", HP.getS(),HP.getL(),HP.getC()), HP.getTitle(),NBinsPed*2, PedQX[0], PedQX[1]));
+        H_PED.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_PED", HP.getS(),HP.getL(),HP.getC()), HP.getTitle(),NBinsPed*2, PedQX[0], PedQX[1]));
         H_PED.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_PED.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Pedestal");
         H_PED.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
         String namePed = HP.getTitle() + " for 100 events";
         String namePed2 = HP.getTitle() + " every 100 events";
-        H_PED_TEMP.add(HP.getS(), HP.getL(), HP.getC(),
-                       new H1F(DetectorDescriptor.getName("H_PED_TEMP",HP.getS(),HP.getL(),HP.getC()), namePed, NBinsPed, PedQX[0], PedQX[1]));
+        H_PED_TEMP.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_PED_TEMP",HP.getS(),HP.getL(),HP.getC()), namePed, NBinsPed, PedQX[0], PedQX[1]));
         H_PED_TEMP.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_PED_TEMP.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Pedestal");
         H_PED_TEMP.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
@@ -269,24 +248,20 @@ public class FTHodoHistograms {
             //py_H_PED_VS_EVENT[i] = 0.0;
             //pey_H_PED_VS_EVENT[i] = 0.0;
         }
-        H_PED_VS_EVENT.add(HP.getS(), HP.getL(), HP.getC(),new GraphErrors(namePed2,
-                 px_H_PED_VS_EVENT, py_H_PED_VS_EVENT[HP.getS() - 1][HP.getL() - 1][HP.getC() - 1],  pex_H_PED_VS_EVENT, pey_H_PED_VS_EVENT[HP.getS() - 1][HP.getL() - 1][HP.getC() - 1]));
+        H_PED_VS_EVENT.add(HP.getS(), HP.getL(), HP.getC(),new GraphErrors(namePed2,px_H_PED_VS_EVENT, py_H_PED_VS_EVENT[HP.getS() - 1][HP.getL() - 1][HP.getC() - 1],  pex_H_PED_VS_EVENT, pey_H_PED_VS_EVENT[HP.getS() - 1][HP.getL() - 1][HP.getC() - 1]));
         H_PED_VS_EVENT.get(HP.getS(), HP.getL(), HP.getC()).setTitle(namePed);
         H_PED_VS_EVENT.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Event Index");
         H_PED_VS_EVENT.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Average Pedestal");
         H_PED_VS_EVENT.get(HP.getS(), HP.getL(), HP.getC()).setMarkerSize(5);
-        H_MIP_Q.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Cosmic Charge",HP.getS(),HP.getL(),HP.getC()),
-                HP.getTitle(),NBinsCosmic,CosmicQXMin[HP.getL()],CosmicQXMax[HP.getL()]));
+        H_MIP_Q.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Cosmic Charge",HP.getS(),HP.getL(),HP.getC()),"Charge "+HP.getTitle(),NBinsCosmic,CosmicQXMin[HP.getL()],CosmicQXMax[HP.getL()]));
         H_MIP_Q.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_MIP_Q.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Charge (pC)");
         H_MIP_Q.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
-        H_MIP_Q_MatchingTiles.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("MIP Charge Matching Tiles",HP.getS(),HP.getL(),HP.getC()),
-                HP.getTitle(),NBinsCosmic,CosmicQXMin[HP.getL()],CosmicQXMax[HP.getL()]));
+        H_MIP_Q_MatchingTiles.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("MIP Charge Matching Tiles",HP.getS(),HP.getL(),HP.getC()),"Charge "+HP.getTitle(),NBinsCosmic,CosmicQXMin[HP.getL()],CosmicQXMax[HP.getL()]));
         H_MIP_Q_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_MIP_Q_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Charge (pC)");
         H_MIP_Q_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
-        H_NOISE_Q.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Noise Charge",HP.getS(),HP.getL(),HP.getC()),
-                HP.getTitle(),NBinsNoiseQ[HP.getL()],NoiseQXMin[HP.getL()],NoiseQXMax[HP.getL()]));
+        H_NOISE_Q.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Noise Charge",HP.getS(),HP.getL(),HP.getC()),"Charge "+HP.getTitle(),NBinsNoiseQ[HP.getL()],NoiseQXMin[HP.getL()],NoiseQXMax[HP.getL()]));
         H_NOISE_Q.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_NOISE_Q.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Charge (pC)");
         H_NOISE_Q.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
@@ -301,25 +276,25 @@ public class FTHodoHistograms {
         H_NPE_MATCH.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("npe (peak/gain)");
         H_NPE_MATCH.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
         H_NOISE_V.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("WAVEMAX",HP.getS(), HP.getL(), HP.getC()),
-                HP.getTitle(), NBinsNoiseV[HP.getL()],NoiseVXMin[HP.getL()],NoiseVXMax[HP.getL()]));
+                "maxV "+ HP.getTitle(), NBinsNoiseV[HP.getL()],NoiseVXMin[HP.getL()],NoiseVXMax[HP.getL()]));
         H_NOISE_V.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(5);
         H_NOISE_V.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Waveform Max (mV)");
         H_NOISE_V.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
         H_MIP_V.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("MIP WAVEMAX",HP.getS(),HP.getL(),HP.getC()),
-                HP.getTitle(), nBinsVMIP, CosmicVXMin[HP.getL()], CosmicVXMax[HP.getL()]));
+                "maxV "+ HP.getTitle(), nBinsVMIP, CosmicVXMin[HP.getL()], CosmicVXMax[HP.getL()]));
         H_MIP_V.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_MIP_V.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Waveform Max (mV)");
         H_MIP_V.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
         H_MIP_V_MatchingTiles.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("MIP WAVEMAX Matching Tiles",HP.getS(),HP.getL(),HP.getC()),
-                HP.getTitle(), nBinsVMIP,CosmicVXMin[HP.getL()], CosmicVXMax[HP.getL()]));
+                "maxV "+HP.getTitle(), nBinsVMIP,CosmicVXMin[HP.getL()], CosmicVXMax[HP.getL()]));
         H_MIP_V_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(3);
         H_MIP_V_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setTitleX("Waveform Max (mV)");
         H_MIP_V_MatchingTiles.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
-        H_T_MODE3.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE3",HP.getS(), HP.getL(), HP.getC()),
-                HP.getTitle(), 100, 0.0, 400));
+        H_T_MODE3.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE3",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(), 100, 0.0, 400));
         H_T_MODE3.get(HP.getS(), HP.getL(), HP.getC()).setFillColor(4);
         H_T_MODE3.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 3 Time (ns)");
         H_T_MODE3.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
+       
         // simulated data
         timeMin[1] = -15.0;
         timeMin[2] = -15.0;
@@ -330,47 +305,51 @@ public class FTHodoHistograms {
         timeMin[2] += triggerDelay;
         timeMax[1] += triggerDelay;
         timeMax[2] += triggerDelay;
-        H_MAXV_VS_T.add(HP.getS(),HP.getL(),HP.getC(), new H2F(DetectorDescriptor.getName("H_MAXV_VS_T",HP.getS(), HP.getL(), HP.getC()),
-             HP.getTitle(),64, timeMin[HP.getL()], timeMax[HP.getL()],64, 0., 2000.));
+        H_MAXV_VS_T.add(HP.getS(),HP.getL(),HP.getC(), new H2F(DetectorDescriptor.getName("H_MAXV_VS_T",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(),64, timeMin[HP.getL()], timeMax[HP.getL()],64, 0., 2000.));
         H_MAXV_VS_T.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 7 Time (ns)");
         H_MAXV_VS_T.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Peak Voltage (mV)");
-        H_T_MODE3.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE3",HP.getS(), HP.getL(), HP.getC()),
-                              HP.getTitle(), 32, timeMin[HP.getL()], timeMax[HP.getL()]));
-        H_T_MODE3.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(4);
-        H_T_MODE3.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 3 (ns)");
-        H_T_MODE3.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Counts");
-        H_T_MODE7.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE7",HP.getS(), HP.getL(), HP.getC()),
-                              HP.getTitle(), 64, timeMin[HP.getL()], timeMax[HP.getL()]));
+//        H_T_MODE3.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE3",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(), 32, timeMin[HP.getL()], timeMax[HP.getL()]));
+//        H_T_MODE3.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(4);
+//        H_T_MODE3.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 3 (ns)");
+//        H_T_MODE3.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Counts");
+        H_T_MODE7.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_T_MODE7",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(), 64, timeMin[HP.getL()], timeMax[HP.getL()]));
         H_T_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(4);
         H_T_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setLineColor(1);
         H_T_MODE7.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 7 Time (ns)");
         H_T_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Counts");
-        
         if (HP.getL() == 1) {
-            H_T1_T2.add(HP.getS(),HP.getL(),HP.getC(),new H2F(DetectorDescriptor.getName("H_T1_T2",HP.getS(), HP.getL(), HP.getC()),
-                                HP.getTitle(),64, timeMin[1], timeMax[1],64, timeMin[2], timeMax[2]));
-            
+            H_T1_T2.add(HP.getS(),HP.getL(),HP.getC(),new H2F(DetectorDescriptor.getName("H_T1_T2",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(),64, timeMin[1], timeMax[1],64, timeMin[2], timeMax[2]));
             H_T1_T2.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 7 Time (ns) [thin layer]");
             H_T1_T2.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Mode 7 Time (ns) [thick layer]");
-            // DT
-            H_DT_MODE7.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_DT_MODE7",HP.getS(), HP.getL(), HP.getC()),
-                                   HP.getTitle(), 64, -15., 15.));
+            
+            H_DT_MODE7.add(HP.getS(),HP.getL(),HP.getC(),new H1F(DetectorDescriptor.getName("H_DT_MODE7",HP.getS(), HP.getL(), HP.getC()),HP.getTitle(), 64, -15., 15.));
             H_DT_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(4);
             H_DT_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setLineColor(1);
             H_DT_MODE7.get(HP.getS(),HP.getL(),HP.getC()).setTitleX("Mode 7 Time difference (ns)");
             H_DT_MODE7.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("Counts");
         }
         
-        H_COSMIC_fADC.add(HP.getS(), HP.getL(), HP.getC(),new H1F(DetectorDescriptor.getName("Cosmic fADC",HP.getS(), HP.getL(), HP.getC()),
-                                  HP.getTitle(), 100, 0.0, 100.0));
-        H_COSMIC_fADC.get(HP.getS(), HP.getL(),HP.getC()).setFillColor(3);
-        H_COSMIC_fADC.get(HP.getS(), HP.getL(),HP.getC()).setTitleX("fADC Sample");
-        H_COSMIC_fADC.get(HP.getS(), HP.getL(),HP.getC()).setTitleY("fADC Counts");
     }
+    
+    public void InitFunctions() {
+        fPed = new DetectorCollection<F1D>();
+        fQ2 = new DetectorCollection<F1D>();
+        fQMIP = new DetectorCollection<F1D>();
+        fQMIPMatching = new DetectorCollection<F1D>();
+        fV2 = new DetectorCollection<F1D>();
+        fVMIP = new DetectorCollection<F1D>();
+        fVMIPMatching = new DetectorCollection<F1D>();
+        fT = new DetectorCollection<F1D>();
+        fThr = new DetectorCollection<F1D>();
+        fVThr = new DetectorCollection<F1D>();
+    }
+    
     public void InitHistograms() {
+        this.InitFunctions();
         for (int index = 0; index < 232; index++) {
             setHistogramsHodo(index);
         }
+        
         H_W_MAX = new H1F("H_W_MAX", 504, 0, 504);
         H_V_MAX = new H1F("H_V_MAX", 504, 0, 2000);
         H_NPE_MAX = new H1F("H_NPE_MAX", 500, 0, 50);
@@ -449,11 +428,6 @@ public class FTHodoHistograms {
         H_EMPTYMIPGAIN_matchingTiles_ELE_MV.setTitleX("component");
         H_EMPTYMIPGAIN_matchingTiles_ELE_MV.setTitleY("NPE (from mV)");
         H_EMPTYMIPGAIN_matchingTiles_ELE_MV.setBinContent(1,150);
-        
-        
-        
-        
-        
         
         H_EMPTYMIPSIGN_MV9=new H1F("H_EMPTYSIGN_MV9", 500, 0.0, 10);
         H_EMPTYMIPSIGN_MV9.setTitleX("component");
@@ -586,42 +560,9 @@ public class FTHodoHistograms {
             }
         }
         
-    }
-    
-    public void resetHistograms(){
-        for (int index = 0; index < 232; index++) {
-            resetAllHistograms(index, 'h');
-        }
-    }
-    private void resetAllHistograms(int index, char detector) {
         
-        HP.setAllParameters(index, detector);
-        if (detector == 'h') {
-            
-            H_MIP_Q.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_MIP_Q_MatchingTiles.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_NOISE_Q.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_NPE_INT.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_NPE_MATCH.get(HP.getS(),  HP.getL(),  HP.getC()).reset();
-            H_FADC.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_FADC_RAW.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_FADC_RAW_PED.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_FADC_RAW_PUL.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_NOISE_V.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_T_MODE7.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            //G_FADC_ANALYSIS.get(HP.getS(), HP.getL(), HP.getC()).reset();
-            
-            H_PED.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_COSMIC_fADC.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_MIP_V.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_MIP_V_MatchingTiles.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            H_MAXV_VS_T.get(HP.getS(),      HP.getL(),      HP.getC()).reset();
-            if (HP.getL() == 1) {
-                H_DT_MODE7.get(HP.getS(),HP.getL(),HP.getC()).reset();
-                H_T1_T2.get(HP.getS(),HP.getL(),HP.getC()).reset();
-            }
-        }
     }
+
     
     public void fitHistograms() {
         System.out.println(" Fitting Histograms");
@@ -640,11 +581,13 @@ public class FTHodoHistograms {
         }
         System.out.println(" Fitting Histograms complete");
     }
+    
     private void fitPedestals(int s, int l, int c, String fitOption) {
         if (testMode)  System.out.println(" Fitting Pedestal (S,L,C) = ("+ s + "," + l + "," + c + ")");
         
         if (initFitPedestalParameters(s, l, c, H_PED.get(s, l, c))) {
             DataFitter.fit(fPed.get(s, l, c), H_PED.get(s, l, c), fitOption);
+            H_PED.get(s, l, c).setFunction(null);
             if (testMode) {
                 System.out.println(" Fitted Pedestal (S,L,C) = ("+ s + "," + l + "," + c + ")");
             }
@@ -681,6 +624,7 @@ public class FTHodoHistograms {
             if (testMode)
                 System.out.println(" Fitting Voltage Noise (fV2) ");
             DataFitter.fit(fV2.get(s, l, c), H_NOISE_V.get(s, l, c), fitOption);
+            H_NOISE_V.get(s, l, c).setFunction(null);
             if (testMode){
                 System.out.println(" Fitted V Noise (S,L,C) = ("+ s + "," + l + "," + c + ")");
             }
@@ -693,6 +637,7 @@ public class FTHodoHistograms {
             System.out.println(" Fitting Q Noise(S,L,C) = ("+ s + "," + l + "," + c + ")");
         if (initFitNoiseParameters(s, l, c, H_NOISE_Q.get(s, l, c), fQ2)) {
             DataFitter.fit(fQ2.get(s, l, c), H_NOISE_Q.get(s, l, c), fitOption);
+            H_NOISE_Q.get(s, l, c).setFunction(null);
             if (testMode)
                 System.out.println(" Fitted Q Noise (S,L,C) = ("+ s + "," + l + "," + c + ")");
         } else if (testMode) {
@@ -709,7 +654,7 @@ public class FTHodoHistograms {
         double std = 0.5;
         double exp0 = H1.getBinContent(1) + H1.getBinContent(2);
         if (testMode) System.out.println(" initFitNoiseParameters variables initialised ");
-        if (H1.getEntries() > 500) {
+        if (H1.getEntries() > 250) {
             if (testMode) System.out.println(" initFitNoiseParameters setting fV2 parameters ");
             DCFunc.add(s, l, c, new F1D("gaus", "[amp1]*gaus(x,[mean1],[sigma1])+[amp2]*gaus(x,[mean2],[sigma2])+[amp3]*exp(x*[scale])",H1.getAxis().min(),H1.getAxis().max()));
             DCFunc.get(s, l, c).setLineColor(2);
@@ -742,6 +687,7 @@ public class FTHodoHistograms {
         if (testMode) System.out.println(" Fitting V MIP (S,L,C) = ("+ s + "," + l + "," + c + ")");
         if (initFitMIPParameters(s, l, c, H_MIP_V.get(s, l, c), fVMIP)) {
             DataFitter.fit(fVMIP.get(s, l, c), H_MIP_V.get(s, l, c), fitOption);
+            H_MIP_V.get(s, l, c).setFunction(null);
             if (testMode) System.out.println(" Fitted V MIP (S,L,C) = ("+ s + "," + l + "," + c + ")");
         } else {
             if (testMode) System.out.println(" No V MIP Fit (S,L,C) = ("+ s + "," + l + "," + c + ")");
@@ -752,6 +698,8 @@ public class FTHodoHistograms {
         if (testMode) System.out.println(" Fitting Q MIP (S,L,C) = ("+ s + "," + l + "," + c + ")");
         if (initFitMIPParameters(s, l, c, H_MIP_Q.get(s, l, c), fQMIP)) {
             DataFitter.fit(fQMIP.get(s, l, c), H_MIP_Q.get(s, l, c), fitOption);
+            H_MIP_Q.get(s, l, c).setFunction(null);
+
             if (testMode) System.out.println(" Fitted Q MIP (S,L,C) = ("+ s + "," + l + "," + c + ")");
         } else {
             if (testMode) System.out.println(" No Q MIP Fit (S,L,C) = ("+ s + "," + l + "," + c + ")");
@@ -763,6 +711,7 @@ public class FTHodoHistograms {
         if (testMode) System.out.println(" Fitting V MIP Matching (S,L,C) = ("+ s + "," + l + "," + c + ")");
         if (initFitMIPParameters(s, l, c, H_MIP_V_MatchingTiles.get(s, l, c), fVMIPMatching)) {
             DataFitter.fit(fVMIPMatching.get(s, l, c), H_MIP_V_MatchingTiles.get(s, l, c), fitOption);
+            H_MIP_V_MatchingTiles.get(s, l, c).setFunction(null);
             if (testMode) System.out.println(" Fitted V MIP Matching (S,L,C) = ("+ s + "," + l + "," + c + ")");
         } else {
             if (testMode) System.out.println(" No V MIP Fit Matching (S,L,C) = ("+ s + "," + l + "," + c + ")");
@@ -773,6 +722,7 @@ public class FTHodoHistograms {
         if (testMode) System.out.println(" Fitting Q MIP Matching (S,L,C) = ("+ s + "," + l + "," + c + ")");
         if (initFitMIPParameters(s, l, c, H_MIP_Q_MatchingTiles.get(s, l, c), fQMIPMatching)) {
             DataFitter.fit(fQMIPMatching.get(s, l, c), H_MIP_Q_MatchingTiles.get(s, l, c), fitOption);
+            H_MIP_Q_MatchingTiles.get(s, l, c).setFunction(null);
             if (testMode) System.out.println(" Fitted Q MIP Matching (S,L,C) = ("+ s + "," + l + "," + c + ")");
         } else {
             if (testMode) System.out.println(" No Q MIP MatchingFit (S,L,C) = ("+ s + "," + l + "," + c + ")");
@@ -787,63 +737,39 @@ public class FTHodoHistograms {
         double ampl1 = H1.getBinContent(H1.getMaximumBin()); //set as starting amplitude of exponential the value of the bin at xmin
         
         if (H1.integral() > 100) {
-            DCFunc.add(s, l, c, new F1D("landau", "[amp]*landau(x,[mean],[gamma])+[amp2]*exp(x*[scale])",H1.getAxis().min(),H1.getAxis().max()));
-            //DCFunc.add(s, l, c, new F1D("landau", "[amp]*landau(x,[mean],[gamma])",H1.getAxis().min(),H1.getAxis().max()));
-            DCFunc.get(s, l, c).setLineColor(2);
-            DCFunc.get(s, l, c).setLineWidth(2);
-            DCFunc.get(s, l, c).setParameter(0, ampl);
-            DCFunc.get(s, l, c).setParameter(1, mean);
-            DCFunc.get(s, l, c).setParameter(2, gamma);
-            DCFunc.get(s, l, c).setParameter(3, ampl1);
-            DCFunc.get(s, l, c).setParameter(4, -0.001);
-            
-            DCFunc.get(s, l, c).setParLimits(0, ampl * 0.1, ampl * 10.0);
-            DCFunc.get(s, l, c).setParLimits(1, H1.getAxis().min(),H1.getAxis().max());
-            DCFunc.get(s, l, c).setParLimits(2, gamma/10, gamma*10);
-            DCFunc.get(s, l, c).setParLimits(3, ampl1 * 0.1, ampl1 * 100.0);
-            DCFunc.get(s, l, c).setParLimits(4, -1.0, 0);
+            if (!(ledAnalysis)){
+                DCFunc.add(s, l, c, new F1D("landau", "[amp]*landau(x,[mean],[gamma])+[amp2]*exp(x*[scale])",H1.getAxis().min(),H1.getAxis().max()));
+                //DCFunc.add(s, l, c, new F1D("landau", "[amp]*landau(x,[mean],[gamma])",H1.getAxis().min(),H1.getAxis().max()));
+                DCFunc.get(s, l, c).setLineColor(2);
+                DCFunc.get(s, l, c).setLineWidth(2);
+                DCFunc.get(s, l, c).setParameter(0, ampl);
+                DCFunc.get(s, l, c).setParameter(1, mean);
+                DCFunc.get(s, l, c).setParameter(2, gamma);
+                DCFunc.get(s, l, c).setParameter(3, ampl1);
+                DCFunc.get(s, l, c).setParameter(4, -0.001);
+                
+                DCFunc.get(s, l, c).setParLimits(0, ampl * 0.1, ampl * 10.0);
+                DCFunc.get(s, l, c).setParLimits(1, H1.getAxis().min(),H1.getAxis().max());
+                DCFunc.get(s, l, c).setParLimits(2, gamma/10, gamma*10);
+                DCFunc.get(s, l, c).setParLimits(3, ampl1 * 0.1, ampl1 * 100.0);
+                DCFunc.get(s, l, c).setParLimits(4, -1.0, 0);
+            } else if ((ledAnalysis)){
+                DCFunc.add(s, l, c, new F1D("gaus", "[amp1]*gaus(x,[mean1],[sigma1])",H1.getAxis().min(),H1.getAxis().max()));
+                DCFunc.get(s, l, c).setLineColor(2);
+                DCFunc.get(s, l, c).setLineWidth(2);
+                DCFunc.get(s, l, c).setParameter(0, ampl);
+                DCFunc.get(s, l, c).setParameter(1, mean);
+                DCFunc.get(s, l, c).setParameter(2, gamma);
+                DCFunc.get(s, l, c).setParLimits(0, ampl * 0.1, ampl * 10.0);
+                DCFunc.get(s, l, c).setParLimits(1, H1.getAxis().min(),H1.getAxis().max());
+                DCFunc.get(s, l, c).setParLimits(2, gamma/10, gamma*10);
+            }
             return true;
         } else {
             return false;
         }
     }
 
-//    private void fitT(int s, int l, int c, String fitOption) {
-//        if (testMode) System.out.println(" Fitting T (S,L,C) = ("+ s + "," + l + "," + c + ")");
-//        if (H_T_MODE7.hasEntry(s, l, c)  && initFitTParameters(s, l, c, H_T_MODE7.get(s, l, c))) {
-//            DataFitter.fit(fT.get(s, l, c), H_T_MODE7.get(s, l, c), fitOption);
-//            //         H_T_MODE7.get(s,l,c).
-//            //         fit(fT.get(s,l,c),fitOption);
-//            if (testMode) System.out.println(" Fitted T (S,L,C) = ("+ s + "," + l + "," + c + ")");
-//        } else {
-//            if (testMode) System.out.println(" No T Fit (S,L,C) = ("+ s + "," + l + "," + c + ")");
-//        }
-//    }
-    
-//    private boolean initFitTParameters(int s, int l, int c, H1F H1) {
-//        double ampl = H1.getBinContent(H1.getMaximumBin());
-//        double mean = H1.getMaximumBin();
-//        mean = mean * H1.getAxis().getBinWidth(2);
-//        mean = mean + H1.getAxis().min();
-//        double std = 1.0;
-//        double rangeLow = -15.;
-//        double rangeHigh = 15.0;
-//        rangeLow += triggerDelay;
-//        rangeHigh += triggerDelay;
-//        if (H1.integral() > 100) {
-//            fT.add(s, l, c, new F1D("gaus", "[amp]*gaus(x,[mean],[sigma])",rangeLow,rangeHigh));
-//            fT.get(s, l, c).setParameter(0, ampl);
-//            fT.get(s, l, c).setParameter(1, mean);
-//            fT.get(s, l, c).setParameter(2, std);
-//            fT.get(s, l, c).setParLimits(0, ampl * 0.5, ampl * 2);
-//            fT.get(s, l, c).setParLimits(1, rangeLow, rangeHigh);
-//            fT.get(s, l, c).setParLimits(2, 0.3, 4.0);
-//            fT.get(s, l, c).setLineColor(1);
-//            return true;
-//        } else {
-//            return false;
-//        }
-//    }
     
     public void initThresholdParameters(int s, int l, int c) {
         if (fThr.hasEntry(s, l, c)){
