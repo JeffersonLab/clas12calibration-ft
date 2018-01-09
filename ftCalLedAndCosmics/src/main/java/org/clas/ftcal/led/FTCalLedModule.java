@@ -814,40 +814,40 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
                 int pul_i1 = counter.getADCData(0).getPulseMinBin();
                 int pul_i2 = counter.getADCData(0).getPulseMaxBin();
                 H_fADC_N.fill(key);
-                this.resetWave(key);
-                for (int i = 0; i < Math.min(pulse.length, H_fADC.get(1, 1, key).getAxis().getNBins()); i++) {
-                    H_fADC.get(1, 1, key).fill(i, pulse[i] - counter.getADCData(0).getPedestal() + 10.0);
-                    H_WAVE.get(1, 1, key).fill(i, pulse[i]);
-                    if(i> ped_i1 && i<=ped_i2) H_WAVE_PED.get(1, 1, key).fill(i, pulse[i]);
-                    if(i>=pul_i1 && i<=pul_i2) H_WAVE_PUL.get(1, 1, key).fill(i, pulse[i]);                    
-                }
-                H_WMAX.fill(key,counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal());
-                H_TCROSS.fill(key,counter.getADCData(0).getTimeCourse());
-                H_PED.get(1, 1, key).fill(counter.getADCData(0).getPedestal());
-                H_NOISE.get(1, 1, key).fill(counter.getADCData(0).getRMS()*LSB);
-                // save relevant info in pulse-analysis graph for debugging
-                G_PULSE_ANALYSIS.get(1, 1, key).reset();
-                G_PULSE_ANALYSIS.get(1, 1, key).addPoint(ped_i1+1.5,counter.getADCData(0).getPedestal(),0,0);
-                G_PULSE_ANALYSIS.get(1, 1, key).addPoint(ped_i2+0.5,counter.getADCData(0).getPedestal(),0,0);            
-                G_PULSE_ANALYSIS.get(1, 1, key).addPoint(pul_i1+0.5,counter.getADCData(0).getPulseValue(pul_i1),0,0);
-                G_PULSE_ANALYSIS.get(1, 1, key).addPoint(pul_i2+0.5,counter.getADCData(0).getPulseValue(pul_i2),0,0);            
-                if(counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal()>this.detectorDecoder.getFadcPanel().tet) {
-                    H_LED_N.fill(key);
-                    for (int i = 0; i < Math.min(pulse.length, H_LED_fADC.get(1, 1, key).getAxis().getNBins()); i++) {
-                        H_LED_fADC.get(1, 1, key).fill(i, pulse[i]-counter.getADCData(0).getPedestal() + 10.0);                
+                if(this.detector.hasComponent(key)) {
+                    this.resetWave(key);
+                    for (int i = 0; i < Math.min(pulse.length, H_fADC.get(1, 1, key).getAxis().getNBins()); i++) {
+                        H_fADC.get(1, 1, key).fill(i, pulse[i] - counter.getADCData(0).getPedestal() + 10.0);
+                        H_WAVE.get(1, 1, key).fill(i, pulse[i]);
+                        if(i> ped_i1 && i<=ped_i2) H_WAVE_PED.get(1, 1, key).fill(i, pulse[i]);
+                        if(i>=pul_i1 && i<=pul_i2) H_WAVE_PUL.get(1, 1, key).fill(i, pulse[i]);                    
                     }
-                    H_LED_CHARGE.get(1, 1, key).fill(counter.getADCData(0).getADC()*LSB*nsPerSample/50);
-                    H_LED_VMAX.get(1, 1, key).fill((counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB);
-                    H_LED_TCROSS.get(1, 1, key).fill(counter.getADCData(0).getTimeCourse()*nsPerSample-tPMTCross);
-                    H_LED_THALF.get(1, 1, key).fill(counter.getADCData(0).getTime()-tPMTHalf); 
-                    H_LED_WIDTH.get(1, 1, key).fill(counter.getADCData(0).getFWHM()*nsPerSample); 
-                    G_PULSE_ANALYSIS.get(1, 1, key).addPoint(counter.getADCData(0).getThresholdCrossing()+0.5,counter.getADCData(0).getPulseValue(counter.getADCData(0).getThresholdCrossing()),0,0);
-                    G_PULSE_ANALYSIS.get(1, 1, key).addPoint(counter.getADCData(0).getTime()/nsPerSample+0.5,counter.getADCData(0).getHeight()/2,0,0);
-                    G_PULSE_ANALYSIS.get(1, 1, key).addPoint(counter.getADCData(0).getPosition()+0.5,counter.getADCData(0).getHeight(),0,0);
-//                    G_PULSE.addPoint(counter.getADCData(0).getTimeF()/nsPerSample,counter.getADCData(0).getHalf_Max(),0,0);
+                    H_WMAX.fill(key,counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal());
+                    H_TCROSS.fill(key,counter.getADCData(0).getTimeCourse());
+                    H_PED.get(1, 1, key).fill(counter.getADCData(0).getPedestal());
+                    H_NOISE.get(1, 1, key).fill(counter.getADCData(0).getRMS()*LSB);
+                    // save relevant info in pulse-analysis graph for debugging
+                    G_PULSE_ANALYSIS.get(1, 1, key).reset();
+                    G_PULSE_ANALYSIS.get(1, 1, key).addPoint(ped_i1+1.5,counter.getADCData(0).getPedestal(),0,0);
+                    G_PULSE_ANALYSIS.get(1, 1, key).addPoint(ped_i2+0.5,counter.getADCData(0).getPedestal(),0,0);            
+                    G_PULSE_ANALYSIS.get(1, 1, key).addPoint(pul_i1+0.5,counter.getADCData(0).getPulseValue(pul_i1),0,0);
+                    G_PULSE_ANALYSIS.get(1, 1, key).addPoint(pul_i2+0.5,counter.getADCData(0).getPulseValue(pul_i2),0,0);            
+                    if(counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal()>this.detectorDecoder.getFadcPanel().tet) {
+                        H_LED_N.fill(key);
+                        for (int i = 0; i < Math.min(pulse.length, H_LED_fADC.get(1, 1, key).getAxis().getNBins()); i++) {
+                            H_LED_fADC.get(1, 1, key).fill(i, pulse[i]-counter.getADCData(0).getPedestal() + 10.0);                
+                        }
+                        H_LED_CHARGE.get(1, 1, key).fill(counter.getADCData(0).getADC()*LSB*nsPerSample/50);
+                        H_LED_VMAX.get(1, 1, key).fill((counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB);
+                        H_LED_TCROSS.get(1, 1, key).fill(counter.getADCData(0).getTimeCourse()*nsPerSample-tPMTCross);
+                        H_LED_THALF.get(1, 1, key).fill(counter.getADCData(0).getTime()-tPMTHalf); 
+                        H_LED_WIDTH.get(1, 1, key).fill(counter.getADCData(0).getFWHM()*nsPerSample); 
+                        G_PULSE_ANALYSIS.get(1, 1, key).addPoint(counter.getADCData(0).getThresholdCrossing()+0.5,counter.getADCData(0).getPulseValue(counter.getADCData(0).getThresholdCrossing()),0,0);
+                        G_PULSE_ANALYSIS.get(1, 1, key).addPoint(counter.getADCData(0).getTime()/nsPerSample+0.5,counter.getADCData(0).getHeight()/2,0,0);
+                        G_PULSE_ANALYSIS.get(1, 1, key).addPoint(counter.getADCData(0).getPosition()+0.5,counter.getADCData(0).getHeight(),0,0);
+    //                    G_PULSE.addPoint(counter.getADCData(0).getTimeF()/nsPerSample,counter.getADCData(0).getHalf_Max(),0,0);
 
-                    // fill info for time dependence evaluation
-                    if(this.detector.hasComponent(key)) {
+                        // fill info for time dependence evaluation
                         double ledCH = counter.getADCData(0).getADC()*LSB*nsPerSample/50;
                         double ledAM = (counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB;
                         double ledFW = (counter.getADCData(0).getFWHM()*nsPerSample);
@@ -920,7 +920,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
                                 ledWidth2[key]  += ledFW*ledFW;
                                 ledNEvents[key]++;
                             }
-                        }
+                        }                        
                     }
                 }
 //                G_PULSE_ANALYSIS.add(1, 1, key, G_PULSE);
