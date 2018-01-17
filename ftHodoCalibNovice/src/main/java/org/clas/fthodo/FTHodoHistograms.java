@@ -1,6 +1,7 @@
 
 package org.clas.fthodo;
 
+import java.lang.Math;
 import org.jlab.detector.base.DetectorCollection;
 import org.jlab.detector.base.DetectorDescriptor;
 import org.jlab.groot.data.GraphErrors;
@@ -157,28 +158,36 @@ public class FTHodoHistograms {
     // = 51
     double threshD = nThrshNPE*10.0/(LSB);
     public int threshold;
-    public int matchingTilesThreshold=600; // Threshold to look for match tiles above this in fADC channels.
-    public boolean SingleMatchedTile=true;
+    //public int matchingTilesThreshold=600; // Threshold to look for match tiles above this in fADC channels.
+    public int matchingTilesThreshold=50; // Threshold to look for match tiles above this in fADC channels.
+    //public boolean SingleMatchedTile=true;
+    public boolean SingleMatchedTile=false;
     public boolean ledAnalysis=false;
     double nsPerSample = 4.0;
 
     final boolean fitBackground = false;
-    int NBinsCosmic = 50;
-    double CosmicQXMin[] = {0, 20.0 * nGain, 20.0 * nGain};
-    double CosmicQXMax[] = {10000, 6000, 6000};
-    final int nBinsVMIP = 50;
-    final double CosmicVXMin[] = {0, 20.0 * nGain_mV, 20.0 * nGain_mV};
-    final int CosmicVXMax[] = {10000, 1800, 1800};
+    int NBinsCosmic = 100;
+    //double CosmicQXMin[] = {0, 20.0 * nGain, 20.0 * nGain};
+    double CosmicQXMin[] = {0, 0.0 * nGain, 0.0 * nGain};
+    //double CosmicQXMax[] = {10000, 6000, 6000};
+    double CosmicQXMax[] = {10000, 2000, 2000};
+    final int nBinsVMIP = 100;
+    //final double CosmicVXMin[] = {0, 20.0 * nGain_mV, 20.0 * nGain_mV};
+    final double CosmicVXMin[] = {0, 0.0 * nGain_mV, 0.0 * nGain_mV};
+    //final int CosmicVXMax[] = {10000, 1800, 1800};
+    final int CosmicVXMax[] = {10000, 800, 800};
     final int CosmicNPEXMin[] = {0, 3, 5};
     final int CosmicNPEXMax[] = {200, 93, 133};
     boolean simulatedAnalysis = true;
     boolean useDefaultGain = false;
-    double NoiseQXMin[] = {0., 0.5 * nGain, 0.5 * nGain};
-    double NoiseQXMax[] = {310., 3.0 * nGain, 3.0 * nGain};
-    double NoiseVXMin[] = {0., 0.5 * nGain_mV, 0.5 * nGain_mV};
-    double NoiseVXMax[] = {0., 3.0 * nGain_mV, 3.0 * nGain_mV};
-    int[] NBinsNoiseQ = {0, 75, 75};
-    int[] NBinsNoiseV = {0, 50, 50};
+    //double NoiseQXMin[] = {0., 0.5 * nGain, 0.5 * nGain};
+    double NoiseQXMin[] = {0., 0.0 * nGain, 0.0 * nGain};
+    double NoiseQXMax[] = {310., 5.0 * nGain, 5.0 * nGain};
+    //double NoiseVXMin[] = {0., 0.5 * nGain_mV, 0.5 * nGain_mV};
+    double NoiseVXMin[] = {0., 0.0 * nGain_mV, 0.0 * nGain_mV};
+    double NoiseVXMax[] = {0., 5.0 * nGain_mV, 5.0 * nGain_mV};
+    int[] NBinsNoiseQ = {0, 110, 110};
+    int[] NBinsNoiseV = {0, 90, 90};
     final int NBinsPed = 200;
     //pedestal min and max bin values for histogram
     int[] PedQX = {50, 500};
@@ -662,7 +671,7 @@ public class FTHodoHistograms {
             DCFunc.get(s, l, c).setParameter(0, ampl);
             DCFunc.get(s, l, c).setParameter(1, mean);
             DCFunc.get(s, l, c).setParameter(2, std);
-            DCFunc.get(s, l, c).setParameter(3, ampl / 4.0);
+            DCFunc.get(s, l, c).setParameter(3, ampl / 6.0);
             DCFunc.get(s, l, c).setParameter(4, 2.0 * mean);
             DCFunc.get(s, l, c).setParameter(5, std);
             DCFunc.get(s, l, c).setParameter(6, exp0);
@@ -670,11 +679,11 @@ public class FTHodoHistograms {
             if (testMode) System.out.println(" initFitNoiseParameters setting fV2 limits ");
             DCFunc.get(s, l, c).setParLimits(0, 0., ampl * 2);
             DCFunc.get(s, l, c).setParLimits(1, H1.getAxis().min(), 1.5 * mean);
-            DCFunc.get(s, l, c).setParLimits(2, std/3, std * 5.0);
+            DCFunc.get(s, l, c).setParLimits(2, std/6, std * 5.0);
             DCFunc.get(s, l, c).setParLimits(3, 0.0, ampl);
             DCFunc.get(s, l, c).setParLimits(4,1.2 * mean,3.0 * mean);
-            DCFunc.get(s, l, c).setParLimits(5, std/3, std * 5.0);
-            DCFunc.get(s, l, c).setParLimits(6, 0.1 * exp0, 10.0 * exp0);
+            DCFunc.get(s, l, c).setParLimits(5, std/6, std * 5.0);
+            DCFunc.get(s, l, c).setParLimits(6, 0.1 * exp0, 10.0 * exp0+50);
             DCFunc.get(s, l, c).setParLimits(7, -10.0, 0);
             return true;
         } else {
