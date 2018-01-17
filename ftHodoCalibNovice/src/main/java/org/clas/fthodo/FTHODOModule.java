@@ -2563,6 +2563,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         }
             gain_mV[s][l][c] = thisGain;
             errGain_mV[s][l][c] = gainError;
+            
     }else {
         gain[s][l][c] = gain_pc_NoiseCCDB[s][l][c];
         errGain[s][l][c] = 0.0;
@@ -2953,6 +2954,27 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         histogramsFTHodo.InitHistograms();
     }
 
+    public void resetEventObjects(){
+         for (int s = 0; s < 9; s++) {
+            for (int l = 0; l < 3; l++) {
+                for (int c = 0; c < 21; c++) {
+                     this.vMaxEvent[s][l][c] = 0.0;
+                }
+            }
+         }
+         for (int index = 0; index < 232; index++) {
+             char detector = 'h';
+            histogramsFTHodo.HP.setAllParameters(index, detector);
+            int s=histogramsFTHodo.HP.getS();
+            int l=histogramsFTHodo.HP.getL();
+            int c=histogramsFTHodo.HP.getC();
+            histogramsFTHodo.H_FADC.get(s, l, c).reset();
+            histogramsFTHodo.H_FADC_RAW.get(s, l, c).reset();
+            histogramsFTHodo.H_FADC_RAW_PED.get(s, l, c).reset();
+            histogramsFTHodo.H_FADC_RAW_PUL.get(s, l, c).reset();
+            histogramsFTHodo.H_VT.get(s, l, c).reset();
+        }
+    }
     public void initArrays() {
         status = new double[9][3][21];
         thrshNPE = new double[9][3][21];
@@ -3052,6 +3074,10 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             }
         }
     }// end: public void initArra....
+    
+    
+    
+    
     
     public void processDecodedSimEvent(DetectorCollection<Double> adc, DetectorCollection<Double> tdc) {
         boolean calChalData = true;
@@ -3168,6 +3194,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                             histogramsFTHodo.H_NOISE_Q.get(s, l, c).fill(charge[l]);
                             histogramsFTHodo.H_MIP_V.get(s, l, c).fill(peakVolt[l]);
                             histogramsFTHodo.H_NOISE_V.get(s, l, c).fill(peakVolt[l]);
+
                         } // end of cut conditions
                         histogramsFTHodo.H_MAXV_VS_T.get(s, l, c)
                                 .fill(time[l], peakVolt[l]);
@@ -3264,6 +3291,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 histogramsFTHodo.H_NPE_MAX.reset();
                 int nTilesAboveThresholdLayer1=0;
                 int nTilesAboveThresholdLayer2=0;
+                resetEventObjects();
                 double threshDV = (double) histogramsFTHodo.matchingTilesThreshold * histogramsFTHodo.LSB;
 
                 //=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -3296,12 +3324,12 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                     double baselineSubRaw;
                     int eventloop;
                     // reset non-accumulating histograms
-                    histogramsFTHodo.H_FADC.get(sec, lay, com).reset();
-                    histogramsFTHodo.H_FADC_RAW.get(sec, lay, com).reset();
-                    histogramsFTHodo.H_FADC_RAW_PED.get(sec, lay, com).reset();
-                    histogramsFTHodo.H_FADC_RAW_PUL.get(sec, lay, com).reset();
+                    //histogramsFTHodo.H_FADC.get(sec, lay, com).reset();
+                    //histogramsFTHodo.H_FADC_RAW.get(sec, lay, com).reset();
+                    //histogramsFTHodo.H_FADC_RAW_PED.get(sec, lay, com).reset();
+                    //histogramsFTHodo.H_FADC_RAW_PUL.get(sec, lay, com).reset();
                     //histogramsFTHodo.G_FADC_ANALYSIS.get(sec, lay, com).reset();
-                    histogramsFTHodo.H_VT.get(sec, lay, com).reset();
+                    //histogramsFTHodo.H_VT.get(sec, lay, com).reset();
                     histogramsFTHodo.H_NPE.get(sec, lay, com).reset();
                     
                     
