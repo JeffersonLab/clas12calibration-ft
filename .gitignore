@@ -16,4 +16,6 @@ ftHodoCalib/target/maven-status/maven-compiler-plugin/compile/default-compile/cr
 *.cnf
 *.tiff
 *.properties
-
+ftHodoCalib/nbactions.xml
+ftHodoCalibNovice/nbactions.xml
+ftHodoCalibNovice/pom.xml
