@@ -56,11 +56,14 @@ import org.jlab.utils.groups.IndexedTable;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.math.F1D;
 import org.clas.ft.tools.FTAdjustFit;
+import org.clas.ft.tools.FTAdjustFitParams;
 
 public class FTHODOModule extends JPanel implements CalibrationConstantsListener, ActionListener, DetectorListener, ChangeListener {
     FTHodoWire wireFTHodo = new FTHodoWire();    
     CodaEventDecoder             decoder = new CodaEventDecoder();
     DetectorEventDecoder detectorDecoder = new DetectorEventDecoder();
+    FTAdjustFitParams cfitParams1 = null;
+    FTAdjustFitParams cfitParams2 = null;;
     //=================================
     //    PANELS, CANVASES ETC
     //=================================
@@ -1958,7 +1961,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             else {
                 if (isec%2==0)
                     canvasNoiseAnalysis.draw(histogramsFTHodo.H_EMPTYGAIN_PC9);
-               else
+                else
                     canvasNoiseAnalysis.draw(histogramsFTHodo.H_EMPTYGAIN_PC20);
                 canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainDetectorC[0][isec],"same");
                 canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainDetectorC[1][isec],"same");
@@ -2241,7 +2244,139 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         }
     }
     
-
+    //HERE:
+    void drawCanvasMIPAnalysisElecAll() {
+        this.canvasMIPAnalysis.divide(5, 3);
+        for (int mezz=0; mezz<15;mezz++){
+            canvasMIPAnalysis.cd(mezz);
+            if (plotNPE){
+                if (!deltaEoverE){
+                    if (!matchingTiles){
+                        if (useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPGAIN_ELE_MV.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_ELE_MV);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainElectronicsV[mezz],"same");
+                        }
+                        else if (!useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPGAIN_ELE_PC.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_ELE_PC);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainElectronicsC[mezz],"same");
+                        }
+                    }else if (matchingTiles){
+                        if (useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_MV.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_MV);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainElectronics_matchingTilesV[mezz],"same");
+                        }
+                        else if (!useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_PC.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPGAIN_matchingTiles_ELE_PC);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPgainElectronics_matchingTilesC[mezz],"same");
+                        }
+                    }
+                }
+                else if (deltaEoverE){
+                    if (!matchingTiles){
+                        if (useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_MV.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_MV);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPDeltaEoverEElectronicsV[mezz],"same");
+                        }
+                        else if (!useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_PC.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_PC);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPDeltaEoverEElectronicsC[mezz],"same");
+                        }
+                    }else if (matchingTiles){
+                        if (useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_MV.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_MV);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPDeltaEoverEElectronics_matchingTilesV[mezz],"same");
+                        }
+                        else if (!useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_PC.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_PC);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPDeltaEoverEElectronics_matchingTilesC[mezz],"same");
+                        }
+                    }
+                }
+            }else if (!plotNPE) {
+                if (!deltaEoverE){
+                    if (!matchingTiles){
+                        if (useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPSIGN_ELE_MV.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_ELE_MV);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignElectronicsV[mezz],"same");
+                        }
+                        else if (!useGain_mV) {
+                            histogramsFTHodo.H_EMPTYMIPSIGN_ELE_PC.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_ELE_PC);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignElectronicsC[mezz],"same");
+                        }
+                    }else if (matchingTiles){
+                        if (useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_MV.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_MV);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignElectronics_matchingTilesV[mezz],"same");
+                        }
+                        else if (!useGain_mV) {
+                            histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_PC.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPSIGN_matchingTiles_ELE_PC);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPsignElectronics_matchingTilesC[mezz],"same");
+                        }
+                    }
+                }
+                else if (deltaEoverE) {
+                    if (!matchingTiles){
+                        if (useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_MV.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_MV);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPDeltaEoverEElectronicsV[mezz],"same");
+                        }
+                        else if (!useGain_mV) {
+                            histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_PC.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_PC);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPDeltaEoverEElectronicsC[mezz],"same");
+                        }
+                    }else if (matchingTiles){
+                        if (useGain_mV){
+                            histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_MV.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_MV);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPDeltaEoverEElectronics_matchingTilesV[mezz],"same");
+                        }
+                        else if (!useGain_mV) {
+                            histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_PC.setTitle("Mezzanine "+mezz);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.H_EMPTYMIPDeltaEoverE_ELE_PC);
+                            canvasMIPAnalysis.draw(histogramsFTHodo.GGMIPDeltaEoverEElectronics_matchingTilesC[mezz],"same");
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     void setGGraphGain(){
         for (int mezz = 0; mezz < 15; mezz++) {
             int sectI;
@@ -2740,10 +2875,6 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 canvasNoiseAnalysis.draw(histogramsFTHodo.GGgainElectronicsC[mezz],"same");
             }
         }
-    }
-    
-    void drawCanvasMIPAnalysisElecAll(){
-        
     }
     
     
@@ -4117,6 +4248,7 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             H1F histtofit =  histogramsFTHodo.H_PED.get(secSel, laySel, comSel);
             F1D ftofit = histogramsFTHodo.fPed.get(secSel, laySel, comSel);
             FTAdjustFit cfit = new FTAdjustFit(histtofit, ftofit, "LRQ");
+            
         }
         else if (this.tabSel==tabIndexNoise){
             System.out.println("Adjusting Noise fit for Sector " + secSel +" Layer " + laySel +" Component " + comSel);
@@ -4278,10 +4410,216 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 drawCanvasMIPAnalysisElec(secSel,laySel,comSel); //HERE::
             else if (plotDetElecElecall==2) //HERE::
                 drawCanvasMIPAnalysisElecAll(); //HERE::
-            
         }
     }
 
+    public void adjustFitParameters() {
+        if (this.tabSel==tabIndexPed){
+            System.out.println("Adjusting Ped fit Parameters");
+            if (histogramsFTHodo.fPed.hasEntry(secSel,laySel,comSel)){
+                F1D ftofit = histogramsFTHodo.fPed.get(secSel, laySel, comSel);
+                cfitParams1 = new FTAdjustFitParams(ftofit, "Pedestal fits");
+            }
+            else {
+                System.out.println("Function associate with histogram does not exist. Choose different histogram");
+            }
+            
+        }
+        else if (this.tabSel==tabIndexNoise){
+            System.out.println("Adjusting Noise fit Parameters");
+            if (histogramsFTHodo.fQ2.hasEntry(secSel,laySel,comSel)){
+                F1D ftofit1 = histogramsFTHodo.fQ2.get(secSel, laySel, comSel);
+                cfitParams1 = new FTAdjustFitParams(ftofit1, "Noise charge fits");
+            }
+            else {
+                System.out.println("Function associate with histogram does not exist. Choose different histogram");
+            }
+            if (histogramsFTHodo.fV2.hasEntry(secSel,laySel,comSel)){
+                F1D ftofit2 = histogramsFTHodo.fV2.get(secSel, laySel, comSel);
+                cfitParams2 = new FTAdjustFitParams(ftofit2, "Noise mV fits");
+            }
+            else {
+                System.out.println("Function associate with histogram does not exist. Choose different histogram");
+            }
+        }
+        else if (this.tabSel==tabIndexMIPsignal){
+            if (!matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP mV fit Parameters");
+                    if (histogramsFTHodo.fVMIP.hasEntry(secSel,laySel,comSel)){
+                        F1D ftofit = histogramsFTHodo.fVMIP.get(secSel, laySel, comSel);
+                        cfitParams1 = new FTAdjustFitParams(ftofit, "MIP mV fits");
+                    }
+                    else {
+                        System.out.println("Function associate with histogram does not exist. Choose different histogram");
+                    }
+                }
+                if (plotVoltageChargeBoth==2 ||plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP pC fit Parameters");
+                    if (histogramsFTHodo.fQMIP.hasEntry(secSel,laySel,comSel)){
+                        F1D ftofit1 = histogramsFTHodo.fQMIP.get(secSel, laySel, comSel);
+                        cfitParams2 = new FTAdjustFitParams(ftofit1, "MIP charge fits");
+                    }
+                    else {
+                        System.out.println("Function associate with histogram does not exist. Choose different histogram");
+                    }
+                }
+            }
+            else if (matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP Matching Tiles mV fit Parameters");
+                    if (histogramsFTHodo.fVMIPMatching.hasEntry(secSel,laySel,comSel)){
+                        F1D ftofit = histogramsFTHodo.fVMIPMatching.get(secSel, laySel, comSel);
+                        cfitParams1 = new FTAdjustFitParams(ftofit, "MIP mV fits Matching Tiles");
+                    }
+                    else {
+                        System.out.println("Function associate with histogram does not exist. Choose different histogram");
+                    }
+                }
+                if (plotVoltageChargeBoth==2 || plotVoltageChargeBoth==3){
+                    System.out.println("Adjusting MIP Matching Tiles pC fit Parameters");
+                    if (histogramsFTHodo.fQMIPMatching.hasEntry(secSel,laySel,comSel)){
+                        F1D ftofit1 = histogramsFTHodo.fQMIPMatching.get(secSel, laySel, comSel);
+                        cfitParams2 = new FTAdjustFitParams(ftofit1, "MIP charge fits Matching Tiles");
+                    }
+                    else {
+                        System.out.println("Function associate with histogram does not exist. Choose different histogram");
+                    }
+                }
+            }
+        }
+    }
+    
+    public void SetFitParameters(boolean toUseNewParams){
+        if (this.tabSel==tabIndexPed){
+            if (toUseNewParams && cfitParams1!=null){
+                System.out.println("Setting Ped fit Parameters");
+                histogramsFTHodo.parsPed=cfitParams1.getParamsFit();
+                histogramsFTHodo.rangePed=cfitParams1.getRangeFit();
+                for(int i=0; i<histogramsFTHodo.parsPed.size(); i++)
+                    System.out.println("Param["+i+"] = " + histogramsFTHodo.parsPed.get(i));
+                System.out.println("Range: " + histogramsFTHodo.rangePed[0] +" -- "+ histogramsFTHodo.rangePed[1]);
+                histogramsFTHodo.toUseNewParamsPed=toUseNewParams;
+                cfitParams1=null;
+            }
+            else{
+                System.out.println("Resetting Ped fit Parameters");
+                histogramsFTHodo.toUseNewParamsPed=toUseNewParams;
+            }
+        }
+        else if (this.tabSel==tabIndexNoise){
+            if (toUseNewParams){
+                System.out.println("Setting Noise fit Parameters");
+                if (cfitParams1!=null){
+                    histogramsFTHodo.parsNoiseC=cfitParams1.getParamsFit();
+                    histogramsFTHodo.rangeNoiseC=cfitParams1.getRangeFit();
+                    for(int i=0; i<histogramsFTHodo.parsNoiseC.size(); i++)
+                        System.out.println("Param["+i+"] = " + histogramsFTHodo.parsNoiseC.get(i));
+                    System.out.println("Range: " + histogramsFTHodo.rangeNoiseC[0] +" -- "+ histogramsFTHodo.rangeNoiseC[1]);
+                    histogramsFTHodo.toUseNewParamsNoiseC=toUseNewParams;
+                    cfitParams1=null;
+                }
+                if (cfitParams2!=null){
+                    histogramsFTHodo.parsNoiseV=cfitParams2.getParamsFit();
+                    histogramsFTHodo.rangeNoiseV=cfitParams2.getRangeFit();
+                    for(int i=0; i<histogramsFTHodo.parsNoiseV.size(); i++)
+                        System.out.println("Param["+i+"] = " + histogramsFTHodo.parsNoiseV.get(i));
+                    System.out.println("Range: " + histogramsFTHodo.rangeNoiseV[0] +" -- "+ histogramsFTHodo.rangeNoiseV[1]);
+                    histogramsFTHodo.toUseNewParamsNoiseV=toUseNewParams;
+                    cfitParams2=null;
+                }
+            }
+            else{
+                System.out.println("Resetting Noise fit Parameters");
+                histogramsFTHodo.toUseNewParamsNoiseC=toUseNewParams;
+                histogramsFTHodo.toUseNewParamsNoiseV=toUseNewParams;
+            }
+        }
+        else if (this.tabSel==tabIndexMIPsignal){
+            if (!matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    if (toUseNewParams && cfitParams1!=null){
+                        System.out.println("Setting MIP mV fit Parameters");
+                        histogramsFTHodo.parsMIPV=cfitParams1.getParamsFit();
+                        histogramsFTHodo.rangeMIPV=cfitParams1.getRangeFit();
+                        for(int i=0; i<histogramsFTHodo.parsMIPV.size(); i++)
+                            System.out.println("Param["+i+"] = " + histogramsFTHodo.parsMIPV.get(i));
+                        System.out.println("Range: " + histogramsFTHodo.rangeMIPV[0] +" -- "+ histogramsFTHodo.rangeMIPV[1]);
+                        histogramsFTHodo.toUseNewParamsMIPV=toUseNewParams;
+                        cfitParams1=null;
+                    }
+                    else{
+                        System.out.println("Resetting MIP mV fit Parameters");
+                        histogramsFTHodo.toUseNewParamsMIPV=toUseNewParams;
+                    }
+                    
+                }
+                if (plotVoltageChargeBoth==2 ||plotVoltageChargeBoth==3){
+                    if (toUseNewParams && cfitParams2!=null){
+                        System.out.println("Setting MIP pC fit Parameters");
+                        histogramsFTHodo.parsMIPC=cfitParams2.getParamsFit();
+                        histogramsFTHodo.rangeMIPC=cfitParams2.getRangeFit();
+                        for(int i=0; i<histogramsFTHodo.parsMIPC.size(); i++)
+                            System.out.println("Param["+i+"] = " + histogramsFTHodo.parsMIPC.get(i));
+                        System.out.println("Range: " + histogramsFTHodo.rangeMIPC[0] +" -- "+ histogramsFTHodo.rangeMIPC[1]);
+                        histogramsFTHodo.toUseNewParamsMIPC=toUseNewParams;
+                        cfitParams2=null;
+                    }
+                    else{
+                        System.out.println("Resetting MIP pC fit Parameters");
+                    histogramsFTHodo.toUseNewParamsMIPC=toUseNewParams;
+                    }
+                }
+            }
+            else if (matchingTiles){
+                if (plotVoltageChargeBoth==1 || plotVoltageChargeBoth==3){
+                    if (toUseNewParams && cfitParams1!=null){
+                        System.out.println("Setting MIP Matching Tiles mV fit Parameters");
+                        histogramsFTHodo.parsMIPVMT=cfitParams1.getParamsFit();
+                        histogramsFTHodo.rangeMIPVMT=cfitParams1.getRangeFit();
+                        for(int i=0; i<histogramsFTHodo.parsMIPVMT.size(); i++)
+                            System.out.println("Param["+i+"] = " + histogramsFTHodo.parsMIPVMT.get(i));
+                        System.out.println("Range: " + histogramsFTHodo.rangeMIPVMT[0] +" -- "+ histogramsFTHodo.rangeMIPVMT[1]);
+                        histogramsFTHodo.toUseNewParamsMIPVMT=toUseNewParams;
+                        cfitParams1=null;
+                    }
+                    else{
+                        System.out.println("Resetting MIP Matching Tiles mV fit Parameters");
+                        histogramsFTHodo.toUseNewParamsMIPVMT=toUseNewParams;
+                    }
+                }
+                if (plotVoltageChargeBoth==2 || plotVoltageChargeBoth==3){
+                    if (toUseNewParams && cfitParams2!=null){
+                        System.out.println("Setting MIP Matching Tiles pC fit Parameters");
+                        histogramsFTHodo.parsMIPCMT=cfitParams2.getParamsFit();
+                        histogramsFTHodo.rangeMIPCMT=cfitParams2.getRangeFit();
+                        for(int i=0; i<histogramsFTHodo.parsMIPCMT.size(); i++)
+                            System.out.println("Param["+i+"] = " + histogramsFTHodo.parsMIPCMT.get(i));
+                        System.out.println("Range: " + histogramsFTHodo.rangeMIPCMT[0] +" -- "+ histogramsFTHodo.rangeMIPCMT[1]);
+                        histogramsFTHodo.toUseNewParamsMIPCMT=toUseNewParams;
+                        cfitParams2=null;
+                    }
+                    else{
+                        System.out.println("Resetting MIP Matching Tiles pC fit Parameters");
+                    histogramsFTHodo.toUseNewParamsMIPCMT=toUseNewParams;
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     public void readCCDBconstants(){
         int s,l,c, chan, slot;
