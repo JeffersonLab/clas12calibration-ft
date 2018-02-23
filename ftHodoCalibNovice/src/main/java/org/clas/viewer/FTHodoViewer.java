@@ -17,12 +17,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
-
-
 import org.clas.fthodo.FTHODOModule;
-
 import org.jlab.detector.base.DetectorType;
-
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.base.DataEventType;
 import org.jlab.io.evio.EvioDataEvent;
@@ -127,56 +123,20 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
         menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit");
         menuItem.addActionListener(this);
         fit.add(menuItem);
-        
-//        menuItem = new JMenuItem("Adjust Noise mV fit...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Update Noise mV constants...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Adjust Noise charge fit...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Update Noise charge constants...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Adjust MIP mV fit...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Update MIP mV constants...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Adjust MIP charge fit...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Update MIP charge constants...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Adjust MIP mV Matching Tiles fit...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise max Voltage and range");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Update MIP mV Matching Tiles constants...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise max Voltage");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Adjust MIP charge Matching Tiles fit...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters for noise charge and range");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-//        menuItem = new JMenuItem("Update MIP charge Matching Tiles constants...");
-//        menuItem.getAccessibleContext().setAccessibleDescription("Update constants from adjusted fit on noise charge");
-//        menuItem.addActionListener(this);
-//        fit.add(menuItem);
-        
+        //HERE-NEW
+        menuItem = new JMenuItem("Set new global fit parameters...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Set new fit parameters for all functions");
+        menuItem.addActionListener(this);
+        fit.add(menuItem);
+        menuItem = new JMenuItem("Use new global fit parameters...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Use the newly chosen fit parameters for all functions");
+        menuItem.addActionListener(this);
+        fit.add(menuItem);
+        menuItem = new JMenuItem("Use default global fit parameters...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Use the new fit parameters for all functions");
+        menuItem.addActionListener(this);
+        fit.add(menuItem);
+
         this.menuBar.add(fit);
         
         JMenu settings = new JMenu("Settings");
@@ -194,9 +154,6 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
         menuItem.addActionListener(this);
         settings.add(menuItem);
         this.menuBar.add(settings);
-        
-        
-        
     }
     private void resetHistograms() {
         moduleFTHODO.resetHistograms();
@@ -230,7 +187,7 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
     }
     
     public String getAuthor() {
-        return "Gary Smith";
+        return "Nicholas Zachariou";
     }
     
     public DetectorType getType() {
@@ -257,6 +214,20 @@ public class FTHodoViewer implements IDataEventListener, ActionListener {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
             moduleFTHODO.adjustFitConstants();
         }
+        if(e.getActionCommand() == "Set new global fit parameters...") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            moduleFTHODO.adjustFitParameters();
+        }
+        //HERE--
+        if(e.getActionCommand() == "Use new global fit parameters...") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            moduleFTHODO.SetFitParameters(true);
+        }
+        if(e.getActionCommand() == "Use default global fit parameters...") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            moduleFTHODO.SetFitParameters(false);
+        }
+
         
 //        if(e.getActionCommand() == "Adjust Noise mV fit...") {
 //            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
