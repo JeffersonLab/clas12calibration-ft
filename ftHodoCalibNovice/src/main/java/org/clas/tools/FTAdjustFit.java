@@ -20,14 +20,11 @@ import org.jlab.groot.data.H1F;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.math.F1D;
 
-
-
 /**
  *
  * @author fanchini
- */
-
-
+ * Edited by Nick Zachariou
+ * */
 public class FTAdjustFit {
     
     public  F1D newfct;
@@ -60,7 +57,7 @@ public class FTAdjustFit {
         
     }
     
-    public void refit(){
+    public void refit(boolean toFit){
         this.pars.clear();
         this.err_pars.clear();
         int npar = fct.getNPars();
@@ -82,28 +79,35 @@ public class FTAdjustFit {
             this.newfct.setParameter(i, this.pars.get(i));
         }
         this.newfct.setRange(range[0], range[1]);
-        DataFitter.fit(newfct,hist,opt);
+        if (toFit)
+            DataFitter.fit(newfct,hist,opt);
         hist.setFunction(null);
         for(int i=0; i<this.pars.size(); i++){
             this.err_pars.add(this.newfct.parameter(i).error());
         }
-        this.newfct.setLineColor(6);
+        if (toFit)
+            this.newfct.setLineColor(4);
+        else 
+            this.newfct.setLineColor(1);
     }
     
     private final class CustomPanel2 extends JPanel {
         JLabel label;
         JPanel panel;
+        JPanel subPanel;
+
         JTextField minRange = new JTextField(5);
         JTextField maxRange = new JTextField(5);
         JTextField[] params = new JTextField[10];
         JButton   fitButton = null;
+        JButton   setButton = null;
         
         public CustomPanel2() {
             super(new BorderLayout());
             
             int npar = newfct.getNPars();
             panel = new JPanel(new GridLayout(npar+2, 2));
-            
+            subPanel= new JPanel();
             for (int i = 0; i < npar; i++) {
                 JLabel l = new JLabel(newfct.parameter(i).name(), JLabel.TRAILING);
                 panel.add(l);
@@ -120,13 +124,22 @@ public class FTAdjustFit {
             fitButton = new JButton("Fit");
             fitButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    refit();
+                    refit(true);
                     return;
                 }
             });
+            setButton = new JButton("Set");
+            setButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    refit(false);
+                    return;
+                }
+            });
+            subPanel.add(fitButton);
+            subPanel.add(setButton);
             this.add(panel, BorderLayout.CENTER);
-            this.add(fitButton, BorderLayout.PAGE_END);
-            
+            //this.add(fitButton, BorderLayout.PAGE_END);
+            this.add(subPanel, BorderLayout.PAGE_END);
             label = new JLabel("Click the \"Show it!\" button"
                                + " to bring up the selected dialog.",
                                JLabel.CENTER);
