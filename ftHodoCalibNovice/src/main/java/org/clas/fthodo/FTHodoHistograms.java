@@ -9,7 +9,6 @@ import org.jlab.groot.data.H1F;
 import org.jlab.groot.data.H2F;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
-import org.jlab.groot.math.F1D;
 import java.util.ArrayList;
 
 public class FTHodoHistograms {
@@ -79,6 +78,15 @@ public class FTHodoHistograms {
     GraphErrors[] GGMIPsignElectronics_matchingTilesC=new GraphErrors[15];
     GraphErrors[][] GGMIPsignDetector_matchingTilesV=new GraphErrors[2][8];
     GraphErrors[][] GGMIPsignDetector_matchingTilesC=new GraphErrors[2][8];
+    
+    GraphErrors[] GGMIPChi2ElectronicsV=new GraphErrors[15];
+    GraphErrors[] GGMIPChi2ElectronicsC=new GraphErrors[15];
+    GraphErrors[][] GGMIPChi2DetectorV=new GraphErrors[2][8];
+    GraphErrors[][] GGMIPChi2DetectorC=new GraphErrors[2][8];
+    GraphErrors[] GGMIPChi2Electronics_matchingTilesV=new GraphErrors[15];
+    GraphErrors[] GGMIPChi2Electronics_matchingTilesC=new GraphErrors[15];
+    GraphErrors[][] GGMIPChi2Detector_matchingTilesV=new GraphErrors[2][8];
+    GraphErrors[][] GGMIPChi2Detector_matchingTilesC=new GraphErrors[2][8];
 
     GraphErrors[] GGMIPDeltaEoverEElectronicsV=new GraphErrors[15];
     GraphErrors[] GGMIPDeltaEoverEElectronicsC=new GraphErrors[15];
@@ -133,6 +141,20 @@ public class FTHodoHistograms {
     H1F H_EMPTYMIPDeltaEoverE_matchingTiles_PC20=null;
     H1F H_EMPTYMIPDeltaEoverE_matchingTiles_ELE_PC=null;
     H1F H_EMPTYMIPDeltaEoverE_matchingTiles_ELE_MV=null;
+    
+    
+    H1F H_EMPTYMIPChi2_MV9 = null;
+    H1F H_EMPTYMIPChi2_MV20= null;
+    H1F H_EMPTYMIPChi2_PC9= null;
+    H1F H_EMPTYMIPChi2_PC20=null;
+    H1F H_EMPTYMIPChi2_ELE_PC=null;
+    H1F H_EMPTYMIPChi2_ELE_MV=null;
+    H1F H_EMPTYMIPChi2_matchingTiles_MV9 = null;
+    H1F H_EMPTYMIPChi2_matchingTiles_MV20= null;
+    H1F H_EMPTYMIPChi2_matchingTiles_PC9= null;
+    H1F H_EMPTYMIPChi2_matchingTiles_PC20=null;
+    H1F H_EMPTYMIPChi2_matchingTiles_ELE_PC=null;
+    H1F H_EMPTYMIPChi2_matchingTiles_ELE_MV=null;
 
     H1F H_W_MAX = null;
     H1F H_V_MAX = null;
@@ -585,6 +607,68 @@ public class FTHodoHistograms {
         H_EMPTYMIPDeltaEoverE_matchingTiles_ELE_MV.setBinContent(1,1.0);
         
         
+        H_EMPTYMIPChi2_MV9=new H1F("H_EMPTYChi2_MV9", 500, 0.0, 10);
+        H_EMPTYMIPChi2_MV9.setTitleX("component");
+        H_EMPTYMIPChi2_MV9.setTitleY("#chi^2/NDF (for mV)");
+        H_EMPTYMIPChi2_MV9.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_MV9.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_MV20=new H1F("H_EMPTYChi2_MV20", 500, 0.0, 21);
+        H_EMPTYMIPChi2_MV20.setTitleX("component");
+        H_EMPTYMIPChi2_MV20.setTitleY("#chi^2/NDF (for mV)");
+        H_EMPTYMIPChi2_MV20.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_MV20.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_PC9=new H1F("H_EMPTYMIPChi2_PC9", 500, 0.0, 10);
+        H_EMPTYMIPChi2_PC9.setTitleX("component");
+        H_EMPTYMIPChi2_PC9.setTitleY("#chi^2/NDF (for charge)");
+        H_EMPTYMIPChi2_PC9.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_PC9.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_PC20=new H1F("H_EMPTYMIPChi2_PC20", 500, 0.0, 21);
+        H_EMPTYMIPChi2_PC20.setTitleX("component");
+        H_EMPTYMIPChi2_PC20.setTitleY("#chi^2/NDF (for charge)");
+        H_EMPTYMIPChi2_PC20.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_PC20.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_ELE_PC=new H1F("H_EMPTYMIPChi2_ELE_PC", 500, -1.0, 16);
+        H_EMPTYMIPChi2_ELE_PC.setTitleX("component");
+        H_EMPTYMIPChi2_ELE_PC.setTitleY("#chi^2/NDF (for charge)");
+        H_EMPTYMIPChi2_ELE_PC.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_ELE_PC.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_ELE_MV=new H1F("H_EMPTYMIPChi2_ELE_MV", 500, -1.0, 16);
+        H_EMPTYMIPChi2_ELE_MV.setTitleX("component");
+        H_EMPTYMIPChi2_ELE_MV.setTitleY("#chi^2/NDF (for mV)");
+        H_EMPTYMIPChi2_ELE_MV.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_ELE_MV.setBinContent(499,10.0);
+
+        H_EMPTYMIPChi2_matchingTiles_MV9=new H1F("H_EMPTYChi2_matchingTiles_MV9", 500, 0.0, 10);
+        H_EMPTYMIPChi2_matchingTiles_MV9.setTitleX("component");
+        H_EMPTYMIPChi2_matchingTiles_MV9.setTitleY("#chi^2/NDF (for mV)");
+        H_EMPTYMIPChi2_matchingTiles_MV9.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_matchingTiles_MV9.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_matchingTiles_MV20=new H1F("H_EMPTYChi2_matchingTiles_MV20", 500, 0.0, 21);
+        H_EMPTYMIPChi2_matchingTiles_MV20.setTitleX("component");
+        H_EMPTYMIPChi2_matchingTiles_MV20.setTitleY("#chi^2/NDF (for mV)");
+        H_EMPTYMIPChi2_matchingTiles_MV20.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_matchingTiles_MV20.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_matchingTiles_PC9=new H1F("H_EMPTYMIPChi2_matchingTiles_PC9", 500, 0.0, 10);
+        H_EMPTYMIPChi2_matchingTiles_PC9.setTitleX("component");
+        H_EMPTYMIPChi2_matchingTiles_PC9.setTitleY("#chi^2/NDF (for charge)");
+        H_EMPTYMIPChi2_matchingTiles_PC9.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_matchingTiles_PC9.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_matchingTiles_PC20=new H1F("H_EMPTYMIPChi2_matchingTiles_PC20", 500, 0.0, 21);
+        H_EMPTYMIPChi2_matchingTiles_PC20.setTitleX("component");
+        H_EMPTYMIPChi2_matchingTiles_PC20.setTitleY("#chi^2/NDF (for charge)");
+        H_EMPTYMIPChi2_matchingTiles_PC20.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_matchingTiles_PC20.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_matchingTiles_ELE_PC=new H1F("H_EMPTYMIPChi2_matchingTiles_ELE_PC", 500, -1.0, 16);
+        H_EMPTYMIPChi2_matchingTiles_ELE_PC.setTitleX("component");
+        H_EMPTYMIPChi2_matchingTiles_ELE_PC.setTitleY("#chi^2/NDF (for charge)");
+        H_EMPTYMIPChi2_matchingTiles_ELE_PC.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_matchingTiles_ELE_PC.setBinContent(499,10.0);
+        H_EMPTYMIPChi2_matchingTiles_ELE_MV=new H1F("H_EMPTYMIPChi2_matchingTiles_ELE_MV", 500, -1.0, 16);
+        H_EMPTYMIPChi2_matchingTiles_ELE_MV.setTitleX("component");
+        H_EMPTYMIPChi2_matchingTiles_ELE_MV.setTitleY("#chi^2/NDF (for mV)");
+        H_EMPTYMIPChi2_matchingTiles_ELE_MV.setBinContent(1,-10.0);
+        H_EMPTYMIPChi2_matchingTiles_ELE_MV.setBinContent(499,10.0);
+        
         for (int mezin = 0; mezin < 15; mezin++){
             GGgainElectronicsV[mezin]=new GraphErrors();
             GGgainElectronicsV[mezin].addPoint(0,0,0,0);
@@ -630,7 +714,19 @@ public class FTHodoHistograms {
             GGMIPDeltaEoverEElectronics_matchingTilesC[mezin].addPoint(0,0,0,0);
             GGMIPDeltaEoverEElectronics_matchingTilesC[mezin].addPoint(16,0,0,0);
             
-            
+            GGMIPChi2ElectronicsV[mezin]=new GraphErrors();
+            GGMIPChi2ElectronicsV[mezin].addPoint(0,0,0,0);
+            GGMIPChi2ElectronicsV[mezin].addPoint(16,0,0,0);
+            GGMIPChi2ElectronicsC[mezin]=new GraphErrors();
+            GGMIPChi2ElectronicsC[mezin].addPoint(0,0,0,0);
+            GGMIPChi2ElectronicsC[mezin].addPoint(16,0,0,0);
+            GGMIPChi2Electronics_matchingTilesV[mezin]=new GraphErrors();
+            GGMIPChi2Electronics_matchingTilesV[mezin].addPoint(0,0,0,0);
+            GGMIPChi2Electronics_matchingTilesV[mezin].addPoint(16,0,0,0);
+            GGMIPChi2Electronics_matchingTilesC[mezin]=new GraphErrors();
+            GGMIPChi2Electronics_matchingTilesC[mezin].addPoint(0,0,0,0);
+            GGMIPChi2Electronics_matchingTilesC[mezin].addPoint(16,0,0,0);
+                     
         }
         for (int lay = 0; lay < 2; lay++){
             for (int sec = 0; sec < 8; sec++){
@@ -664,6 +760,14 @@ public class FTHodoHistograms {
                 GGMIPDeltaEoverEDetector_matchingTilesC[lay][sec]=new GraphErrors();
                 GGMIPDeltaEoverEDetector_matchingTilesC[lay][sec].addPoint(0,0,0,0);
                 
+                GGMIPChi2DetectorV[lay][sec]=new GraphErrors();
+                GGMIPChi2DetectorV[lay][sec].addPoint(0,0,0,0);
+                GGMIPChi2DetectorC[lay][sec]=new GraphErrors();
+                GGMIPChi2DetectorC[lay][sec].addPoint(0,0,0,0);
+                GGMIPChi2Detector_matchingTilesV[lay][sec]=new GraphErrors();
+                GGMIPChi2Detector_matchingTilesV[lay][sec].addPoint(0,0,0,0);
+                GGMIPChi2Detector_matchingTilesC[lay][sec]=new GraphErrors();
+                GGMIPChi2Detector_matchingTilesC[lay][sec].addPoint(0,0,0,0);
                 
                 if (sec%2==0){
                     GGgainDetectorV[lay][sec].addPoint(10,0,0,0);
@@ -681,6 +785,11 @@ public class FTHodoHistograms {
                     GGMIPDeltaEoverEDetectorC[lay][sec].addPoint(10,0,0,0);
                     GGMIPDeltaEoverEDetector_matchingTilesV[lay][sec].addPoint(10,0,0,0);
                     GGMIPDeltaEoverEDetector_matchingTilesC[lay][sec].addPoint(10,0,0,0);
+                    
+                    GGMIPChi2DetectorV[lay][sec].addPoint(10,0,0,0);
+                    GGMIPChi2DetectorC[lay][sec].addPoint(10,0,0,0);
+                    GGMIPChi2Detector_matchingTilesV[lay][sec].addPoint(10,0,0,0);
+                    GGMIPChi2Detector_matchingTilesC[lay][sec].addPoint(10,0,0,0);
                 }
                 else {
                     GGgainDetectorV[lay][sec].addPoint(21,0,0,0);
@@ -698,6 +807,12 @@ public class FTHodoHistograms {
                     GGMIPDeltaEoverEDetectorC[lay][sec].addPoint(21,0,0,0);
                     GGMIPDeltaEoverEDetector_matchingTilesV[lay][sec].addPoint(21,0,0,0);
                     GGMIPDeltaEoverEDetector_matchingTilesC[lay][sec].addPoint(21,0,0,0);
+                
+                    GGMIPChi2DetectorV[lay][sec].addPoint(21,0,0,0);
+                    GGMIPChi2DetectorC[lay][sec].addPoint(21,0,0,0);
+                    GGMIPChi2Detector_matchingTilesV[lay][sec].addPoint(21,0,0,0);
+                    GGMIPChi2Detector_matchingTilesC[lay][sec].addPoint(21,0,0,0);
+                
                 }
             }
         }
