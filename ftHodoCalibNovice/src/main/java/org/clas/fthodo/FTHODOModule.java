@@ -1976,6 +1976,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
         //System.out.println("Mathcing:" +matchingTiles+" mv: "+useGain_mV);
         this.canvasMIPAnalysis.divide(3, 3);
         int sector2CD[] = {0,1,2,5,8,7,6,3};
+        canvasMIPAnalysis.cd(4);
+        canvasMIPAnalysis.clear();
         for (int isec=0; isec<8; isec++){
             canvasMIPAnalysis.cd(sector2CD[isec]);
             if (plotNPE){

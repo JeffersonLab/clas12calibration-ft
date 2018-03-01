@@ -162,7 +162,8 @@ public class FTHodoHistograms {
     double LSB = 0.4884;
     double vPedOffset = 5.0;
     double PedOffset = 10.0;
-    double triggerDelay = 125.0;//double triggerDelay = 190.0;
+    //double triggerDelay = 125.0;
+    double triggerDelay = 190.0;
     double MIPFitXminOffset=20.0; //x-axis offset for fitting MIP
     
     ////MALAKIES for coloring the detector should be replaced with TET
@@ -350,10 +351,10 @@ public class FTHodoHistograms {
         H_T_MODE3.get(HP.getS(), HP.getL(), HP.getC()).setTitleY("Counts");
        
         // simulated data
-        timeMin[1] = -15.0;
-        timeMin[2] = -15.0;
-        timeMax[1] = 15.0;
-        timeMax[2] = 15.0;
+        timeMin[1] = -45.0;
+        timeMin[2] = -45.0;
+        timeMax[1] = 45.0;
+        timeMax[2] = 45.0;
         // paddle trigger
         timeMin[1] += triggerDelay;
         timeMin[2] += triggerDelay;
