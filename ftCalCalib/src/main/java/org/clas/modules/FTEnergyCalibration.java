@@ -6,8 +6,6 @@
 package org.clas.modules;
 
 import java.awt.Color;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,10 +21,7 @@ import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
-import org.jlab.groot.fitter.DataFitter;
-import org.jlab.groot.data.GraphErrors;
 import org.jlab.groot.data.H2F;
-import org.jlab.utils.groups.IndexedList;
 
 /**
  *
@@ -37,8 +32,8 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     // analysis realted info
     double nsPerSample=4;
     double LSB = 0.4884;
-    double clusterEnergyThr = 500.0;// Vertical selection
-    int    clusterSizeThr   = 9;// Vertical selection
+    double clusterEnergyThr = 300.0;// Vertical selection
+    int    clusterSizeThr   = 3;// Vertical selection
 //    double singleChThr = 0.00;// Single channel selection MeV
 //    double signalThr =0.0;
 //    double simSignalThr=0.00;// Threshold used for simulated events in MeV
@@ -59,7 +54,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     @Override
     public void resetEventListener() {
 
-        H1F hpi0sum = new H1F("hpi0sum", 100,0., 300.);
+        H1F hpi0sum = new H1F("hpi0sum", 200,50., 250.);
         hpi0sum.setTitleX("M (MeV)");
         hpi0sum.setTitleY("Counts");
         hpi0sum.setTitle("2#gamma invariant mass");
@@ -134,13 +129,15 @@ public class FTEnergyCalibration extends FTCalibrationModule {
 
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
-        if (event.hasBank("FTCAL::clusters") && event.hasBank("FTCAL::adc")) {
+        if (event.hasBank("FTCAL::clusters") && event.hasBank("FT::particles") && event.hasBank("FTCAL::adc")) {
             ArrayList<Particle> ftParticles = new ArrayList();
+            DataBank particlesFT  = event.getBank("FT::particles");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             DataBank clusterFTCAL = event.getBank("FTCAL::clusters");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             DataBank adcFTCAL     = event.getBank("FTCAL::adc");
             for (int loop = 0; loop < clusterFTCAL.rows(); loop++) {
                 int key = getDetector().getComponent(clusterFTCAL.getFloat("x", loop), clusterFTCAL.getFloat("y", loop));
                 int    size    = clusterFTCAL.getShort("size", loop);
+                int    charge  = particlesFT.getByte("charge", loop);
                 double x       = clusterFTCAL.getFloat("x", loop);
                 double y       = clusterFTCAL.getFloat("y", loop);
                 double z       = clusterFTCAL.getFloat("z", loop);
@@ -155,7 +152,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                 Particle recParticle = new Particle(22, energy*x/path, energy*y/path, energy*z/path, 0,0,0);
                 recParticle.setProperty("key",(double) key);
                 recParticle.setProperty("energySeed",energySeed);
-                if(energyR>this.clusterEnergyThr && size>this.clusterSizeThr) ftParticles.add(recParticle);
+                if(energyR>this.clusterEnergyThr && size>this.clusterSizeThr && charge==0) ftParticles.add(recParticle);
             }
             if(ftParticles.size()>=2) {
                 for (int i1 = 0; i1 < ftParticles.size(); i1++) {
@@ -170,9 +167,11 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                         double invmass = Math.sqrt(partPi0.mass2());
                         double x = (partGamma1.p() - partGamma2.p()) / (partGamma1.p() + partGamma2.p());
                         double angle = Math.toDegrees(Math.acos(partGamma1.cosTheta(partGamma2)));
-                        this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum").fill(invmass);
+                        if(angle>1.5) {
+                            this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum").fill(invmass);
+                            this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum").fill(invmass);
+                        }
                         this.getDataGroup().getItem(1, 1, key1).getH2F("hmassangle").fill(invmass, angle);
-                        this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum").fill(invmass);
                         this.getDataGroup().getItem(1, 1, key2).getH2F("hmassangle").fill(invmass, angle);
                         if(angle>1.) {
                             double ecal1 = Math.pow(PhysicsConstants.massPionNeutral()*1.0E3,2)/(2*partGamma2.p()*(1-Math.cos(Math.toRadians(angle))))-(partGamma1.p()-partGamma1.getProperty("energySeed"));

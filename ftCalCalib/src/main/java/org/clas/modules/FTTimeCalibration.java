@@ -6,8 +6,6 @@
 package org.clas.modules;
 
 import java.awt.Color;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.Arrays;
 import java.util.List;
 import org.clas.view.DetectorShape2D;
@@ -22,7 +20,6 @@ import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
-import org.jlab.utils.groups.IndexedList;
 
 /**
  *
@@ -35,9 +32,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
     double LSB = 0.4884;
     double clusterThr = 50.0;// Vertical selection
     double singleChThr = 0.00;// Single channel selection MeV
-    double signalThr =0.0;
-    double simSignalThr=0.00;// Threshold used for simulated events in MeV
-    double startTime   = 124.25;//ns
+    double signalThr =100.0;
     double ftcalDistance =1898; //mm
     double timeshift =0;// ns
     double crystal_size = 15.3;//mm
@@ -47,6 +42,10 @@ public class FTTimeCalibration extends FTCalibrationModule {
     double light_speed = 150; //cm/ns     
     double c = 29.97; //cm/ns     
 
+    double startTime   = 124.25;//ns
+    double trigger     = 11;//ns
+    double triggerPhase = 0;
+    
     public FTTimeCalibration(FTDetector d, String name) {
         super(d, name, "offset:offset_error:resolution",3);
     }
@@ -54,12 +53,12 @@ public class FTTimeCalibration extends FTCalibrationModule {
     @Override
     public void resetEventListener() {
 
-        H1F htsum = new H1F("htsum", 330, -30.0, 80.0);
+        H1F htsum = new H1F("htsum", 330, -500.0, 50.0);
         htsum.setTitleX("Time Offset (ns)");
         htsum.setTitleY("Counts");
         htsum.setTitle("Global Time Offset");
         htsum.setFillColor(3);
-        H1F htsum_calib = new H1F("htsum_calib", 330, -30.0, 80.0);
+        H1F htsum_calib = new H1F("htsum_calib", 200, -20.0, 20.0);
         htsum_calib.setTitleX("Time Offset (ns)");
         htsum_calib.setTitleY("counts");
         htsum_calib.setTitle("Global Time Offset");
@@ -79,15 +78,15 @@ public class FTTimeCalibration extends FTCalibrationModule {
             this.getCalibrationTable().addEntry(1, 1, key);
 
             // initialize data group
-            H1F htime_wide = new H1F("htime_wide_" + key, 330, -30.0, 80.0);
+            H1F htime_wide = new H1F("htime_wide_" + key, 330, -500.0, 50.0);
             htime_wide.setTitleX("Time (ns)");
             htime_wide.setTitleY("Counts");
             htime_wide.setTitle("Component " + key);
-            H1F htime = new H1F("htime_" + key, 330, -15.0, 15.0);
+            H1F htime = new H1F("htime_" + key, 300, this.getRange()[0], this.getRange()[1]);
             htime.setTitleX("Time (ns)");
             htime.setTitleY("Counts");
             htime.setTitle("Component " + key);
-            H1F htime_calib = new H1F("htime_calib_" + key, 300, -15.0, 15.0);
+            H1F htime_calib = new H1F("htime_calib_" + key, 300, -30., 30.);
             htime_calib.setTitleX("Time (ns)");
             htime_calib.setTitleY("Counts");
             htime_calib.setTitle("Component " + key);
@@ -101,14 +100,14 @@ public class FTTimeCalibration extends FTCalibrationModule {
             ftime.setLineWidth(2);
 //            ftime.setLineColor(2);
 //            ftime.setLineStyle(1);
-            DataGroup dg = new DataGroup(2, 2);
+            DataGroup dg = new DataGroup(3, 2);
             dg.addDataSet(htsum      , 0);
-            dg.addDataSet(htsum_calib, 0);
-            dg.addDataSet(gtoffsets,   1);
-            dg.addDataSet(htime_wide,  2);
-            dg.addDataSet(htime,       3);
-            dg.addDataSet(htime_calib, 3);
-            dg.addDataSet(ftime,       3);
+            dg.addDataSet(htsum_calib, 1);
+            dg.addDataSet(gtoffsets,   2);
+            dg.addDataSet(htime_wide,  3);
+            dg.addDataSet(htime,       4);
+            dg.addDataSet(ftime,       4);
+            dg.addDataSet(htime_calib, 5);
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
@@ -126,13 +125,27 @@ public class FTTimeCalibration extends FTCalibrationModule {
 
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
-        this.startTime = -1000;
+        this.startTime = -100000;
+        this.triggerPhase=0;
+        // get trigger phase
+        if(event.hasBank("RUN::config")) {
+            DataBank recConfig = event.getBank("RUN::config");
+            long timestamp = recConfig.getLong("timestamp",0);    
+            int phase_offset = 1;
+            triggerPhase=((timestamp%6)+phase_offset)%6; // TI derived phase correction due to TDC and FADC clock differences
+        }
+        // get start time
         if(event.hasBank("REC::Event")) {
             DataBank recEvent = event.getBank("REC::Event");
             this.startTime = recEvent.getFloat("STTime", 0);
+//            if(this.startTime>-1000)System.out.println(this.startTime);
+        }
+        if(event.hasBank("REC::Particle")) {
+            DataBank recPart = event.getBank("REC::Particle");
+            this.trigger = recPart.getInt("pid", 0);
 //            System.out.println(this.startTime);
         }
-        if (event.hasBank("FTCAL::adc")) {
+        if (event.hasBank("FTCAL::adc") && this.startTime>-1000 /*&& trigger==11*/) {
             DataBank adcFTCAL = event.getBank("FTCAL::adc");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             for (int loop = 0; loop < adcFTCAL.rows(); loop++) {
                 int    key    = adcFTCAL.getInt("component", loop);
@@ -142,8 +155,8 @@ public class FTTimeCalibration extends FTCalibrationModule {
                 double radius = Math.sqrt(Math.pow(this.getDetector().getIdX(key)-0.5,2.0)+Math.pow(this.getDetector().getIdY(key)-0.5,2.0))*this.crystal_size;//meters
                 double path   = Math.sqrt(Math.pow(this.ftcalDistance+shower_depth,2)+Math.pow(radius,2));
                 double tof    = (path/10/c); //ns
-                double timec  = (time -(this.startTime + (crystal_length-shower_depth)/light_speed + tof))-this.timeshift;
-                if(charge>simSignalThr) {
+                double timec  = (time + 0*this.triggerPhase*4 -(this.startTime + (crystal_length-shower_depth)/light_speed + tof))-this.timeshift;
+                if(charge>signalThr) {
                     this.getDataGroup().getItem(1,1,key).getH1F("htsum").fill(timec);
                     this.getDataGroup().getItem(1,1,key).getH1F("htime_wide_"+key).fill(timec);
                     this.getDataGroup().getItem(1,1,key).getH1F("htime_"+key).fill(timec);
@@ -175,6 +188,11 @@ public class FTTimeCalibration extends FTCalibrationModule {
             getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("ftime_" + key).getParameter(2),      "resolution" ,  1, 1, key);
         }
         getCalibrationTable().fireTableDataChanged();
+    }
+
+    @Override
+    public void setCanvasBookData() {
+        this.getCanvasBook().setData(this.getDataGroup(), 4);
     }
 
     private void initTimeGaussFitPar(F1D ftime, H1F htime) {
@@ -239,7 +257,8 @@ public class FTTimeCalibration extends FTCalibrationModule {
 //        }
          
 //    }
-    
+
+
     @Override
     public void timerUpdate() {
         this.analyze();

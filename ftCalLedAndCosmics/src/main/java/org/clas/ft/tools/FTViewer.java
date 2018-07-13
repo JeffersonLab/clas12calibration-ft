@@ -47,6 +47,7 @@ import org.jlab.io.base.DataEventType;
 import org.jlab.io.evio.EvioSource;
 import org.jlab.io.task.DataSourceProcessorPane;
 import org.jlab.io.task.IDataEventListener;
+import org.jlab.utils.groups.IndexedTable;
 
 /**
  *
@@ -69,6 +70,8 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
     ConstantsManager                 ccdb = new ConstantsManager();
     CalibrationConstantsView   calibTable = new CalibrationConstantsView();
     CalibrationConstants   calibConstants = null;
+    IndexedTable         translationTable = null;
+    IndexedTable             reverseTable = new CalibrationConstants(3,"crate/I:" + "slot/I:" + "chan/I");
 
     // Decoders
     CodaEventDecoder              decoder = new CodaEventDecoder();
@@ -466,8 +469,16 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         return parameterSelect;
     }
 
+    public IndexedTable getReverseTable() {
+        return reverseTable;
+    }
+
     public int getRunNumber() {
         return runNumber;
+    }
+
+    public IndexedTable getTranslationTable() {
+        return translationTable;
     }
 
     public Map<String, Integer> getTabs() {
@@ -533,6 +544,10 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
 
     }
     
+    public void initTranslationTable() {
+        
+    }
+    
     public JMenuBar getMenuBar() {
         return menuBar;
     }
@@ -543,7 +558,7 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         System.out.println("Opening file: " + fileName);
         TDirectory dir = new TDirectory();
         dir.readFile(fileName);
-        System.out.println(dir.getDirectoryList());
+//        System.out.println(dir.getDirectoryList());
         dir.cd();
         dir.pwd();
         
@@ -698,6 +713,10 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
 
     public void setTimerUpdate(int timerUpdate) {
         this.timerUpdate = timerUpdate;
+    }
+
+    public void setTranslationTable(IndexedTable translationTable) {
+        this.translationTable = translationTable;
     }
 
     @Override

@@ -6,6 +6,10 @@
 package org.clas.ftcal.cosmic;
 
 import java.awt.Color;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 import javax.swing.JFrame;
 import org.clas.detector.DetectorDataDgtz;
@@ -167,12 +171,40 @@ public class FTCalNoiseModule extends FTModule {
     public void setCanvasBookData() {
         this.getCanvasBook().setData(this.getDataGroup(), 1);
     }    
-    
+
     @Override
     public void saveConstants(String filename) {
-        for(int component : this.getDetector().getDetectorComponents()) {
-            System.out.println(this.getDataGroup().getItem(1,1,component).getH1F("Pedestal_" + component).getMean());                
+
+        try {
+            File outputFile = new File(filename);
+            FileWriter outputFw = new FileWriter(outputFile.getAbsoluteFile());
+            BufferedWriter outputBw = new BufferedWriter(outputFw);
+
+            String line = new String();
+            int i = 0;
+
+            for (int component : this.getDetector().getDetectorComponents()) {
+
+                i++;
+                line = "  ";
+
+                line = line + String.format("%.3f", this.getParameterValue("Pedestal (Channels)",component));
+                outputBw.write(line);
+
+                if ((i % 16) == 0) {
+                    outputBw.newLine();
+                }
+
+            }
+
+            outputBw.close();
+
+        } catch (IOException ex) {
+            System.out.println(
+                    "Error writing file '"
+                    + filename + "'");
         }
+
     }
 }
     

@@ -5,7 +5,11 @@
  */
 package org.clas.viewer;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,18 +20,27 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JSplitPane;
+import javax.swing.JTextField;
 import org.clas.view.DetectorShape2D;
 import org.jlab.detector.calib.tasks.CalibrationEngine;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.CalibrationConstantsListener;
 import org.jlab.detector.calib.utils.CalibrationConstantsView;
+import org.jlab.detector.calib.utils.ConstantsManager;
+import org.jlab.groot.base.GStyle;
 import org.jlab.groot.data.IDataSet;
 import org.jlab.groot.data.TDirectory;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.base.DataEventType;
-import org.jlab.utils.groups.IndexedList;import org.jlab.groot.graphics.EmbeddedCanvas;
+import org.jlab.utils.groups.IndexedList;
+import org.jlab.groot.graphics.EmbeddedCanvas;
 
 /**
  *
@@ -38,15 +51,34 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     //private final int[] npaddles = new int[]{23,62,5};
     private String                       moduleName = null;
     private FTDetector                           ft = null;
+    ConstantsManager                           ccdb = null;
     private CalibrationConstants              calib = null;
     private CalibrationConstants          prevCalib = null;
     private final IndexedList<DataGroup> dataGroups = new IndexedList<DataGroup>(3);
     private JSplitPane                   moduleView = null;
     private EmbeddedCanvas                   canvas = null;
     private CalibrationConstantsView         ccview = null;
+    private FTCanvasBook                 canvasBook = new FTCanvasBook();
     private int                          nProcessed = 0;
+    private int                         selectedKey = 8;
+    private double[]                          range = new double[2];
 
     public FTCalibrationModule(FTDetector d, String ModuleName, String Constants,int Precision) {
+        GStyle.getAxisAttributesX().setTitleFontSize(24);
+        GStyle.getAxisAttributesX().setLabelFontSize(18);
+        GStyle.getAxisAttributesY().setTitleFontSize(24);
+        GStyle.getAxisAttributesY().setLabelFontSize(18);
+        GStyle.getAxisAttributesZ().setLabelFontSize(14);
+        GStyle.setPalette("kDefault");
+        GStyle.getAxisAttributesX().setLabelFontName("Avenir");
+        GStyle.getAxisAttributesY().setLabelFontName("Avenir");
+        GStyle.getAxisAttributesZ().setLabelFontName("Avenir");
+        GStyle.getAxisAttributesX().setTitleFontName("Avenir");
+        GStyle.getAxisAttributesY().setTitleFontName("Avenir");
+        GStyle.getAxisAttributesZ().setTitleFontName("Avenir");
+        GStyle.setGraphicsFrameLineWidth(1);
+        GStyle.getH1FAttributes().setLineWidth(1);
+                
         this.ft    = d; 
         this.initModule(ModuleName,Constants,Precision);
         this.resetEventListener();
@@ -56,6 +88,10 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
 
     }    
 
+    public void adjustFit() {
+        System.out.println("Option not implemented in current module");
+    }
+    
     @Override
     public void constantsEvent(CalibrationConstants cc, int col, int row) {
         System.out.println("Well. it's working " + col + "  " + row);
@@ -77,8 +113,30 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         } else {
             System.out.println(" ERROR: can not find the data group");
         }
+        this.selectedKey = component;
     }
     
+    @Override
+    public void dataEventAction(DataEvent event) {
+        nProcessed++;
+        if (event.getType() == DataEventType.EVENT_START) {
+                System.out.println("EVENT_START");
+                resetEventListener();
+                processEvent(event);
+        } else if (event.getType() == DataEventType.EVENT_ACCUMULATE) {
+                processEvent(event);
+        }
+        else if (event.getType()==DataEventType.EVENT_SINGLE) {
+                processEvent(event);
+                System.out.println("EVENT_SINGLE from FTCalibrationModule");
+        }
+        else if (event.getType() == DataEventType.EVENT_STOP) {
+                System.out.println("EVENT_STOP");
+                analyze();
+                updateTable();
+        }
+    }
+
     public EmbeddedCanvas getCanvas() {
         return canvas;
     }
@@ -94,6 +152,14 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     
     public CalibrationConstants getCalibrationTable() {
 	return calib;
+    }
+
+    public FTCanvasBook getCanvasBook() {
+        return canvasBook;
+    }
+    
+    public ConstantsManager getConstantsManager() {
+        return ccdb;
     }
     
     public Color getColor(DetectorShape2D dsd) {
@@ -122,6 +188,14 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         return nProcessed;
     }
 
+    public double[] getRange() {
+        return range;
+    }
+
+    public int getSelectedKey() {
+        return selectedKey;
+    }
+
     public JSplitPane getView() {
         return moduleView;
     }
@@ -147,28 +221,18 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         moduleView.setDividerLocation(0.75);        
         moduleView.setResizeWeight(0.75);
     }
-       
-    @Override
-    public void dataEventAction(DataEvent event) {
-        nProcessed++;
-        if (event.getType() == DataEventType.EVENT_START) {
-                System.out.println("EVENT_START");
-                resetEventListener();
-                processEvent(event);
-        } else if (event.getType() == DataEventType.EVENT_ACCUMULATE) {
-                processEvent(event);
-        }
-        else if (event.getType()==DataEventType.EVENT_SINGLE) {
-                processEvent(event);
-                System.out.println("EVENT_SINGLE from FTCalibrationModule");
-        }
-        else if (event.getType() == DataEventType.EVENT_STOP) {
-                System.out.println("EVENT_STOP");
-                analyze();
-        }
+           
+    public void initRange(double r1, double r2) {
+        this.range[0]=r1;
+        this.range[1]=r2;
+        this.resetEventListener();
     }
     
-     public void loadConstants(String path) {     
+    public void loadConstants(ConstantsManager ccdb) {   
+        this.ccdb = ccdb;
+    }  
+    
+    public void loadConstants(String path) {     
 	System.out.println("Loading calibration values for module " + this.getName());
         String fileName = path + "/" + this.getName() + ".txt";
 	System.out.println("File: " + fileName);
@@ -241,6 +305,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         } else {
             System.out.println(" ERROR: can not find the data group");
         }       
+        this.selectedKey = paddle;
     }
   
     public void readDataGroup(TDirectory dir) {
@@ -298,14 +363,62 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
 
     }
+
+    public void setCalibrationTablePrecision(int nDigits) {
+	this.calib.setPrecision(nDigits);
+	this.prevCalib.setPrecision(nDigits);        
+    }
+    
+    public void setCanvasBookData() {
+        
+    }
     
     public void setCanvasUpdate(int time) {
         this.getCanvas().initTimer(time);
     }
+
+    public void setRange() {
+        JFrame frame    = new JFrame();
+        JLabel label;
+        JPanel panel;
+    	JTextField minRange = new JTextField(5);
+	JTextField maxRange = new JTextField(5);
+        	
+        
+        panel = new JPanel(new GridLayout(2, 2));            
+        panel.add(new JLabel("Histogram range minimum"));
+        minRange.setText(Double.toString(0.0));
+        panel.add(minRange);
+        panel.add(new JLabel("Histogram range maximum"));
+        maxRange.setText(Double.toString(100));
+        panel.add(maxRange);
+        
+        int result = JOptionPane.showConfirmDialog(null, panel, 
+                        "Set range", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            if(!minRange.getText().isEmpty())this.range[0] = Double.parseDouble(minRange.getText());
+            else this.range[0] = 0;
+            if(!maxRange.getText().isEmpty())this.range[1] = Double.parseDouble(maxRange.getText());
+            else this.range[1] = 100;
+            System.out.println("Histogram range set to: " + this.range[0] + ":" + - this.range[1]);
+            this.resetEventListener();
+        }
+
+    }
     
-    public void setCalibrationTablePrecision(int nDigits) {
-	this.calib.setPrecision(nDigits);
-	this.prevCalib.setPrecision(nDigits);        
+    public void showPlots() {
+        this.setCanvasBookData();
+        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+            JFrame frame = new JFrame(this.getName());
+            frame.setSize(1000, 800);        
+            frame.add(canvasBook);
+            // frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        }
+        else {
+        System.out.println("Function not implemented in current module");            
+        }
     }
     
     public void writeDataGroup(TDirectory dir) {
@@ -328,8 +441,15 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
     }
 
+    public void setConstantsManager(ConstantsManager ccdb) {
+        this.ccdb = ccdb;
+    }
+    
     public void timeUpdate() {
 
     }
 
+    public void updateTable() {
+
+    }
 }

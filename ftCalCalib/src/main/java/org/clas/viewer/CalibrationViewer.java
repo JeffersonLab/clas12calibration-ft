@@ -10,6 +10,7 @@ import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -23,15 +24,18 @@ import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.clas.modules.FTElasticCalibration;
 import org.clas.modules.FTEnergyCalibration;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.base.DataEventType;
 import org.jlab.io.task.DataSourceProcessorPane;
 import org.jlab.io.task.IDataEventListener;
 import org.clas.modules.FTEnergyCorrection;
+import org.clas.modules.FTPedestalCalibration;
 import org.clas.modules.FTTimeCalibration;
 import org.clas.view.DetectorListener;
 import org.clas.view.DetectorShape2D;
+import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.data.TDirectory;
 import org.jlab.io.base.DataBank;
 
@@ -58,6 +62,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     JTabbedPane               modulePanel  = null;
     String                    moduleSelect = null;
     
+    ConstantsManager         ccdb = new ConstantsManager();
+    
     private int canvasUpdateTime   = 2000;
     private int analysisUpdateTime = 10000;
     private int runNumber  = 0;
@@ -80,28 +86,46 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         menuItem.getAccessibleContext().setAccessibleDescription("Load constants from file");
         menuItem.addActionListener(this);
         constants.add(menuItem);        
+        menuItem = new JMenuItem("CCDB...", KeyEvent.VK_L);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
+        menuItem.getAccessibleContext().setAccessibleDescription("Load constants from ccdb");
+        menuItem.addActionListener(this);
+        constants.add(menuItem);        
         menuItem = new JMenuItem("Save...", KeyEvent.VK_S);
         menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
         menuItem.getAccessibleContext().setAccessibleDescription("Save constants to file");
+        menuItem.addActionListener(this);
+        constants.add(menuItem);
+        menuItem = new JMenuItem("Update table");
+        menuItem.getAccessibleContext().setAccessibleDescription("Update table content");
         menuItem.addActionListener(this);
         constants.add(menuItem);
         menuBar.add(constants);         
         JMenu file = new JMenu("Histograms");
         file.setMnemonic(KeyEvent.VK_A);
         file.getAccessibleContext().setAccessibleDescription("File options");
-        menuItem = new JMenuItem("Open histograms file...", KeyEvent.VK_O);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+        menuItem = new JMenuItem("Adjust fit...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Adjust fit parameters and range");
+        menuItem.addActionListener(this);
+        file.add(menuItem);        
+        menuItem = new JMenuItem("Open histograms file...");
         menuItem.getAccessibleContext().setAccessibleDescription("Open histograms file");
         menuItem.addActionListener(this);
         file.add(menuItem);
-        menuItem = new JMenuItem("Print histograms to file...", KeyEvent.VK_P);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.CTRL_MASK));
+        menuItem = new JMenuItem("Print histograms to file...");
         menuItem.getAccessibleContext().setAccessibleDescription("Print histograms to file");
         menuItem.addActionListener(this);
         file.add(menuItem);
-        menuItem = new JMenuItem("Save histograms...", KeyEvent.VK_H);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
+        menuItem = new JMenuItem("Save histograms...");
         menuItem.getAccessibleContext().setAccessibleDescription("Save histograms to file");
+        menuItem.addActionListener(this);
+        file.add(menuItem);
+        menuItem = new JMenuItem("Set range...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Set histogram range");
+        menuItem.addActionListener(this);
+        file.add(menuItem);
+        menuItem = new JMenuItem("View all");
+        menuItem.getAccessibleContext().setAccessibleDescription("View all histograms");
         menuItem.addActionListener(this);
         file.add(menuItem);
         menuBar.add(file);
@@ -123,8 +147,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         detectorPanel.add(detectorView);
         
         // create module viewer
+        modules.add(new FTElasticCalibration(detectorView,"ElasticCalibration"));
         modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration"));
         modules.add(new FTTimeCalibration(detectorView,"TimeCalibration"));
+        modules.add(new FTPedestalCalibration(detectorView,"PedestalCalibration"));
         modules.add(new FTEnergyCorrection(detectorView,"EnergyCorrection"));
         modulePanel = new JTabbedPane();
         for(int k=0; k<modules.size(); k++) {
@@ -151,6 +177,11 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         mainPanel.add(processorPane,BorderLayout.PAGE_END);
         
         this.setCanvasUpdate(canvasUpdateTime);
+        
+        // init constants manager
+        ccdb.init(Arrays.asList(new String[]{
+                    "/calibration/ft/ftcal/charge_to_energy",
+                    "/daq/tt/ftcal"}));
     }
     
     public void actionPerformed(ActionEvent e) {
@@ -158,6 +189,14 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         if(e.getActionCommand()=="Set analysis update interval...") {
             this.chooseUpdateInterval();
         }
+        if(e.getActionCommand() == "Adjust fit...") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(this.modules.get(k).getName()==moduleSelect) {
+                    this.modules.get(k).adjustFit();
+                }
+            } 
+        }        
         if(e.getActionCommand()=="Open histograms file...") {
             String fileName = null;
             JFileChooser fc = new JFileChooser();
@@ -187,6 +226,22 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             this.saveHistosToFile(fileName);
         }
+        if(e.getActionCommand() == "Set range...") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(this.modules.get(k).getName()==moduleSelect) {
+                    this.modules.get(k).setRange();
+                }
+            } 
+        }        
+        if(e.getActionCommand() == "View all") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(this.modules.get(k).getName()==moduleSelect) {
+                    this.modules.get(k).showPlots();
+                }
+            } 
+        }
         if(e.getActionCommand()=="Load...") {
             String filePath = null;
             JFileChooser fc = new JFileChooser();
@@ -201,6 +256,11 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             for(int k=0; k<this.modules.size(); k++) {
                 this.modules.get(k).loadConstants(filePath);
+            }
+        }
+        if(e.getActionCommand()=="CCDB...") {            
+            for(int k=0; k<this.modules.size(); k++) {
+                this.modules.get(k).loadConstants(ccdb);
             }
         }
         if(e.getActionCommand()=="Save...") {
@@ -232,6 +292,11 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             for(int k=0; k<this.modules.size(); k++) {
                 this.modules.get(k).saveConstants(dirName);
+            }
+        }
+        if(e.getActionCommand()=="Update table") {
+            for(int k=0; k<this.modules.size(); k++) {
+                this.modules.get(k).updateTable();
             }
         }
     }

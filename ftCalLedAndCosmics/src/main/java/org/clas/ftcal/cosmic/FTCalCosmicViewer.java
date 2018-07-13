@@ -44,16 +44,6 @@ public class FTCalCosmicViewer extends FTViewer {
     }
 
     @Override
-    public void initPulseFitter() {
-            System.out.println("\nInitializing connection to CCDB"); 
-            this.getConstantManager().init(Arrays.asList(new String[]{
-                    "/daq/fadc/ftcal",
-                    "/daq/tt/ftcal"}));
-            this.getDetectorDecoder().getFadcPanel().init(this.getConstantManager(),11,"/daq/fadc/ftcal", 70,3,1); 
-            this.getDetectorDecoder().getFadcPanel().setMode1(1, 15, 45, 80, 7);           
-     }
-
-    @Override
     public void initDetector() {
         this.setDetector(new FTCalDetector("FTCAL"));
         this.getDetector().setThresholds(this.threshold);
@@ -63,6 +53,23 @@ public class FTCalCosmicViewer extends FTViewer {
          }
         getDetector().updateBox();
     }                
+
+    @Override
+    public void initPulseFitter() {
+            System.out.println("\nInitializing connection to CCDB"); 
+            this.getConstantManager().init(Arrays.asList(new String[]{
+                    "/daq/fadc/ftcal",
+                    "/daq/tt/ftcal"}));
+            this.getDetectorDecoder().getFadcPanel().init(this.getConstantManager(),11,"/daq/fadc/ftcal", 70,3,1); 
+            this.getDetectorDecoder().getFadcPanel().setMode1(1, 15, 45, 80, 7);           
+     }
+    
+    @Override
+    public void initTranslationTable() {
+        this.setTranslationTable(this.getConstantManager().getConstants(this.getRunNumber(), "/daq/tt/ftcal"))   ;
+//        for(this.getTranslationTable().getList().getMap())
+    }
+
     @Override
     public String getAuthor() {
         return "De Vita";

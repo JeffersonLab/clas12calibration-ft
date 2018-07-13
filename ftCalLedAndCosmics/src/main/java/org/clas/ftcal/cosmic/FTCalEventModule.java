@@ -12,6 +12,7 @@ import org.clas.ft.tools.FTDetector;
 import org.clas.ft.tools.FTModule;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.groot.data.H1F;
+import org.jlab.groot.data.TDirectory;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.utils.groups.IndexedList;
 
@@ -155,4 +156,13 @@ public class FTCalEventModule extends FTModule {
     public void setCanvasBookData() {
         this.getCanvasBook().setData(this.getDataGroup(), 0);
     }
+//    
+//    @Override
+//        public void writeDataGroup(TDirectory dir) {
+//        String folder = "/" + this.getName();
+//        }
+//        
+//    @Override
+//            public void readDataGroup(TDirectory dir, boolean ref) {
+//            }
 }

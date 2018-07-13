@@ -18,6 +18,7 @@ import org.clas.ft.tools.FTDetector;
 import org.clas.ft.tools.FTModule;
 import org.clas.ft.tools.FTParameter;
 import org.jlab.groot.data.H1F;
+import org.jlab.groot.data.TDirectory;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.graphics.EmbeddedCanvas;
 import org.jlab.groot.group.DataGroup;
@@ -444,6 +445,15 @@ public class FTCalCosmicModule extends FTModule {
 //        frame.setVisible(true);
 //        frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 //    }
+    
+//    @Override
+//        public void writeDataGroup(TDirectory dir) {
+//        String folder = "/" + this.getName();
+//        }
+//        
+//    @Override
+//            public void readDataGroup(TDirectory dir, boolean ref) {
+//            }
     
 
 }
