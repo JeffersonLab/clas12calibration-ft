@@ -16,38 +16,29 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import org.jlab.groot.data.H1F;
-import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.math.F1D;
 
 /**
  *
- * @author fanchini
- * Edited by Nick Zachariou
- * */
-public class FTAdjustFit {
-    
-    public  F1D newfct;
-    private F1D fct;
-    private H1F hist;
-    private String opt;
+ * @author nicholas
+ */
+
+
+public class FTAdjustFitParams {
+  
+    public  F1D fct;
     private ArrayList<Double> pars     = new ArrayList<Double>();
-    private ArrayList<Double> err_pars = new ArrayList<Double>();
     private double[]          range    = new double[2];
     private JFrame            frame    = new JFrame();
-    private CustomPanel2      panel    = null;
+    private CustomPanelFitParams      panel    = null;
     
-    public FTAdjustFit(H1F h, F1D f, String opt){
+    public FTAdjustFitParams(F1D f, String title){
         this.fct     = f;
-        this.newfct  = f;
-        this.hist    = h;
-        this.opt     = opt;
-        this.openFitPanel(this.hist.getTitle());
+        this.openFitPanel(title);
     }
     
     public void openFitPanel(String title){
-        
-        panel = new CustomPanel2();
+        panel = new CustomPanelFitParams();
         frame.setSize(250, 300);
         frame.setTitle(title);
         frame.add(panel);
@@ -56,95 +47,105 @@ public class FTAdjustFit {
         //        frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         
     }
-    
-    public void refit(boolean toFit){
+    public void changeFitParams(){
         this.pars.clear();
-        this.err_pars.clear();
         int npar = fct.getNPars();
-        this.newfct.setName(fct.getName());
         for(int i=0; i<npar; i++){
             if(panel.params[i].getText().isEmpty()){
                 this.pars.add(fct.getParameter(i));
-                this.err_pars.add(fct.parameter(i).error());
             }
             else {
                 this.pars.add(Double.parseDouble(panel.params[i].getText()));
             }
+            System.out.println("Param["+i+"] = " + pars.get(i));
         }
-        if(!panel.minRange.getText().isEmpty())this.range[0] = Double.parseDouble(panel.minRange.getText());
-        else this.range[0] = fct.getMin();
-        if(!panel.maxRange.getText().isEmpty())this.range[1] = Double.parseDouble(panel.maxRange.getText());
-        else this.range[1] = fct.getMax();
-        for(int i=0; i<this.pars.size(); i++){
-            this.newfct.setParameter(i, this.pars.get(i));
+        if(!panel.minRange.getText().isEmpty()){
+            this.range[0] = Double.parseDouble(panel.minRange.getText());
         }
-        this.newfct.setRange(range[0], range[1]);
-        if (toFit)
-            DataFitter.fit(newfct,hist,opt);
-        hist.setFunction(null);
-        for(int i=0; i<this.pars.size(); i++){
-            this.err_pars.add(this.newfct.parameter(i).error());
+        else{
+            this.range[0] = fct.getMin();
         }
-        if (toFit)
-            this.newfct.setLineColor(4);
-        else 
-            this.newfct.setLineColor(1);
+        if(!panel.maxRange.getText().isEmpty()){
+            this.range[1] = Double.parseDouble(panel.maxRange.getText());
+        }
+        else{
+            this.range[1] = fct.getMax();
+        }
+        System.out.println("Range: " + this.range[0] +" -- "+ this.range[1]);
+    }
+    public double[] getRangeFit(){
+        return range;
+    }
+    public ArrayList<Double> getParamsFit(){
+        return pars;
     }
     
-    private final class CustomPanel2 extends JPanel {
+    
+//    public void refit(){
+//
+//        this.err_pars.clear();
+//
+//        this.newfct.setName(fct.getName());
+//
+    
+    
+    
+//        if(!panel.minRange.getText().isEmpty())this.range[0] = Double.parseDouble(panel.minRange.getText());
+//        else this.range[0] = fct.getMin();
+//        if(!panel.maxRange.getText().isEmpty())this.range[1] = Double.parseDouble(panel.maxRange.getText());
+//        else this.range[1] = fct.getMax();
+//        for(int i=0; i<this.pars.size(); i++){
+//            this.newfct.setParameter(i, this.pars.get(i));
+//        }
+//        this.newfct.setRange(range[0], range[1]);
+//        DataFitter.fit(newfct,hist,opt);
+//        hist.setFunction(null);
+//        for(int i=0; i<this.pars.size(); i++){
+//            this.err_pars.add(this.newfct.parameter(i).error());
+//        }
+//        this.newfct.setLineColor(3);
+//    }
+    
+    private final class CustomPanelFitParams extends JPanel {
         JLabel label;
         JPanel panel;
-        JPanel subPanel;
-
         JTextField minRange = new JTextField(5);
         JTextField maxRange = new JTextField(5);
         JTextField[] params = new JTextField[10];
-        JButton   fitButton = null;
-        JButton   setButton = null;
+        JButton   SetButton = null;
         
-        public CustomPanel2() {
+        public CustomPanelFitParams() {
             super(new BorderLayout());
-            
-            int npar = newfct.getNPars();
+            int npar = fct.getNPars();
             panel = new JPanel(new GridLayout(npar+2, 2));
-            subPanel= new JPanel();
             for (int i = 0; i < npar; i++) {
-                JLabel l = new JLabel(newfct.parameter(i).name(), JLabel.TRAILING);
+                JLabel l = new JLabel(fct.parameter(i).name(), JLabel.TRAILING);
                 panel.add(l);
                 params[i] = new JTextField(5);
                 params[i].setText(String.format("%.3f", fct.getParameter(i)));
                 panel.add(params[i]);
             }
-            panel.add(new JLabel("Fit range minimum"));
+            panel.add(new JLabel("Fit range minimum "));
             minRange.setText(Double.toString(fct.getRange().getMin()));
             panel.add(minRange);
-            panel.add(new JLabel("Fit range maximum"));
+            panel.add(new JLabel("Fit range maximum "));
             maxRange.setText(Double.toString(fct.getRange().getMax()));
             panel.add(maxRange);
-            fitButton = new JButton("Fit");
-            fitButton.addActionListener(new ActionListener() {
+            SetButton = new JButton("Set new fit parameters");
+            SetButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    refit(true);
+                    changeFitParams();
+                    frame.dispose();
                     return;
                 }
             });
-            setButton = new JButton("Set");
-            setButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    refit(false);
-                    return;
-                }
-            });
-            subPanel.add(fitButton);
-            subPanel.add(setButton);
             this.add(panel, BorderLayout.CENTER);
-            //this.add(fitButton, BorderLayout.PAGE_END);
-            this.add(subPanel, BorderLayout.PAGE_END);
+            this.add(SetButton, BorderLayout.PAGE_END);
+            
             label = new JLabel("Click the \"Show it!\" button"
                                + " to bring up the selected dialog.",
                                JLabel.CENTER);
         }
-        
         void setLabel(String newText) {
             label.setText(newText);
         }
