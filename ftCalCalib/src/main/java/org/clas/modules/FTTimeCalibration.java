@@ -134,6 +134,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
             int phase_offset = 1;
             triggerPhase=((timestamp%6)+phase_offset)%6; // TI derived phase correction due to TDC and FADC clock differences
         }
+        
         // get start time
         if(event.hasBank("REC::Event")) {
             DataBank recEvent = event.getBank("REC::Event");
