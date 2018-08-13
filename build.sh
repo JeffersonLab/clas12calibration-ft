@@ -34,6 +34,14 @@ echo "Building ftHodoCalib..."
     cp target/ftHodoCalibNovice-4.0-SNAPSHOT.jar ../lib/
     cd ..
 
+# ftCalCalib
+echo "Building ftHodoCalibHipo..."
+cd ftHodoCalibHipo
+mvn install
+mvn package
+cp target/FTHodoCalibHipo-4.0-SNAPSHOT.jar ../lib/
+cd ..
+
 
 # Finishing touches
 echo ""
