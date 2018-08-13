@@ -113,7 +113,7 @@ private int sector = 3;
                     
                     DataGroup dg = new DataGroup(4, 1);
                     dg.addDataSet(htime_wide,       1);
-                    dg.addDataSet(htime,            1);
+                    dg.addDataSet(htime,            0);
                     dg.addDataSet(ftime,            0);
                     dg.addDataSet(hgToffsets,       2);
                     dg.addDataSet(gToffsets,        2);
