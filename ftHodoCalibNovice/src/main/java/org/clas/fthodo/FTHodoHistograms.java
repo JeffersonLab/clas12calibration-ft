@@ -237,13 +237,13 @@ public class FTHodoHistograms {
     int NBinsCosmic = 300;
     //double CosmicQXMin[] = {0, 20.0 * nGain, 20.0 * nGain};
     double CosmicQXMin[] = {0, 0.0 * nGain, 0.0 * nGain};
-    double CosmicQXMax[] = {10000, 2000, 2000};
+    double CosmicQXMax[] = {10000, 5000, 5000};
     //double CosmicQXMax[] = {10000, 2000, 2000};
     final int nBinsVMIP = 200;
     //final double CosmicVXMin[] = {0, 20.0 * nGain_mV, 20.0 * nGain_mV};
     final double CosmicVXMin[] = {0, 0.0 * nGain_mV, 0.0 * nGain_mV};
-    final int CosmicVXMax[] = {10000, 1000, 1000};
-    //final int CosmicVXMax[] = {10000, 800, 800};
+    final int CosmicVXMax[] = {10000, 2500, 2500};
+    //final int CosmicVXMax[] = {10000, 1000, 1000};
     final int CosmicNPEXMin[] = {0, 3, 5};
     final int CosmicNPEXMax[] = {200, 93, 133};
     boolean simulatedAnalysis = true;
