@@ -153,6 +153,19 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
     
     public FTCalLedModule(){
         
+        GStyle.setPalette("kDefault");
+        GStyle.getAxisAttributesX().setLabelFontName("Avenir");
+        GStyle.getAxisAttributesY().setLabelFontName("Avenir");
+        GStyle.getAxisAttributesZ().setLabelFontName("Avenir");
+        GStyle.getAxisAttributesX().setTitleFontName("Avenir");
+        GStyle.getAxisAttributesY().setTitleFontName("Avenir");
+        GStyle.getAxisAttributesZ().setTitleFontName("Avenir");
+        GStyle.setGraphicsFrameLineWidth(1);
+        GStyle.getH1FAttributes().setLineWidth(1);
+        GStyle.getAxisAttributesX().setTitleFontSize(18);
+        GStyle.getAxisAttributesX().setLabelFontSize(14);
+        GStyle.getAxisAttributesY().setTitleFontSize(18);
+        GStyle.getAxisAttributesY().setLabelFontSize(14);
         this.initCCDB();
         this.initDetector();
         this.initParameters();
@@ -219,115 +232,38 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
     }
 
     private void initCanvas() {
-        GStyle.setPalette("kDefault");
-        GStyle.getAxisAttributesX().setLabelFontName("Avenir");
-        GStyle.getAxisAttributesY().setLabelFontName("Avenir");
-        GStyle.getAxisAttributesZ().setLabelFontName("Avenir");
-        GStyle.getAxisAttributesX().setTitleFontName("Avenir");
-        GStyle.getAxisAttributesY().setTitleFontName("Avenir");
-        GStyle.getAxisAttributesZ().setTitleFontName("Avenir");
-        GStyle.setGraphicsFrameLineWidth(1);
-        GStyle.getH1FAttributes().setLineWidth(1);
-        GStyle.getAxisAttributesX().setTitleFontSize(16);
-        GStyle.getAxisAttributesX().setLabelFontSize(14);
-        GStyle.getAxisAttributesY().setTitleFontSize(16);
-        GStyle.getAxisAttributesY().setLabelFontSize(14);
         // event canvas
         this.canvasEvent.setGridX(false);
         this.canvasEvent.setGridY(false);
         this.canvasEvent.setStatBoxFontSize(12);
         this.canvasEvent.initTimer(timerUpdate);
+        this.canvasEvent.update();
         // noise
         this.canvasNoise.divide(2, 2);
-        this.canvasNoise.cd(0);
-        this.canvasNoise.setGridX(false);
-        this.canvasNoise.setGridY(false);
-        this.canvasNoise.setStatBoxFontSize(12);
-        this.canvasNoise.cd(1);
-        this.canvasNoise.setGridX(false);
-        this.canvasNoise.setGridY(false);
-        this.canvasNoise.setStatBoxFontSize(12);
-        this.canvasNoise.cd(2);
-        this.canvasNoise.setGridX(false);
-        this.canvasNoise.setGridY(false);
-        this.canvasNoise.setStatBoxFontSize(12);
-        this.canvasNoise.cd(3);
         this.canvasNoise.setGridX(false);
         this.canvasNoise.setGridY(false);
         this.canvasNoise.setStatBoxFontSize(12);
         this.canvasNoise.initTimer(timerUpdate);
         // charge
         this.canvasCharge.divide(2, 2);
-        this.canvasCharge.cd(0);
-        this.canvasCharge.setGridX(false);
-        this.canvasCharge.setGridY(false);
-        this.canvasCharge.setStatBoxFontSize(12);
-        this.canvasCharge.cd(1);
-        this.canvasCharge.setGridX(false);
-        this.canvasCharge.setGridY(false);
-        this.canvasCharge.setStatBoxFontSize(12);
-        this.canvasCharge.cd(2);
-        this.canvasCharge.setGridX(false);
-        this.canvasCharge.setGridY(false);
-        this.canvasCharge.setStatBoxFontSize(12);
-        this.canvasCharge.cd(3);
         this.canvasCharge.setGridX(false);
         this.canvasCharge.setGridY(false);
         this.canvasCharge.setStatBoxFontSize(12);
         this.canvasCharge.initTimer(timerUpdate);
         // amplitude
         this.canvasAmpli.divide(2, 2);
-        this.canvasAmpli.cd(0);
-        this.canvasAmpli.setGridX(false);
-        this.canvasAmpli.setGridY(false);
-        this.canvasAmpli.setStatBoxFontSize(12);
-        this.canvasAmpli.cd(1);
-        this.canvasAmpli.setGridX(false);
-        this.canvasAmpli.setGridY(false);
-        this.canvasAmpli.setStatBoxFontSize(12);
-        this.canvasAmpli.cd(2);
-        this.canvasAmpli.setGridX(false);
-        this.canvasAmpli.setGridY(false);
-        this.canvasAmpli.setStatBoxFontSize(12);
-        this.canvasAmpli.cd(3);
         this.canvasAmpli.setGridX(false);
         this.canvasAmpli.setGridY(false);
         this.canvasAmpli.setStatBoxFontSize(12);
         this.canvasAmpli.initTimer(timerUpdate);
         // Width
         this.canvasWidth.divide(2, 2);
-        this.canvasWidth.cd(0);
-        this.canvasWidth.setGridX(false);
-        this.canvasWidth.setGridY(false);
-        this.canvasWidth.setStatBoxFontSize(12);
-        this.canvasWidth.cd(1);
-        this.canvasWidth.setGridX(false);
-        this.canvasWidth.setGridY(false);
-        this.canvasWidth.setStatBoxFontSize(12);
-        this.canvasWidth.cd(2);
-        this.canvasWidth.setGridX(false);
-        this.canvasWidth.setGridY(false);
-        this.canvasWidth.setStatBoxFontSize(12);
-        this.canvasWidth.cd(3);
         this.canvasWidth.setGridX(false);
         this.canvasWidth.setGridY(false);
         this.canvasWidth.setStatBoxFontSize(12);
         this.canvasWidth.initTimer(timerUpdate);
         // time
         this.canvasTime.divide(2, 2);
-        this.canvasTime.cd(0);
-        this.canvasTime.setGridX(false);
-        this.canvasTime.setGridY(false);
-        this.canvasTime.setStatBoxFontSize(12);
-        this.canvasTime.cd(1);
-        this.canvasTime.setGridX(false);
-        this.canvasTime.setGridY(false);
-        this.canvasTime.setStatBoxFontSize(12);
-        this.canvasTime.cd(2);
-        this.canvasTime.setGridX(false);
-        this.canvasTime.setGridY(false);
-        this.canvasTime.setStatBoxFontSize(12);
-        this.canvasTime.cd(3);
         this.canvasTime.setGridX(false);
         this.canvasTime.setGridY(false);
         this.canvasTime.setStatBoxFontSize(12);

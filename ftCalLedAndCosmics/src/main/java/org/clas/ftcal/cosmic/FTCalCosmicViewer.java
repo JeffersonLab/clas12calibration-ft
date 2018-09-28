@@ -16,8 +16,11 @@ import org.clas.ft.tools.FTViewer;
 
 
 import org.jlab.detector.base.DetectorType;
+import org.jlab.detector.decode.CLASDecoder;
+import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.evio.EvioDataEvent;
+import org.jlab.io.hipo.HipoDataEvent;
 
 
 /**
@@ -29,6 +32,7 @@ public class FTCalCosmicViewer extends FTViewer {
     
     int    threshold       = 6;
     int    nProcessed      = 0;
+        CLASDecoder                clasDecoder = new CLASDecoder();
 
 
     public FTCalCosmicViewer() {
@@ -37,6 +41,7 @@ public class FTCalCosmicViewer extends FTViewer {
         this.getModules().add(new FTCalEventModule(this.getDetector()));
         this.getModules().add(new FTCalNoiseModule(this.getDetector()));
         this.getModules().add(new FTCalCosmicModule(this.getDetector()));
+        this.setModuleSelect(2);
         this.initModules();
         this.addSummaryTable();
         this.initPanel();

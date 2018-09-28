@@ -144,7 +144,7 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         }
         if(e.getActionCommand()=="Save histograms...") {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
-            String fileName = "ftCalCosmic_" + this.runNumber + "_" + df.format(new Date()) + ".hipo";
+            String fileName = this.getName() + "_" + this.runNumber + "_" + df.format(new Date()) + ".hipo";
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
             fc.setCurrentDirectory(workingDirectory);
@@ -201,7 +201,7 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         // Table menu bar
         if(e.getActionCommand()=="Save table...") {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
-            String fileName = "ftCalLed_" + this.runNumber + "_" + df.format(new Date()) + ".txt";
+            String fileName = this.getName() + "_" + this.runNumber + "_" + df.format(new Date()) + ".txt";
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
             fc.setCurrentDirectory(workingDirectory);
@@ -216,7 +216,7 @@ public class FTViewer implements ActionListener, DetectorListener, CalibrationCo
         // Table menu bar
         if(e.getActionCommand()=="Save constants...") {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
-            String fileName = "ftCal_" + this.getModules().get(moduleTabSelect).getName() + "_" + this.runNumber + "_" + df.format(new Date()) + ".txt";
+            String fileName = this.getName() + "_" + this.getModules().get(moduleTabSelect).getName() + "_" + this.runNumber + "_" + df.format(new Date()) + ".txt";
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
             fc.setCurrentDirectory(workingDirectory);

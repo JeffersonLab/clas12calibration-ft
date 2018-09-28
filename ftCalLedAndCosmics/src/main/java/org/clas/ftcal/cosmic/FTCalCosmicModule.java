@@ -6,6 +6,10 @@
 package org.clas.ftcal.cosmic;
 
 import java.awt.GridLayout;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -18,7 +22,6 @@ import org.clas.ft.tools.FTDetector;
 import org.clas.ft.tools.FTModule;
 import org.clas.ft.tools.FTParameter;
 import org.jlab.groot.data.H1F;
-import org.jlab.groot.data.TDirectory;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.graphics.EmbeddedCanvas;
 import org.jlab.groot.group.DataGroup;
@@ -336,6 +339,42 @@ public class FTCalCosmicModule extends FTModule {
     }
     
     @Override
+    public void saveConstants(String filename) {
+
+        try {
+            File outputFile = new File(filename);
+            FileWriter outputFw = new FileWriter(outputFile.getAbsoluteFile());
+            BufferedWriter outputBw = new BufferedWriter(outputFw);
+
+            String line = new String();
+            int i = 0;
+
+            for (int component : this.getDetector().getDetectorComponents()) {
+
+                i++;
+                line = "1  1";
+                line = line + component;
+                line = line + String.format("%.3f", this.getParameterValue("<Q> (pC)",component));
+                line = line + " 15.3 0.039064 700 150";
+                outputBw.write(line);
+
+//                if ((i % 16) == 0) {
+                    outputBw.newLine();
+//                }
+
+            }
+
+            outputBw.close();
+
+        } catch (IOException ex) {
+            System.out.println(
+                    "Error writing file '"
+                    + filename + "'");
+        }
+
+    }
+
+    @Override
     public void setAnalysisParameters() {
 	JTextField multiplicity = new JTextField(5);
 	JTextField range        = new JTextField(5);
@@ -445,15 +484,6 @@ public class FTCalCosmicModule extends FTModule {
 //        frame.setVisible(true);
 //        frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 //    }
-    
-//    @Override
-//        public void writeDataGroup(TDirectory dir) {
-//        String folder = "/" + this.getName();
-//        }
-//        
-//    @Override
-//            public void readDataGroup(TDirectory dir, boolean ref) {
-//            }
     
 
 }

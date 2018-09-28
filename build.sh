@@ -15,7 +15,7 @@ echo "Building ftCalCalib..."
     cd ftCalCalib
     mvn install
     mvn package
-    cp target/FTCalCalib-1.0.jar ../lib/
+    cp target/FTCalCalib-1.0-jar-with-dependencies.jar ../lib/
     cd ..
 
 # ftCalLedAndCosmics
@@ -23,15 +23,15 @@ echo "Building ftCalLedAndCosmics..."
     cd ftCalLedAndCosmics
     mvn install
     mvn package
-    cp target/FTCalLedAndCosmics-1.0.jar ../lib/
+    cp target/FTCalLedAndCosmics-1.0-jar-with-dependencies.jar ../lib/
     cd ..
 
-# ftCalCalib
+# ftHodoCalib
 echo "Building ftHodoCalib..."
     cd ftHodoCalibNovice
     mvn install
     mvn package
-    cp target/ftHodoCalibNovice-4.0-SNAPSHOT.jar ../lib/
+    cp target/FTHodoCalibNovice-5.0-SNAPSHOT-jar-with-dependencies.jar ../lib/
     cd ..
 
 # ftCalCalib
@@ -39,7 +39,7 @@ echo "Building ftHodoCalibHipo..."
 cd ftHodoCalibHipo
 mvn install
 mvn package
-cp target/FTHodoCalibHipo-4.0-SNAPSHOT.jar ../lib/
+cp target/FTHodoCalibHipo-5.0-SNAPSHOT-jar-with-dependencies.jar ../lib/
 cd ..
 
 
