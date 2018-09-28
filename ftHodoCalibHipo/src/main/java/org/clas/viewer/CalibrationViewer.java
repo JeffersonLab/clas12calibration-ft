@@ -31,6 +31,7 @@ import org.jlab.io.task.IDataEventListener;
 
 import org.clas.modules.FTEnergyCalibration;
 import org.clas.modules.FTTimeCalibration;
+import org.clas.modules.FTPedestalCalibration;
 import org.clas.view.DetectorListener;
 import org.clas.view.DetectorShape2D;
 import org.jlab.detector.calib.utils.ConstantsManager;
@@ -152,6 +153,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 //        modules.add(new FTElasticCalibration(detectorView,"ElasticCalibration"));
         modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration"));
         modules.add(new FTTimeCalibration(detectorView,"TimeCalibration"));
+        modules.add(new FTPedestalCalibration(detectorView,"PedestalCalibration"));
 //        modules.add(new FTTimeCalibration(detectorView,"TimeCalibration"));
 //        modules.add(new FTPedestalCalibration(detectorView,"PedestalCalibration"));
 //        modules.add(new FTEnergyCorrection(detectorView,"EnergyCorrection"));
@@ -183,6 +185,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         // init constants manager
         ccdb.init(Arrays.asList(new String[]{
+                    "/daq/tt/fthodo",
+                    "/daq/fadc/fthodo",
                     "/calibration/ft/fthodo/charge_to_energy",
                     "/calibration/ft/fthodo/time_offsets"}));
         

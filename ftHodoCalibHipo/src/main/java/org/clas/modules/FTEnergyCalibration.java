@@ -44,7 +44,6 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     double nsPerSample=4;
     double LSB = 0.4884;
     private IndexedTable                 prevCalibIT = null;
-    private CalibrationConstants         CCDBcalib = null;
 
     public FTEnergyCalibration(FTDetector d, String name) {
         super(d, name, "mips_charge:mips_charge_error:mips_energy", "mips_charge:mips_energy",3);
