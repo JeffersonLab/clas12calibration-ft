@@ -105,10 +105,10 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                     henergycalib.setFillColor(2);
                     henergycalib.setLineColor(2);
 
-                    F1D fcharge = new F1D("fcharge_" + ssec + "_" + llay + "_" + key, "[amp]*landau(x,[mean],[gamma])+[amp2]*exp(x*[scale])", 110, 1100.0);
+                    F1D fcharge = new F1D("fcharge_" + ssec + "_" + llay + "_" + key, "[amp]*landau(x,[mean],[gamma])+[amp2]*exp(x*[scale])", 50, 600.0);
                     fcharge.setParameter(0, 0.0);
-                    fcharge.setParameter(1, 400.0);
-                    fcharge.setParameter(2, 30);
+                    fcharge.setParameter(1, 200.0);
+                    fcharge.setParameter(2, 25);
                     fcharge.setParameter(3, 0.0);
                     fcharge.setParameter(4, 0.0);
                     fcharge.setLineColor(2);
@@ -255,7 +255,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         fcharge.setParameter(4, exp1);
         
         fcharge.setParLimits(0, 0, ampl * 100.0);
-        fcharge.setParLimits(1, 200,600);
+        fcharge.setParLimits(1, 130,310);
         fcharge.setParLimits(2, gamma/10, gamma*10);
         fcharge.setParLimits(3, exp0 * 0.005, exp0 * 100.0);
         fcharge.setParLimits(4, -1.0, 0);
