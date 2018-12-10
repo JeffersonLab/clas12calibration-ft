@@ -105,9 +105,9 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                     henergycalib.setFillColor(2);
                     henergycalib.setLineColor(2);
 
-                    F1D fcharge = new F1D("fcharge_" + ssec + "_" + llay + "_" + key, "[amp]*landau(x,[mean],[gamma])+[amp2]*exp(x*[scale])", 50, 600.0);
+                    F1D fcharge = new F1D("fcharge_" + ssec + "_" + llay + "_" + key, "[amp]*landau(x,[mean],[gamma])+[amp2]*exp(x*[scale])", 50, 500.0);
                     fcharge.setParameter(0, 0.0);
-                    fcharge.setParameter(1, 200.0);
+                    fcharge.setParameter(1, 180.0);
                     fcharge.setParameter(2, 25);
                     fcharge.setParameter(3, 0.0);
                     fcharge.setParameter(4, 0.0);
@@ -209,7 +209,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                     double chisq=fcharge.getChiSquare()/fcharge.getNDF();
                     double ampl2tot = fcharge.getParameter(0)/hcharge.getIntegral();
                     double fitwidth = fcharge.getParameter(2);
-                    boolean ToSetToFitValues= (chisq>0.91 && ampl2tot>0.017  && fitwidth>30 )? true : false;
+                    boolean ToSetToFitValues= (chisq>0.9 && ampl2tot>0.014  && fitwidth>18 )? true : false;
                     double mipsen=(llay==1) ? 1.2 : 2.65;
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineColor(2);
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineStyle(1);
@@ -241,9 +241,9 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     }
 
     private void initLandauFitPar(F1D fcharge, H1F hcharge) {
-        double mean= hcharge.getMean()-20.0;
+        double mean= hcharge.getMean()-45.0;
         double ampl = hcharge.getBinContent(hcharge.getXaxis().getBin(mean)); //set as starting amplitude the value of the bin at mean
-        double gamma = hcharge.getRMS()/2.5;
+        double gamma = hcharge.getRMS()/4.0;
         double exp0 = hcharge.getBinContent(hcharge.getMaximumBin()); //set as starting amplitude of exponential the value of the bin at xmin
         double exp1=-0.001;
         double min=hcharge.getAxis().min();
@@ -255,7 +255,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         fcharge.setParameter(4, exp1);
         
         fcharge.setParLimits(0, 0, ampl * 100.0);
-        fcharge.setParLimits(1, 130,310);
+        fcharge.setParLimits(1, 120,350);
         fcharge.setParLimits(2, gamma/10, gamma*10);
         fcharge.setParLimits(3, exp0 * 0.005, exp0 * 100.0);
         fcharge.setParLimits(4, -1.0, 0);
@@ -388,7 +388,6 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         }
     }
     
-    
     @Override
     public void adjustFit() {
         System.out.println("Adjusting Charge fit for Sector " + this.sector +" Layer " + this.layer +" Component " + this.component);
@@ -399,8 +398,6 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         cfit.setSecLayComp(this.sector,this.layer,this.component);
         cfit.setGraphToUpdate(this.getDataGroup().getItem(this.sector,this.layer,this.component).getGraph("gChargeCal_"+ this.sector + "_" + this.layer));
     }
-    
-    
     
     
     
