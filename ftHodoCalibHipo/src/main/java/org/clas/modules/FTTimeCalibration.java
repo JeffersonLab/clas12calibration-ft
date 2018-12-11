@@ -97,14 +97,16 @@ private int sector = 3;
                     htime_wide.setTitle("Sector: " + ssec + " Layer: " + llay + " Component: "+ key);
                     htime_wide.setFillColor(3);
 
-                    this.initRange(-20,20);
+                    //this.initRange(-20,20);
+                    this.initRange(0,60);
                     H1F htime = new H1F("htime_" + ssec + "_" + llay + "_" + key, 120, this.getRange()[0], this.getRange()[1]);
                     htime.setTitleX("Time [ns]");
                     htime.setTitleY("Counts");
                     htime.setTitle("Sector: " + ssec + " Layer: " + llay + " Component: "+ key);
                     htime.setFillColor(3);
 
-                    F1D ftime = new F1D("ftime_" + ssec + "_" + llay + "_" + key, "[amp]*gaus(x,[mean],[sigma])", -10., 10.);
+                    //F1D ftime = new F1D("ftime_" + ssec + "_" + llay + "_" + key, "[amp]*gaus(x,[mean],[sigma])", -10., 10.);
+                    F1D ftime = new F1D("ftime_" + ssec + "_" + llay + "_" + key, "[amp]*gaus(x,[mean],[sigma])", 30., 45.);
                     ftime.setParameter(0, 0.0);
                     ftime.setParameter(1, 0.0);
                     ftime.setParameter(2, 2.0);
