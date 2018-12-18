@@ -420,6 +420,14 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
         String fileName = data + "/clas12_canvas.png";
         System.out.println(fileName);
+        
+//        System.out.println(fileName);
+//        this.CLAS12Canvas.getCanvas("Summaries").save(fileName);
+//        for(int k=0; k<this.monitors.length; k++) {
+//            this.monitors[k].printCanvas(data);
+//        }
+        
+        
     }
     
     public void timerUpdate() {

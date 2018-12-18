@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import org.jlab.utils.groups.IndexedList;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
@@ -39,7 +40,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     private int sector = 3;
     private int layer = 1;
     private int component = 1;
-    private int runNumber = 1;
+//    private int runNumber = 1;
     // analysis realted info
     double nsPerSample=4;
     double LSB = 0.4884;
@@ -61,7 +62,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                 hgCharge.setTitleX("component");
                 hgCharge.setTitleY("charge [pC]");
                 hgCharge.setTitle("fitted charge for Sec: " + ssec + " Layer: " + llay);
-                hgCharge.setBinContent(0,1000);
+                hgCharge.setBinContent(0,500);
                 
                 GraphErrors  gCharge = new GraphErrors("gCharge_"+ ssec + "_" + llay);
                 gCharge.setTitle("Fitted charge for Sec: "+ ssec + " Layer: " + llay); //  title
@@ -209,13 +210,13 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                     double chisq=fcharge.getChiSquare()/fcharge.getNDF();
                     double ampl2tot = fcharge.getParameter(0)/hcharge.getIntegral();
                     double fitwidth = fcharge.getParameter(2);
-                    boolean ToSetToFitValues= (chisq>0.9 && ampl2tot>0.014  && fitwidth>18 )? true : false;
+                    boolean ToSetToFitValues= (chisq>0.89 && ampl2tot>0.014  && fitwidth>18 )? true : false;
                     double mipsen=(llay==1) ? 1.2 : 2.65;
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineColor(2);
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineStyle(1);
                     if (!ToSetToFitValues){
-                        this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setParameter(1,800.0);
-                        this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setParameter(2,100.0);
+                        this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setParameter(1,500.0);
+                        this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setParameter(2,200.0);
                         this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineColor(4);
                         this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineStyle(3);
                     }
@@ -241,6 +242,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     }
 
     private void initLandauFitPar(F1D fcharge, H1F hcharge) {
+
         double mean= hcharge.getMean()-45.0;
         double ampl = hcharge.getBinContent(hcharge.getXaxis().getBin(mean)); //set as starting amplitude the value of the bin at mean
         double gamma = hcharge.getRMS()/4.0;
@@ -248,19 +250,26 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         double exp1=-0.001;
         double min=hcharge.getAxis().min();
         double max=hcharge.getAxis().max();
+        if (hcharge.getMean()>320){
+           fcharge.setRange(100, 800);
+           fcharge.setParLimits(1, 250,800);
+        }
+        else {
+          fcharge.setRange(50, 500);
+          fcharge.setParLimits(1, 110,600);
+        }
         fcharge.setParameter(0, ampl);
         fcharge.setParameter(1, mean);
         fcharge.setParameter(2, gamma);
         fcharge.setParameter(3, exp0);
         fcharge.setParameter(4, exp1);
-        
         fcharge.setParLimits(0, 0, ampl * 100.0);
-        fcharge.setParLimits(1, 120,350);
         fcharge.setParLimits(2, gamma/10, gamma*10);
         fcharge.setParLimits(3, exp0 * 0.005, exp0 * 100.0);
         fcharge.setParLimits(4, -1.0, 0);
     }
-
+    
+    
     @Override
     public Color getColor(DetectorShape2D dsd) {
         // show summary

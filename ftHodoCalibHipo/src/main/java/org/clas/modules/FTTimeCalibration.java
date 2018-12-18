@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import org.jlab.utils.groups.IndexedList;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTAdjustFit;
@@ -60,7 +61,7 @@ private int sector = 3;
                 hgToffsets.setTitleX("component");
                 hgToffsets.setTitleY("offset [ns]");
                 hgToffsets.setTitle("Time offsets for Sec: " + ssec + " Layer: " + llay);
-                hgToffsets.setBinContent(1,-10);
+                hgToffsets.setBinContent(1,60);
                 //hgToffsets.setBinContent(2,10);
                 
                 GraphErrors  gToffsets = new GraphErrors("gToffsets_"+ ssec + "_" + llay);
@@ -70,8 +71,8 @@ private int sector = 3;
                 gToffsets.setMarkerColor(4); // color from 0-9 for given palette
                 gToffsets.setMarkerSize(3);  // size in points on the screen
                 gToffsets.setMarkerStyle(2); // Style can be 1 or 2
-                gToffsets.addPoint(0.2, -10., 0., 0.);
-                gToffsets.addPoint(1.2, 10., 0., 0.);
+                gToffsets.addPoint(0.2, 20., 0., 0.);
+                gToffsets.addPoint(1.2, 60., 0., 0.);
                 
                 GraphErrors  gToffsetsCal = new GraphErrors("gToffsetsCal_"+ ssec + "_" + llay);
                 gToffsetsCal.setTitle("Time offsets for Sec: "+ ssec + " Layer: " + llay); //  title
@@ -80,8 +81,8 @@ private int sector = 3;
                 gToffsetsCal.setMarkerColor(2); // color from 0-9 for given palette
                 gToffsetsCal.setMarkerSize(3);  // size in points on the screen
                 gToffsetsCal.setMarkerStyle(1); // Style can be 1 or 2
-                gToffsetsCal.addPoint(0., -10., 0., 0.);
-                gToffsetsCal.addPoint(1., 10., 0., 0.);
+                gToffsetsCal.addPoint(0., 20., 0., 0.);
+                gToffsetsCal.addPoint(1., 60., 0., 0.);
 
                 H2F htime_calSect = new H2F("htime_calSect_" + ssec + "_" + llay, 50, -12., 12., numcomp+1, 0, numcomp+1);
                 htime_calSect.setTitleX("Time [ns]");
@@ -97,14 +98,19 @@ private int sector = 3;
                     htime_wide.setTitle("Sector: " + ssec + " Layer: " + llay + " Component: "+ key);
                     htime_wide.setFillColor(3);
 
-                    //this.initRange(-20,20);
-                    this.initRange(0,60);
-                    H1F htime = new H1F("htime_" + ssec + "_" + llay + "_" + key, 120, this.getRange()[0], this.getRange()[1]);
+                    H1F htime_small = new H1F("htime_small_" + ssec + "_" + llay + "_" + key, 2400, -300,300);
+                    htime_small.setTitleX("Time [ns]");
+                    htime_small.setTitleY("Counts");
+                    htime_small.setTitle("Sector: " + ssec + " Layer: " + llay + " Component: "+ key);
+                    htime_small.setFillColor(3);
+
+                    H1F htime = new H1F("htime_" + ssec + "_" + llay + "_" + key, 240, -30,30);
                     htime.setTitleX("Time [ns]");
                     htime.setTitleY("Counts");
                     htime.setTitle("Sector: " + ssec + " Layer: " + llay + " Component: "+ key);
                     htime.setFillColor(3);
-
+                    
+                    
                     //F1D ftime = new F1D("ftime_" + ssec + "_" + llay + "_" + key, "[amp]*gaus(x,[mean],[sigma])", -10., 10.);
                     F1D ftime = new F1D("ftime_" + ssec + "_" + llay + "_" + key, "[amp]*gaus(x,[mean],[sigma])", 30., 45.);
                     ftime.setParameter(0, 0.0);
@@ -116,6 +122,7 @@ private int sector = 3;
                     DataGroup dg = new DataGroup(4, 1);
                     dg.addDataSet(htime_wide,       1);
                     dg.addDataSet(htime,            0);
+                    dg.addDataSet(htime_small,      1);
                     dg.addDataSet(ftime,            0);
                     dg.addDataSet(hgToffsets,       2);
                     dg.addDataSet(gToffsets,        2);
@@ -136,7 +143,7 @@ private int sector = 3;
     }
     
     public int getNEvents(int isec, int ilay, int icomp) {
-        return this.getDataGroup().getItem(isec, ilay, icomp).getH1F("htime_" + isec + "_" + ilay + "_" + icomp).getEntries();
+        return this.getDataGroup().getItem(isec, ilay, icomp).getH1F("htime_small_" + isec + "_" + ilay + "_" + icomp).getEntries();
     }
  
     public void processEvent(DataEvent event) {
@@ -186,9 +193,9 @@ private int sector = 3;
                     double timediff2  = (time2 -(this.startTime + tof2));
                     if (clusterID1==clusterID2){
                         this.getDataGroup().getItem(sect1,lay1,comp1).getH1F("htime_wide_" + sect1 + "_" + lay1 + "_" + comp1).fill(timediff1);
-                        this.getDataGroup().getItem(sect1,lay1,comp1).getH1F("htime_" + sect1 + "_" + lay1 + "_" + comp1).fill(timediff1);
+                        this.getDataGroup().getItem(sect1,lay1,comp1).getH1F("htime_small_" + sect1 + "_" + lay1 + "_" + comp1).fill(timediff1);
                         this.getDataGroup().getItem(sect2,lay2,comp2).getH1F("htime_wide_" + sect2 + "_" + lay2 + "_" + comp2).fill(timediff2);
-                        this.getDataGroup().getItem(sect2,lay2,comp2).getH1F("htime_" + sect2 + "_" + lay2 + "_" + comp2).fill(timediff2);
+                        this.getDataGroup().getItem(sect2,lay2,comp2).getH1F("htime_small_" + sect2 + "_" + lay2 + "_" + comp2).fill(timediff2);
 //                        if(this.getPreviousCalibrationTable().hasEntry(sect1,lay1,comp1)) {
 //                            double offset = this.getPreviousCalibrationTable().getDoubleValue("time_offset", sect1,lay1,comp1);
 //                            double rms = this.getPreviousCalibrationTable().getDoubleValue("time_rms", sect1,lay1,comp1);
@@ -220,11 +227,23 @@ private int sector = 3;
         for (int ssec=1;ssec<9;ssec++){
             for (int llay=1;llay<3;llay++){
                 for (int key : this.getDetector().getDetectorComponents(ssec,llay)) {
+                    H1F htime_small = this.getDataGroup().getItem(ssec,llay,key).getH1F("htime_small_"+ ssec + "_" + llay+ "_" + key);
                     H1F htime = this.getDataGroup().getItem(ssec,llay,key).getH1F("htime_"+ ssec + "_" + llay+ "_" + key);
                     F1D ftime = this.getDataGroup().getItem(ssec,llay,key).getF1D("ftime_"+ ssec + "_" + llay+ "_" + key);
-                    this.initTimeGaussFitPar(ftime,htime);
+                    this.initTimeGaussFitPar(ftime,htime_small, htime);
                     DataFitter.fit(ftime,htime,"LQ");
-                    
+                    double chisq=ftime.getChiSquare()/ftime.getNDF();
+                    double integral = htime.getIntegral();
+                    double fitwidth = ftime.getParameter(2);
+                    boolean ToSetToFitValues= (chisq>0.89 && integral>10  && fitwidth>0.4 )? true : false;
+                    this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setLineColor(2);
+                    this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setLineStyle(1);
+                    if (!ToSetToFitValues){
+                        this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setParameter(1,-100.0);
+                        this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setParameter(2,50.0);
+                        this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setLineColor(4);
+                        this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setLineStyle(3);
+                    }
                     double newOffset=ftime.getParameter(1);
                     this.getDataGroup().getItem(ssec,llay,key).getGraph("gToffsetsCal_"+ ssec + "_" + llay).addPoint(key, ftime.getParameter(1), 0, ftime.parameter(1).error()+ftime.getParameter(2));
                     getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay+ "_" + key).getParameter(1),      "time_offset",       ssec, llay, key);
@@ -243,18 +262,32 @@ private int sector = 3;
         getCalibrationTable().fireTableDataChanged();
     }
 
-    private void initTimeGaussFitPar(F1D ftime, H1F htime) {
+    private void initTimeGaussFitPar(F1D ftime, H1F htime_small, H1F htime) {
+        //System.out.println("Here");
+        double maxbin=htime_small.getXaxis().getBinCenter(htime_small.getMaximumBin())-htime_small.getXaxis().getBinWidth(5)/2.0;
+        //System.out.println("Here1:"+maxbin);
+        if (maxbin>250 || maxbin<-250)
+            maxbin=0.0;
+        htime.set(120, maxbin-15.0,maxbin+15.0);
+        
+        for(int bin = 0; bin < htime.getXaxis().getNBins(); bin++){
+            double xval=htime.getXaxis().getBinCenter(bin);
+            int binval=htime_small.getXaxis().getBin(xval);
+            double bincont=htime_small.getBinContent(binval);
+            htime.setBinContent(bin,bincont);
+            //System.out.println(" bin: "+bin+"Max: "+maxbin+" xval: "+xval+" binval: "+binval+" bincon: "+bincont);
+        }
         double hAmp  = htime.getBinContent(htime.getMaximumBin());
         double hMean = htime.getAxis().getBinCenter(htime.getMaximumBin());
         double hRMS  = 2; //ns
         double rangeMin = (hMean - (0.8*hRMS));
         double rangeMax = (hMean + (0.8*hRMS));
-        double pm = (hMean*3.)/50.0;
+        double pm = (hMean*3.)/40.0;
         ftime.setRange(rangeMin, rangeMax);
         ftime.setParameter(0, hAmp);
         ftime.setParLimits(0, hAmp*0.85, hAmp*1.2);
         ftime.setParameter(1, hMean);
-        ftime.setParLimits(1, hMean-pm, hMean+(pm));
+        ftime.setParLimits(1, hMean-pm, hMean+pm);
         ftime.setParameter(2, 0.2);
         ftime.setParLimits(2, 0.1*hRMS, 0.8*hRMS);
     }
@@ -289,9 +322,9 @@ private int sector = 3;
             this.getCanvas().clear();
             this.getCanvas().divide(4, 2);
             this.getCanvas().cd(0);
-            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("htime_wide_" + sector + "_" + 1 + "_" + component));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("htime_small_" + sector + "_" + 1 + "_" + component));
             this.getCanvas().cd(4);
-            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("htime_wide_" + sector + "_" + 2 + "_" + component));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("htime_small_" + sector + "_" + 2 + "_" + component));
             this.getCanvas().cd(1);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("htime_" + sector + "_" + 1 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getF1D("ftime_" + sector + "_" + 1 + "_" + component),"same");
@@ -334,9 +367,9 @@ private int sector = 3;
             this.getCanvas().clear();
             this.getCanvas().divide(4, 2);
             this.getCanvas().cd(0);
-            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("htime_wide_" + sector + "_" + 1 + "_" + component));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("htime_small_" + sector + "_" + 1 + "_" + component));
             this.getCanvas().cd(4);
-            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("htime_wide_" + sector + "_" + 2 + "_" + component));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("htime_small_" + sector + "_" + 2 + "_" + component));
             this.getCanvas().cd(1);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("htime_" + sector + "_" + 1 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getF1D("ftime_" + sector + "_" + 1 + "_" + component),"same");

@@ -64,6 +64,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     private int                         selectedKey = 8;
     private double[]                          range = new double[2];
     private String                    CCDBConstants = null;
+    public int runNumber = 1;
     public FTCalibrationModule(FTDetector d, String ModuleName, String Constants, String CCDBConstants, int Precision) {
         GStyle.getAxisAttributesX().setTitleFontSize(24);
         GStyle.getAxisAttributesX().setLabelFontSize(18);
@@ -410,10 +411,16 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     }
     
     public void setCanvasBookData(String PlotsToShow) {
-        if (Objects.equals(PlotsToShow, "fits"))
+        if (Objects.equals(PlotsToShow, "fits")){
             canvasBook.setData(this.getDataGroup(), 0);
-        else if (Objects.equals(PlotsToShow, "constants"))
+            String CanvasName=runNumber+"_"+this.moduleName+"_fits_";
+            canvasBook.setName(CanvasName);
+        }
+        else if (Objects.equals(PlotsToShow, "constants")){
             canvasBook.setDataConstants(this.getDataGroup(), 2);
+            String CanvasName=runNumber+"_"+this.moduleName+"_Const_";
+            canvasBook.setName(CanvasName);
+        }
     }
     
     public void setCanvasUpdate(int time) {
