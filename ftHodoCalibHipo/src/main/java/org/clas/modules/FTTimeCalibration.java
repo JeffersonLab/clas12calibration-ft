@@ -43,7 +43,7 @@ private int sector = 3;
     double c = 29.97; //cm/ns
     double startTime   = 124.25;//ns
     double trigger = 11;//ns
-    private int runNumber = 1;
+    //private int runNumber = 1;
     private IndexedTable                 prevCalibIT = null;
 
     public FTTimeCalibration(FTDetector d, String name) {

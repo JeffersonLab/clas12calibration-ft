@@ -428,7 +428,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
         
         for(int k=0; k<this.modules.size(); k++) {
-           this.modules.get(k).printPlots(dirName);
+           this.modules.get(k).printPlots(dirName); 
            this.modules.get(k).printConstants(dirName);
         } 
 //        DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
