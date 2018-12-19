@@ -462,7 +462,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
             JFrame frame = new JFrame(this.getName());
             frame.setSize(1000, 800);
             frame.add(canvasBook);
-            // frame.pack();
+            //frame.pack();
             frame.setVisible(true);
             frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         }
@@ -471,13 +471,13 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
     }
     
-        public void  showConstants() {
+    public void  showConstants() {
         this.setCanvasBookData("constants");
         if(this.canvasBook.getCanvasDataSets().size()!=0) {
             JFrame frame = new JFrame(this.getName());
             frame.setSize(1000, 800);
             frame.add(canvasBook);
-            // frame.pack();
+            //frame.pack();
             frame.setVisible(true);
             frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         }
@@ -486,7 +486,37 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
     }
     
-    
+    public void  printPlots(String name) {
+        this.setCanvasBookData("fits");
+        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+            JFrame frame = new JFrame(this.getName());
+            frame.setSize(1000, 800);
+            frame.add(canvasBook);
+            //frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        }
+        else {
+            System.out.println("Function not implemented in current module");
+        }
+        this.canvasBook.printCanvas(name);
+    }
+    public void  printConstants(String name) {
+        this.setCanvasBookData("constants");
+        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+            JFrame frame = new JFrame(this.getName());
+            frame.setSize(1000, 800);
+            frame.add(canvasBook);
+            //frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        }
+        else {
+            System.out.println("Function not implemented in current module");
+        }
+        this.canvasBook.printCanvas(name);
+
+    }
     
     public void writeDataGroup(TDirectory dir) {
         String folder = "/" + this.getName();

@@ -235,7 +235,8 @@ private int sector = 3;
                     double chisq=ftime.getChiSquare()/ftime.getNDF();
                     double integral = htime.getIntegral();
                     double fitwidth = ftime.getParameter(2);
-                    boolean ToSetToFitValues= (chisq>0.89 && integral>10  && fitwidth>0.4 )? true : false;
+                    double ampl = ftime.getParameter(0);
+                    boolean ToSetToFitValues= (chisq<5.0 && integral>20  && fitwidth>0.4 && ampl>5 )? true : false;
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setLineColor(2);
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setLineStyle(1);
                     if (!ToSetToFitValues){
@@ -278,18 +279,20 @@ private int sector = 3;
             //System.out.println(" bin: "+bin+"Max: "+maxbin+" xval: "+xval+" binval: "+binval+" bincon: "+bincont);
         }
         double hAmp  = htime.getBinContent(htime.getMaximumBin());
-        double hMean = htime.getAxis().getBinCenter(htime.getMaximumBin());
-        double hRMS  = 2; //ns
-        double rangeMin = (hMean - (0.8*hRMS));
-        double rangeMax = (hMean + (0.8*hRMS));
-        double pm = (hMean*3.)/40.0;
+        //double hMean = htime.getAxis().getBinCenter(htime.getMaximumBin());
+        double hMean = htime.getMean();
+        //double hRMS  = 2; //ns
+        double hRMS  = htime.getRMS(); //ns
+        double rangeMin = (hMean - (0.6*hRMS));
+        double rangeMax = (hMean + (0.6*hRMS));
+        double pm = 0.4*hRMS;
         ftime.setRange(rangeMin, rangeMax);
         ftime.setParameter(0, hAmp);
         ftime.setParLimits(0, hAmp*0.85, hAmp*1.2);
         ftime.setParameter(1, hMean);
         ftime.setParLimits(1, hMean-pm, hMean+pm);
         ftime.setParameter(2, 0.2);
-        ftime.setParLimits(2, 0.1*hRMS, 0.8*hRMS);
+        ftime.setParLimits(2, 0.05*hRMS, 0.8*hRMS);
     }
     
     @Override

@@ -45,16 +45,13 @@ public class FTCanvasBook extends JPanel implements ActionListener {
         JButton buttonPrev = new JButton("<");
         this.progressLabel = new JLabel("0/0");
         JButton buttonNext = new JButton(">");
-        JButton buttonPrint = new JButton("Print");
 
         buttonPrev.addActionListener(this);
         buttonNext.addActionListener(this);
-        buttonPrint.addActionListener(this);
         buttonsPanel.setLayout(new FlowLayout());
         buttonsPanel.add(buttonPrev);
         buttonsPanel.add(this.progressLabel);
         buttonsPanel.add(buttonNext);
-        buttonsPanel.add(buttonPrint);
         add(this.canvas,BorderLayout.CENTER);
         add(buttonsPanel,BorderLayout.PAGE_END);
     }
@@ -172,12 +169,13 @@ public class FTCanvasBook extends JPanel implements ActionListener {
             this.updateCanvas();
         }
     }
-    public void printCanvas(){
+    public void printCanvas(String name){
         for (int ll=0;ll<maxPages; ll++){
             this.currentPage = ll;
             this.canvas.clear();
             this.updateCanvas();
-            String fileName1 = "./Run_"+this.canvasName+ll+".png";
+            
+            String fileName1 = name + "/Run_"+this.canvasName+ll+".png";
             System.out.println(fileName1);
             this.canvas.save(fileName1);
         }
@@ -190,9 +188,6 @@ public class FTCanvasBook extends JPanel implements ActionListener {
         }
         if(e.getActionCommand().compareTo(">")==0){
             this.nextPage();
-        }
-        if(e.getActionCommand().compareTo("Print")==0){
-            this.printCanvas();
         }
     }
      public static void main(String[] args){

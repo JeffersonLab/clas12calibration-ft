@@ -123,8 +123,8 @@ public class FTAdjustFit {
             this.calibcons.setDoubleValue(100.0, "mips_charge_error", this.sector, this.layer, this.component);
                         
             if (gGraphToUpdate != null){
-                this.gGraphToUpdate.setPoint(this.component-1, this.component,400.0);
-                this.gGraphToUpdate.setError(this.component-1, 0, 100.0);
+                this.gGraphToUpdate.setPoint(this.component-1, this.component,500.0);
+                this.gGraphToUpdate.setError(this.component-1, 0, 200.0);
             }
             this.calibcons.fireTableDataChanged();
         }else if (Objects.equals(moduleName,"time")){
@@ -132,8 +132,8 @@ public class FTAdjustFit {
             this.calibcons.setDoubleValue(10.0, "time_rms", this.sector, this.layer, this.component);
                         
             if (gGraphToUpdate != null){
-                this.gGraphToUpdate.setPoint(this.component-1, this.component,40.0);
-                this.gGraphToUpdate.setError(this.component-1, 0, 10.0);
+                this.gGraphToUpdate.setPoint(this.component-1, this.component,-100.0);
+                this.gGraphToUpdate.setError(this.component-1, 0, 50.0);
             }
             this.calibcons.fireTableDataChanged();
         }
