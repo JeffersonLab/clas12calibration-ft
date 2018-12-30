@@ -251,9 +251,9 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         double exp1=-0.001;
         double min=hcharge.getAxis().min();
         double max=hcharge.getAxis().max();
-        if (hcharge.getMean()>320){
+        if (hcharge.getMean()>360){
            fcharge.setRange(100, 800);
-           fcharge.setParLimits(1, 250,800);
+           fcharge.setParLimits(1, 110,600);
         }
         else {
           fcharge.setRange(50, 500);
