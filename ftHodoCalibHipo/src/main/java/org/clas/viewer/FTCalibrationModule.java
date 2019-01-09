@@ -64,6 +64,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     private int                         selectedKey = 8;
     private double[]                          range = new double[2];
     private String                    CCDBConstants = null;
+    public int runNumber = 1;
     public FTCalibrationModule(FTDetector d, String ModuleName, String Constants, String CCDBConstants, int Precision) {
         GStyle.getAxisAttributesX().setTitleFontSize(24);
         GStyle.getAxisAttributesX().setLabelFontSize(18);
@@ -410,10 +411,16 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     }
     
     public void setCanvasBookData(String PlotsToShow) {
-        if (Objects.equals(PlotsToShow, "fits"))
+        if (Objects.equals(PlotsToShow, "fits")){
             canvasBook.setData(this.getDataGroup(), 0);
-        else if (Objects.equals(PlotsToShow, "constants"))
+            String CanvasName=runNumber+"_"+this.moduleName+"_fits_";
+            canvasBook.setName(CanvasName);
+        }
+        else if (Objects.equals(PlotsToShow, "constants")){
             canvasBook.setDataConstants(this.getDataGroup(), 2);
+            String CanvasName=runNumber+"_"+this.moduleName+"_Const_";
+            canvasBook.setName(CanvasName);
+        }
     }
     
     public void setCanvasUpdate(int time) {
@@ -455,7 +462,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
             JFrame frame = new JFrame(this.getName());
             frame.setSize(1000, 800);
             frame.add(canvasBook);
-            // frame.pack();
+            //frame.pack();
             frame.setVisible(true);
             frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         }
@@ -464,13 +471,13 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
     }
     
-        public void  showConstants() {
+    public void  showConstants() {
         this.setCanvasBookData("constants");
         if(this.canvasBook.getCanvasDataSets().size()!=0) {
             JFrame frame = new JFrame(this.getName());
             frame.setSize(1000, 800);
             frame.add(canvasBook);
-            // frame.pack();
+            //frame.pack();
             frame.setVisible(true);
             frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         }
@@ -479,7 +486,37 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
     }
     
-    
+    public void  printPlots(String name) {
+        this.setCanvasBookData("fits");
+        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+            JFrame frame = new JFrame(this.getName());
+            frame.setSize(1000, 800);
+            frame.add(canvasBook);
+            //frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        }
+        else {
+            System.out.println("Function not implemented in current module");
+        }
+        this.canvasBook.printCanvas(name);
+    }
+    public void  printConstants(String name) {
+        this.setCanvasBookData("constants");
+        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+            JFrame frame = new JFrame(this.getName());
+            frame.setSize(1000, 800);
+            frame.add(canvasBook);
+            //frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        }
+        else {
+            System.out.println("Function not implemented in current module");
+        }
+        this.canvasBook.printCanvas(name);
+
+    }
     
     public void writeDataGroup(TDirectory dir) {
         String folder = "/" + this.getName();

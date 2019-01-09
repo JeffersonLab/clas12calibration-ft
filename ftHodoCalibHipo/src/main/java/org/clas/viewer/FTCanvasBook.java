@@ -31,12 +31,13 @@ import org.jlab.utils.groups.IndexedList;
 public class FTCanvasBook extends JPanel implements ActionListener {
 
     private EmbeddedCanvas canvas = new EmbeddedCanvas();
-    private int     padsPerPage = 9;
+    private int     padsPerPage = 16;
     private int     currentPage = 0;
     private int        maxPages = 1;
     private List<DataGroup> canvasDataSets = new ArrayList<DataGroup>();
     JLabel  progressLabel = null;
-    
+    private String canvasName = null;
+
     public FTCanvasBook(){
         super();
         setLayout(new BorderLayout());
@@ -44,6 +45,7 @@ public class FTCanvasBook extends JPanel implements ActionListener {
         JButton buttonPrev = new JButton("<");
         this.progressLabel = new JLabel("0/0");
         JButton buttonNext = new JButton(">");
+
         buttonPrev.addActionListener(this);
         buttonNext.addActionListener(this);
         buttonsPanel.setLayout(new FlowLayout());
@@ -54,6 +56,10 @@ public class FTCanvasBook extends JPanel implements ActionListener {
         add(buttonsPanel,BorderLayout.PAGE_END);
     }
     
+    public void setName(String name){
+        this.canvasName=name;
+    }
+
     
     public void setData(IndexedList<DataGroup> dataGroups, int iPad){
         this.canvasDataSets.clear();
@@ -127,7 +133,7 @@ public class FTCanvasBook extends JPanel implements ActionListener {
         
     public void updateCanvas(){
         this.canvas.clear();
-        this.canvas.divide(3, 3);
+        this.canvas.divide(4, 4);
         this.canvas.setGridX(false);
         this.canvas.setGridY(false);
         for(int i = 0; i < this.padsPerPage; i++){
@@ -163,7 +169,17 @@ public class FTCanvasBook extends JPanel implements ActionListener {
             this.updateCanvas();
         }
     }
-    
+    public void printCanvas(String name){
+        for (int ll=0;ll<maxPages; ll++){
+            this.currentPage = ll;
+            this.canvas.clear();
+            this.updateCanvas();
+            
+            String fileName1 = name + "/Run_"+this.canvasName+ll+".png";
+            System.out.println(fileName1);
+            this.canvas.save(fileName1);
+        }
+    }
     
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -180,7 +196,7 @@ public class FTCanvasBook extends JPanel implements ActionListener {
         //EmbeddedCanvasTabbed canvasTab = new EmbeddedCanvasTabbed();
         frame.add(canvasTab);
         frame.pack();
-        frame.setMinimumSize(new Dimension(300,300));
+        frame.setMinimumSize(new Dimension(400,400));
         frame.setVisible(true);
     }
 }

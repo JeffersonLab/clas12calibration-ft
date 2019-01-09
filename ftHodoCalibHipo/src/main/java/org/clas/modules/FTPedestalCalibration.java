@@ -39,7 +39,7 @@ public class FTPedestalCalibration extends FTCalibrationModule {
     private int sector = 3;
     private int layer = 1;
     private int component = 1;
-    private int runNumber = 1;
+    //private int runNumber = 1;
     // analysis realted info
     double nsPerSample=4;
     double LSB = 0.4884;

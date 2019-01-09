@@ -401,25 +401,59 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     
     public void printHistosToFile() {
         DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
-        String data = this.workDir + "/Plots/clas12rec_run_" + this.runNumber + "_" + df.format(new Date());        
-        File theDir = new File(data);
-        // if the directory does not exist, create it
+        String dirName = "ftHodoCalibPlots_" + this.runNumber + "_" + df.format(new Date());
+        JFileChooser fc = new JFileChooser();
+        File workingDirectory = new File(this.workDir);
+        fc.setCurrentDirectory(workingDirectory);
+        File file = new File(dirName);
+        fc.setSelectedFile(file);
+        int returnValue = fc.showSaveDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            dirName = fc.getSelectedFile().getAbsolutePath();            
+        }
+        File theDir = new File(dirName);
+            // if the directory does not exist, create it
         if (!theDir.exists()) {
-            System.out.println("Directory does not exist: " + data);
             boolean result = false;
             try{
                 theDir.mkdir();
                 result = true;
             } 
             catch(SecurityException se){
-                //handle it
+                    //handle it
             }        
             if(result) {    
-            System.out.println("Created directory: " + data);
+                System.out.println("Created directory: " + dirName);
             }
         }
-        String fileName = data + "/clas12_canvas.png";
-        System.out.println(fileName);
+        
+        for(int k=0; k<this.modules.size(); k++) {
+           this.modules.get(k).printPlots(dirName); 
+           this.modules.get(k).printConstants(dirName);
+        } 
+//        DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
+//        String data = this.workDir + "/Plots/clas12rec_run_" + this.runNumber + "_" + df.format(new Date());        
+//        File theDir = new File(data);
+//        // if the directory does not exist, create it
+//        if (!theDir.exists()) {
+//            System.out.println("Directory does not exist: " + data);
+//            boolean result = false;
+//            try{
+//                theDir.mkdir();
+//                result = true;
+//            } 
+//            catch(SecurityException se){
+//                //handle it
+//            }        
+//            if(result) {    
+//            System.out.println("Created directory: " + data);
+//            }
+//        }
+//        String fileName = data + "/clas12_canvas.png";
+//        System.out.println(fileName);
+        
+
+        
     }
     
     public void timerUpdate() {
