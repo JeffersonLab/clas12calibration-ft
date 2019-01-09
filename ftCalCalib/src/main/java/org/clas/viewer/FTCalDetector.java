@@ -21,7 +21,7 @@ public class FTCalDetector extends FTDetector {
     private final int nCrystalX = 22;
     private final int nCrystalY = nCrystalX;
     
-    private final double crystal_size = 15;
+    private final double crystal_size = 1.5;
     
     private double x0=0;
     private double y0=0;

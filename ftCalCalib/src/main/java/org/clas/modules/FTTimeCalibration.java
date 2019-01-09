@@ -32,14 +32,14 @@ public class FTTimeCalibration extends FTCalibrationModule {
     double LSB = 0.4884;
     double clusterThr = 50.0;// Vertical selection
     double singleChThr = 0.00;// Single channel selection MeV
-    double signalThr =100.0;
-    double ftcalDistance =1898; //mm
+    double signalThr =300.0;
+    double ftcalDistance =189.8; //cm
     double timeshift =0;// ns
-    double crystal_size = 15.3;//mm
+    double crystal_size = 1.53;//cm
     double charge2e = 15.3/6.005; //MeV
-    double crystal_length = 200;//mm                                                                                            
-    double shower_depth = 65;                                                                                                   
-    double light_speed = 150; //cm/ns     
+    double crystal_length = 20.0;//cm                                                                                            
+    double shower_depth = 6.5; //cm                                                                                                
+    double light_speed = 15.0; //cm/ns     
     double c = 29.97; //cm/ns     
 
     double startTime   = 124.25;//ns
@@ -58,7 +58,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
         htsum.setTitleY("Counts");
         htsum.setTitle("Global Time Offset");
         htsum.setFillColor(3);
-        H1F htsum_calib = new H1F("htsum_calib", 200, -20.0, 20.0);
+        H1F htsum_calib = new H1F("htsum_calib", 800, -20.0, 20.0);
         htsum_calib.setTitleX("Time Offset (ns)");
         htsum_calib.setTitleY("counts");
         htsum_calib.setTitle("Global Time Offset");
@@ -82,11 +82,11 @@ public class FTTimeCalibration extends FTCalibrationModule {
             htime_wide.setTitleX("Time (ns)");
             htime_wide.setTitleY("Counts");
             htime_wide.setTitle("Component " + key);
-            H1F htime = new H1F("htime_" + key, 300, this.getRange()[0], this.getRange()[1]);
+            H1F htime = new H1F("htime_" + key, 400, this.getRange()[0], this.getRange()[1]);
             htime.setTitleX("Time (ns)");
             htime.setTitleY("Counts");
             htime.setTitle("Component " + key);
-            H1F htime_calib = new H1F("htime_calib_" + key, 300, -30., 30.);
+            H1F htime_calib = new H1F("htime_calib_" + key, 400, -20., 20.);
             htime_calib.setTitleX("Time (ns)");
             htime_calib.setTitleY("Counts");
             htime_calib.setTitle("Component " + key);
@@ -155,7 +155,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
                 double charge =((double) adc)*(LSB*nsPerSample/50)*charge2e;
                 double radius = Math.sqrt(Math.pow(this.getDetector().getIdX(key)-0.5,2.0)+Math.pow(this.getDetector().getIdY(key)-0.5,2.0))*this.crystal_size;//meters
                 double path   = Math.sqrt(Math.pow(this.ftcalDistance+shower_depth,2)+Math.pow(radius,2));
-                double tof    = (path/10/c); //ns
+                double tof    = (path/c); //ns
                 double timec  = (time + 0*this.triggerPhase*4 -(this.startTime + (crystal_length-shower_depth)/light_speed + tof))-this.timeshift;
                 if(charge>signalThr) {
                     this.getDataGroup().getItem(1,1,key).getH1F("htsum").fill(timec);
