@@ -23,6 +23,7 @@ public class FTCalDetector extends FTDetector {
     
     private final double crystal_size = 1.5;
     
+    
     private double x0=0;
     private double y0=0;
     
