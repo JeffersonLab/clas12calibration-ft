@@ -8,10 +8,12 @@ package org.clas.modules;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.detector.calib.utils.CalibrationConstants;
+import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
@@ -20,6 +22,7 @@ import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
+import org.jlab.clas.pdg.PhysicsConstants;
 
 /**
  *
@@ -27,25 +30,9 @@ import org.jlab.groot.data.GraphErrors;
  */
 public class FTPedestalCalibration extends FTCalibrationModule {
 
-    // analysis realted info
-    double nsPerSample=4;
-    double LSB = 0.4884;
-    double clusterThr = 50.0;// Vertical selection
-    double singleChThr = 0.00;// Single channel selection MeV
-    double signalThr =0.0;
-    double adcThrs=0.00;// Threshold used for simulated events in MeV
-    double startTime   = 124.25;//ns
-    double ftcalDistance =1898; //mm
-    double timeshift =0;// ns
-    double crystal_size = 15.3;//mm
-    double charge2e = 15.3/6.005; //MeV
-    double crystal_length = 200;//mm                                                                                            
-    double shower_depth = 65;                                                                                                   
-    double light_speed = 150; //cm/ns     
-    double c = 29.97; //cm/ns     
 
-    public FTPedestalCalibration(FTDetector d, String name) {
-        super(d, name, "pedestal:pedestal_error:pedestal_sigma",3);
+    public FTPedestalCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
+        super(d, name, "pedestal:pedestal_error:pedestal_sigma",3, ccdb, gConstants);
         this.getCalibrationTable().addConstraint(3, 140, 260);
         this.getCalibrationTable().addConstraint(5, 0, 1);                
     }
@@ -56,12 +43,12 @@ public class FTPedestalCalibration extends FTCalibrationModule {
         H1F hpsum = new H1F("hpsum", 200, 100.0, 300.0);
         hpsum.setTitleX("Pedestal (channel)");
         hpsum.setTitleY("Counts");
-        hpsum.setTitle("Global Time Offset");
+        hpsum.setTitle("Pedestal Distribution");
         hpsum.setFillColor(3);
         H1F hpsum_calib = new H1F("hpsum_calib", 200, 100.0, 300.0);
         hpsum_calib.setTitleX("Pedestal (channel)");
         hpsum_calib.setTitleY("counts");
-        hpsum_calib.setTitle("Global Time Offset");
+        hpsum_calib.setTitle("Pedestal Distribution");
         hpsum_calib.setFillColor(44);
         GraphErrors  gpedestals = new GraphErrors("gpedestals");
         gpedestals.setTitle("Pedestals"); //  title
@@ -123,12 +110,16 @@ public class FTPedestalCalibration extends FTCalibrationModule {
         return this.getDataGroup().getItem(1, 1, icomp).getH1F("hped_" + icomp).getEntries();
     }
 
+    public double getPedestal(int isec, int ilay, int icomp) {
+        return this.getCalibrationTable().getDoubleValue("pedestal", isec, ilay, icomp);
+    }
+
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
-        this.startTime = -100000;
+        double startTime = -100000;
         if(event.hasBank("REC::Event")) {
             DataBank recEvent = event.getBank("REC::Event");
-            this.startTime = recEvent.getFloat("STTime", 0);
+            startTime = recEvent.getFloat("STTime", 0);
 //            System.out.println(this.startTime);
         }
         if (event.hasBank("FTCAL::adc")) {
@@ -137,7 +128,7 @@ public class FTPedestalCalibration extends FTCalibrationModule {
                 int    key    = adcFTCAL.getInt("component", loop);
                 int    adc    = adcFTCAL.getInt("ADC", loop);
                 double ped    = adcFTCAL.getShort("ped", loop);                
-                if(adc>adcThrs) {
+                if(adc>0) {
                     this.getDataGroup().getItem(1,1,key).getH1F("hpsum").fill(ped);
                     this.getDataGroup().getItem(1,1,key).getH1F("hped_wide_"+key).fill(ped);
                     this.getDataGroup().getItem(1,1,key).getH1F("hped_"+key).fill(ped);
@@ -201,9 +192,9 @@ public class FTPedestalCalibration extends FTCalibrationModule {
         ColorPalette palette = new ColorPalette();
         Color col = new Color(100, 100, 100);
         if (this.getDetector().hasComponent(key)) {
-            int nent = this.getNEvents(sector, layer, key);
-            if (nent > 0) {
-                col = palette.getColor3D(nent, this.getnProcessed(), true);
+            double ped = this.getPedestal(sector, layer, key);
+            if (ped > 0) {
+                col = palette.getColor3D(ped, 500, false);
             }
         }
 //        col = new Color(100, 0, 0);

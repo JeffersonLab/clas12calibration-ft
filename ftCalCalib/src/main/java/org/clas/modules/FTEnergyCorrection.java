@@ -9,11 +9,13 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.clas.physics.Particle;
 import org.jlab.detector.calib.utils.CalibrationConstants;
+import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.geom.prim.Vector3D;
 import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
@@ -21,11 +23,10 @@ import org.jlab.groot.data.H2F;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
-import org.jlab.io.base.DataEventType;
-import org.jlab.utils.groups.IndexedList;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
+import org.jlab.clas.pdg.PhysicsConstants;
 
 /**
  *
@@ -34,11 +35,11 @@ import org.jlab.groot.data.GraphErrors;
 public class FTEnergyCorrection extends FTCalibrationModule {
 
     private int minNumberOfEvents =100;
-      public double theta[] = new double[500];
-      public double phi[] = new double[500];
+    public double theta[] = new double[500];
+    public double phi[] = new double[500];
     
-    public FTEnergyCorrection(FTDetector d, String name) {
-        super(d, name, "c0:c1:c2:c3:c4",7);
+    public FTEnergyCorrection(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
+        super(d, name, "c0:c1:c2:c3:c4",7, ccdb, gConstants);
     }
 
     @Override

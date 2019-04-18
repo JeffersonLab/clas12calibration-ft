@@ -8,10 +8,12 @@ package org.clas.modules;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.detector.calib.utils.CalibrationConstants;
+import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
@@ -20,34 +22,19 @@ import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
+import org.jlab.clas.pdg.PhysicsConstants;
 
 /**
  *
  * @author devita
  */
-public class FTTimeCalibration extends FTCalibrationModule {
-
-    // analysis realted info
-    double nsPerSample=4;
-    double LSB = 0.4884;
-    double clusterThr = 50.0;// Vertical selection
-    double singleChThr = 0.00;// Single channel selection MeV
-    double signalThr =300.0;
-    double ftcalDistance =189.8; //cm
-    double timeshift =0;// ns
-    double crystal_size = 1.53;//cm
-    double charge2e = 15.3/6.005; //MeV
-    double crystal_length = 20.0;//cm                                                                                            
-    double shower_depth = 6.5; //cm                                                                                                
-    double light_speed = 15.0; //cm/ns     
-    double c = 29.97; //cm/ns     
-
-    double startTime   = 124.25;//ns
-    double trigger     = 11;//ns
-    double triggerPhase = 0;
+public class FTTimeCalibration extends FTCalibrationModule {   
     
-    public FTTimeCalibration(FTDetector d, String name) {
-        super(d, name, "offset:offset_error:resolution",3);
+
+    
+    public FTTimeCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
+        super(d, name, "offset:offset_error:resolution",3, ccdb, gConstants);
+        this.setRange(25.,45.);
     }
 
     @Override
@@ -76,9 +63,10 @@ public class FTTimeCalibration extends FTCalibrationModule {
         for (int key : this.getDetector().getDetectorComponents()) {
             // initializa calibration constant table
             this.getCalibrationTable().addEntry(1, 1, key);
+            this.getCalibrationTable().setDoubleValue(0.0, "offset",   1,1,key);
 
             // initialize data group
-            H1F htime_wide = new H1F("htime_wide_" + key, 330, -500.0, 50.0);
+            H1F htime_wide = new H1F("htime_wide_" + key, 330, -400.0, 150.0);
             htime_wide.setTitleX("Time (ns)");
             htime_wide.setTitleY("Counts");
             htime_wide.setTitle("Component " + key);
@@ -98,6 +86,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
             ftime.setParameter(2, 2.0);
             ftime.setLineColor(24);
             ftime.setLineWidth(2);
+            ftime.setOptStat("1111");
 //            ftime.setLineColor(2);
 //            ftime.setLineStyle(1);
             DataGroup dg = new DataGroup(3, 2);
@@ -125,46 +114,41 @@ public class FTTimeCalibration extends FTCalibrationModule {
 
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
-        this.startTime = -100000;
-        this.triggerPhase=0;
-        // get trigger phase
-        if(event.hasBank("RUN::config")) {
-            DataBank recConfig = event.getBank("RUN::config");
-            long timestamp = recConfig.getLong("timestamp",0);    
-            int phase_offset = 1;
-            triggerPhase=((timestamp%6)+phase_offset)%6; // TI derived phase correction due to TDC and FADC clock differences
-        }
-        
+        double startTime = -100000;
+
         // get start time
         if(event.hasBank("REC::Event")) {
             DataBank recEvent = event.getBank("REC::Event");
-            this.startTime = recEvent.getFloat("STTime", 0);
-//            if(this.startTime>-1000)System.out.println(this.startTime);
+            startTime = recEvent.getFloat("STTime", 0);
         }
         if(event.hasBank("REC::Particle")) {
             DataBank recPart = event.getBank("REC::Particle");
-            this.trigger = recPart.getInt("pid", 0);
-//            System.out.println(this.startTime);
         }
-        if (event.hasBank("FTCAL::adc") && this.startTime>-1000 /*&& trigger==11*/) {
+        if (event.hasBank("FTCAL::adc") && startTime>-1000) {
             DataBank adcFTCAL = event.getBank("FTCAL::adc");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             for (int loop = 0; loop < adcFTCAL.rows(); loop++) {
                 int    key    = adcFTCAL.getInt("component", loop);
                 int    adc    = adcFTCAL.getInt("ADC", loop);
                 double time   = adcFTCAL.getFloat("time", loop);                
-                double charge =((double) adc)*(LSB*nsPerSample/50)*charge2e;
-                double radius = Math.sqrt(Math.pow(this.getDetector().getIdX(key)-0.5,2.0)+Math.pow(this.getDetector().getIdY(key)-0.5,2.0))*this.crystal_size;//meters
-                double path   = Math.sqrt(Math.pow(this.ftcalDistance+shower_depth,2)+Math.pow(radius,2));
-                double tof    = (path/c); //ns
-                double timec  = (time + 0*this.triggerPhase*4 -(this.startTime + (crystal_length-shower_depth)/light_speed + tof))-this.timeshift;
-                if(charge>signalThr) {
-                    this.getDataGroup().getItem(1,1,key).getH1F("htsum").fill(timec);
-                    this.getDataGroup().getItem(1,1,key).getH1F("htime_wide_"+key).fill(timec);
-                    this.getDataGroup().getItem(1,1,key).getH1F("htime_"+key).fill(timec);
+                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
+                double radius = Math.sqrt(Math.pow(this.getDetector().getIdX(key)-0.5,2.0)+Math.pow(this.getDetector().getIdY(key)-0.5,2.0))*this.getConstants().crystal_size;//meters
+                double path   = Math.sqrt(Math.pow(this.getConstants().crystal_distance+this.getConstants().shower_depth,2)+Math.pow(radius,2));
+                double tof    = (path/PhysicsConstants.speedOfLight()); //ns
+                double timec  = (time -(startTime + (this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed + tof));
+                double twalk  = 0;
+                if(charge>this.getConstants().signalThr) {
+                    if(this.getGlobalCalibration().containsKey("TimeWalk")) {
+                        double amp = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("A", 1,1,key);
+                        double lam = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("L", 1,1,key);
+                        twalk = amp/Math.pow(charge,lam);
+                    }
+                    this.getDataGroup().getItem(1,1,key).getH1F("htsum").fill(timec-twalk);
+                    this.getDataGroup().getItem(1,1,key).getH1F("htime_wide_"+key).fill(timec-twalk);
+                    this.getDataGroup().getItem(1,1,key).getH1F("htime_"+key).fill(timec-twalk);
                     if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
                         double offset = this.getPreviousCalibrationTable().getDoubleValue("offset", 1, 1, key);
-                        this.getDataGroup().getItem(1,1,key).getH1F("htsum_calib").fill(timec-offset);
-                        this.getDataGroup().getItem(1,1,key).getH1F("htime_calib_"+key).fill(timec-offset);                        
+                        this.getDataGroup().getItem(1,1,key).getH1F("htsum_calib").fill(timec-twalk-offset);
+                        this.getDataGroup().getItem(1,1,key).getH1F("htime_calib_"+key).fill(timec-twalk-offset);                        
                     }                            
                 } 
             }
@@ -200,8 +184,8 @@ public class FTTimeCalibration extends FTCalibrationModule {
         double hAmp  = htime.getBinContent(htime.getMaximumBin());
         double hMean = htime.getAxis().getBinCenter(htime.getMaximumBin());
         double hRMS  = 2; //ns
-        double rangeMin = (hMean - (0.8*hRMS)); 
-        double rangeMax = (hMean + (0.2*hRMS));  
+        double rangeMin = (hMean - (0.5*hRMS)); 
+        double rangeMax = (hMean + (0.4*hRMS));  
         double pm = (hMean*3.)/100.0;
         ftime.setRange(rangeMin, rangeMax);
         ftime.setParameter(0, hAmp);
@@ -230,34 +214,28 @@ public class FTTimeCalibration extends FTCalibrationModule {
         return col;
     }
     
-//    @Override
-//    public void processShape(DetectorShape2D dsd) {
-//        // plot histos for the specific component
-//        int sector = dsd.getDescriptor().getSector();
-//        int layer  = dsd.getDescriptor().getLayer();
-//        int paddle = dsd.getDescriptor().getComponent();
-//        System.out.println("Selected shape " + sector + " " + layer + " " + paddle);
-//        IndexedList<DataGroup> group = this.getDataGroup();        
-//        
-//        if(group.hasItem(sector,layer,paddle)==true){
-//            this.getCanvas().clear();
-//            this.getCanvas().divide(2, 2);
-//            this.getCanvas().cd(0);
-//            this.getCanvas().draw(this.getDataGroup().getItem(1,1,paddle).getH1F("htsum"));
-//            this.getCanvas().cd(1);
-//            this.getCanvas().draw(this.getDataGroup().getItem(1,1,paddle).getGraph("gtoffsets"));
-//            this.getCanvas().cd(2);
-//            this.getCanvas().draw(this.getDataGroup().getItem(1,1,paddle).getH1F("htime_wide_" + paddle));
-//            this.getCanvas().cd(3);
-//            this.getCanvas().draw(this.getDataGroup().getItem(1,1,paddle).getH1F("htime_" + paddle));
-//            this.getCanvas().draw(this.getDataGroup().getItem(1,1,paddle).getF1D("ftime_" + paddle),"same");
-////            this.getCanvas().draw(this.getDataGroup().getItem(sector,layer,paddle));
-////            this.getCanvas().update();
-//        } else {
-//            System.out.println(" ERROR: can not find the data group");
-//        }
-         
-//    }
+    @Override
+    public void drawDataGroup(int sector, int layer, int component) {
+        if(this.getDataGroup().hasItem(sector,layer,component)==true){
+            DataGroup dataGroup = this.getDataGroup().getItem(sector,layer,component);
+            this.getCanvas().clear();
+            this.getCanvas().divide(3,2);
+            this.getCanvas().setGridX(false);
+            this.getCanvas().setGridY(false);
+            this.getCanvas().cd(0);
+            this.getCanvas().draw(dataGroup.getH1F("htsum"));
+            this.getCanvas().cd(1);
+            this.getCanvas().draw(dataGroup.getH1F("htsum_calib"));
+            this.getCanvas().cd(2);
+            this.getCanvas().draw(dataGroup.getGraph("gtoffsets"));
+            this.getCanvas().cd(3);
+            this.getCanvas().draw(dataGroup.getH1F("htime_wide_" + component));
+            this.getCanvas().cd(4);
+            this.getCanvas().draw(dataGroup.getH1F("htime_" + component));
+            this.getCanvas().cd(5);
+            this.getCanvas().draw(dataGroup.getH1F("htime_calib_" + component));
+        }
+    }
 
 
     @Override

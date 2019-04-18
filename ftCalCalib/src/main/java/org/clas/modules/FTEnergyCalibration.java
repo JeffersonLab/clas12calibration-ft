@@ -9,12 +9,13 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
-import org.jlab.clas.pdg.PhysicsConstants;
 import org.jlab.clas.physics.Particle;
 import org.jlab.detector.calib.utils.CalibrationConstants;
+import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
@@ -22,6 +23,7 @@ import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.data.H2F;
+import org.jlab.clas.pdg.PhysicsConstants;
 
 /**
  *
@@ -29,26 +31,9 @@ import org.jlab.groot.data.H2F;
  */
 public class FTEnergyCalibration extends FTCalibrationModule {
 
-    // analysis realted info
-    double nsPerSample=4;
-    double LSB = 0.4884;
-    double clusterEnergyThr = 300.0;// Vertical selection
-    int    clusterSizeThr   = 3;// Vertical selection
-//    double singleChThr = 0.00;// Single channel selection MeV
-//    double signalThr =0.0;
-//    double simSignalThr=0.00;// Threshold used for simulated events in MeV
-//    double startTime   = 124.25;//ns
-//    double ftcalDistance =1898; //mm
-//    double timeshift =0;// ns
-//    double crystal_size = 15.3;//mm
-    double charge2e = 15.3/6.005; //MeV
-//    double crystal_length = 200;//mm                                                                                            
-//    double shower_depth = 65;                                                                                                   
-//    double light_speed = 150; //cm/ns     
-//    double c = 29.97; //cm/ns     
 
-    public FTEnergyCalibration(FTDetector d, String name) {
-        super(d, name, "offset:offset_error:resolution",3);
+    public FTEnergyCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
+        super(d, name, "offset:offset_error:resolution",3, ccdb, gConstants);
     }
 
     @Override
@@ -146,13 +131,13 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                 double path    = Math.sqrt(x*x+y*y+z*z);
                 double energySeed=0;
                 for(int k=0; k<adcFTCAL.rows(); k++) {
-                    double energyK = ((double) adcFTCAL.getInt("ADC", k))*(LSB*nsPerSample/50)*charge2e;
+                    double energyK = ((double) adcFTCAL.getInt("ADC", k))*(this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
                     if(key == adcFTCAL.getInt("component", k) && energyK>energySeed) energySeed = energyK;
                 }
                 Particle recParticle = new Particle(22, energy*x/path, energy*y/path, energy*z/path, 0,0,0);
                 recParticle.setProperty("key",(double) key);
                 recParticle.setProperty("energySeed",energySeed);
-                if(energyR>this.clusterEnergyThr && size>this.clusterSizeThr && charge==0) ftParticles.add(recParticle);
+                if(energyR>this.getConstants().clusterThr && size>this.getConstants().clusterSize && charge==0) ftParticles.add(recParticle);
             }
             if(ftParticles.size()>=2) {
                 for (int i1 = 0; i1 < ftParticles.size(); i1++) {

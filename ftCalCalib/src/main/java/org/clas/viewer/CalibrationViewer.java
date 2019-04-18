@@ -3,6 +3,10 @@ package org.clas.viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dialog;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -12,8 +16,15 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -33,8 +44,10 @@ import org.jlab.io.task.IDataEventListener;
 import org.clas.modules.FTEnergyCorrection;
 import org.clas.modules.FTPedestalCalibration;
 import org.clas.modules.FTTimeCalibration;
+import org.clas.modules.FTTimeWalkCalibration;
 import org.clas.view.DetectorListener;
 import org.clas.view.DetectorShape2D;
+import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.data.TDirectory;
 import org.jlab.io.base.DataBank;
@@ -61,11 +74,15 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     FTCalDetector            detectorView  = null;
     JTabbedPane               modulePanel  = null;
     String                    moduleSelect = null;
+    JFrame                innerConfigFrame = new JFrame("Select FTCal calibration settings");
+    JDialog                    configFrame = new JDialog(innerConfigFrame, "Select FTCal calibration settings");
+    JTabbedPane                 configPane = new JTabbedPane();
     
-    ConstantsManager         ccdb = new ConstantsManager();
+    ConstantsManager                        ccdb = new ConstantsManager();
+    Map<String,CalibrationConstants> globalCalib = new HashMap<>();
     
     private int canvasUpdateTime   = 2000;
-    private int analysisUpdateTime = 10000;
+    private int analysisUpdateTime = 20000;
     private int runNumber  = 0;
     private String workDir = "/Users/devita";
 
@@ -84,11 +101,6 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         menuItem = new JMenuItem("Load...", KeyEvent.VK_L);
         menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
         menuItem.getAccessibleContext().setAccessibleDescription("Load constants from file");
-        menuItem.addActionListener(this);
-        constants.add(menuItem);        
-        menuItem = new JMenuItem("CCDB...", KeyEvent.VK_L);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
-        menuItem.getAccessibleContext().setAccessibleDescription("Load constants from ccdb");
         menuItem.addActionListener(this);
         constants.add(menuItem);        
         menuItem = new JMenuItem("Save...", KeyEvent.VK_S);
@@ -146,14 +158,22 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         initDetector();
         detectorPanel.add(detectorView);
         
+        // init constants manager
+        ccdb.init(Arrays.asList(new String[]{
+                    "/calibration/ft/ftcal/charge_to_energy",
+                    "/calibration/ft/ftcal/time_offsets",
+                    "/daq/tt/ftcal"}));
+
         // create module viewer
-        modules.add(new FTElasticCalibration(detectorView,"ElasticCalibration"));
-        modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration"));
-        modules.add(new FTTimeCalibration(detectorView,"TimeCalibration"));
-        modules.add(new FTPedestalCalibration(detectorView,"PedestalCalibration"));
-        modules.add(new FTEnergyCorrection(detectorView,"EnergyCorrection"));
+        modules.add(new FTElasticCalibration(detectorView,"ElasticCalibration",ccdb,globalCalib));
+        modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration",ccdb,globalCalib));
+        modules.add(new FTTimeCalibration(detectorView,"TimeCalibration",ccdb,globalCalib));
+        modules.add(new FTTimeWalkCalibration(detectorView,"TimeWalk",ccdb,globalCalib));
+        modules.add(new FTPedestalCalibration(detectorView,"PedestalCalibration",ccdb,globalCalib));
+        modules.add(new FTEnergyCorrection(detectorView,"EnergyCorrection",ccdb,globalCalib));
         modulePanel = new JTabbedPane();
         for(int k=0; k<modules.size(); k++) {
+            
             modulePanel.add(modules.get(k).getName(),modules.get(k).getView());
             if(moduleSelect == null) moduleSelect = modules.get(k).getName();
         }
@@ -163,8 +183,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         splitPanel = new JSplitPane();
         splitPanel.setLeftComponent(detectorPanel);
         splitPanel.setRightComponent(modulePanel);
-        splitPanel.setDividerLocation(0.3);        
-        splitPanel.setResizeWeight(0.3);
+        splitPanel.setDividerLocation(0.2);        
+        splitPanel.setResizeWeight(0.2);
 
 
         // create data processor panel
@@ -178,10 +198,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         this.setCanvasUpdate(canvasUpdateTime);
         
-        // init constants manager
-        ccdb.init(Arrays.asList(new String[]{
-                    "/calibration/ft/ftcal/charge_to_energy",
-                    "/daq/tt/ftcal"}));
+        configFrame.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+        
     }
     
     public void actionPerformed(ActionEvent e) {
@@ -255,14 +273,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                filePath = fc.getSelectedFile().getAbsolutePath();            
             }
             for(int k=0; k<this.modules.size(); k++) {
+                String fileName = filePath + "/" + this.modules.get(k).getName() + ".txt";
                 this.modules.get(k).loadConstants(filePath);
             }
-        }
-        if(e.getActionCommand()=="CCDB...") {            
-            for(int k=0; k<this.modules.size(); k++) {
-                this.modules.get(k).loadConstants(ccdb);
-            }
-        }
+       }
         if(e.getActionCommand()=="Save...") {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
             String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
@@ -299,7 +313,89 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 this.modules.get(k).updateTable();
             }
         }
+        if (e.getActionCommand().compareTo("Next")==0) {
+            int currentTab = configPane.getSelectedIndex();
+            for (int i=currentTab+1; i<configPane.getTabCount(); i++) {
+                if (configPane.isEnabledAt(i)) {
+                    configPane.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+        if (e.getActionCommand().compareTo("Back")==0) {
+            int currentTab = configPane.getSelectedIndex();
+            for (int i=currentTab-1; i>=0; i--) {
+                if (configPane.isEnabledAt(i)) {
+                    configPane.setSelectedIndex(i);
+                    break;
+                }
+            }        
+        }
+        if (e.getActionCommand().compareTo("Cancel")==0) {
+                System.exit(0);
+        }
+        if (e.getActionCommand().compareTo("Finish")==0) {
+            configFrame.setVisible(false);
+
+            System.out.println("");
+            System.out.println("Configuration settings - Previous calibration values");
+            System.out.println("----------------------------------------------------");
+            // get the previous iteration calibration values
+            for(int k=0; k<this.modules.size(); k++) {
+                this.modules.get(k).loadConstants();
+            }
+        }
     }
+
+    public void configureFrame() {
+
+        configFrame.setSize(900, 830);
+        //configFrame.setSize(1000, 600); // vnc size
+        configFrame.setLocationRelativeTo(mainPanel);
+        configFrame.setDefaultCloseOperation(configFrame.DO_NOTHING_ON_CLOSE);
+
+        // Which steps    
+        JPanel stepOuterPanel = new JPanel(new BorderLayout());
+        JPanel stepPanel      = new JPanel(new GridBagLayout());
+        stepOuterPanel.add(stepPanel, BorderLayout.NORTH);
+        GridBagConstraints c  = new GridBagConstraints();
+
+        
+        for(int k=0; k<this.modules.size(); k++) {
+            c.gridx = 0; c.gridy = k;
+            c.anchor = c.WEST;
+            JCheckBox stepCheck = new JCheckBox();
+            stepCheck.setName(this.modules.get(k).getName());
+            stepCheck.setText(this.modules.get(k).getName());
+            stepCheck.setSelected(true);
+            stepCheck.addActionListener(this);
+            stepPanel.add(stepCheck,c);
+        }
+		
+        JPanel butPage1 = new configButtonPanel(this, false, "Next");
+        stepOuterPanel.add(butPage1, BorderLayout.SOUTH);
+
+        //configPane.add("Select steps", stepOuterPanel);    
+
+        // Previous calibration values
+        JPanel confOuterPanel = new JPanel(new BorderLayout());
+        Box confPanel = new Box(BoxLayout.Y_AXIS);
+        
+        for(int k=0; k<this.modules.size(); k++) {        
+            FTPrevConfigPanel configPanel = new FTPrevConfigPanel(this.modules.get(k));
+            confPanel.add(configPanel);
+        }
+		
+        JPanel butPage = new configButtonPanel(this, true, "Finish");
+        confOuterPanel.add(confPanel, BorderLayout.NORTH);
+        confOuterPanel.add(butPage, BorderLayout.SOUTH);
+
+        configPane.add("Previous calibration values", confOuterPanel);
+
+        configFrame.add(configPane);
+        configFrame.setVisible(true);
+
+	}
 
     public void chooseUpdateInterval() {
         String s = (String)JOptionPane.showInputDialog(
@@ -469,8 +565,9 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         //frame.add(viewer.getPanel());
         frame.add(viewer.mainPanel);
         frame.setJMenuBar(viewer.menuBar);
-        frame.setSize(1400, 800);
+        frame.setSize(1700, 1000);
         frame.setVisible(true);
+        viewer.configureFrame();
     }
 
 

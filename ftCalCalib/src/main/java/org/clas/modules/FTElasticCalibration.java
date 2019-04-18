@@ -9,12 +9,14 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTAdjustFit;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.clas.physics.Particle;
 import org.jlab.detector.calib.utils.CalibrationConstants;
+import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
@@ -24,6 +26,7 @@ import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.utils.groups.IndexedTable;
+import org.jlab.clas.pdg.PhysicsConstants;
 
 /**
  *
@@ -32,24 +35,14 @@ import org.jlab.utils.groups.IndexedTable;
 public class FTElasticCalibration extends FTCalibrationModule {
 
     // analysis realted info
-    double ebeam=10604;//2217;//6424;//
-    double mass=938.27;
-    double nsPerSample=4;
-    double LSB = 0.4884;
-    double clusterEnergyThr = 500;// Vertical selection
-    int    clusterSizeThr   = 3;// Vertical selection
-    double emips    = 15.3;  //MeV
-    double charge2e = 6.005; //pC
-    double seed     = 6980;//1370*ebeam/2217; 
+    double ebeam=2217;//10604;//6424;//
+    double seed     = 1370;//6980;//1370*ebeam/; 
     
     IndexedTable charge2energy = null;
-        //    double crystal_length = 200;//mm                                                                                            
-//    double shower_depth = 65;                                                                                                   
-//    double light_speed = 150; //cm/ns     
-//    double c = 29.97; //cm/ns     
+ 
 
-    public FTElasticCalibration(FTDetector d, String name) {
-        super(d, name, "seed:seed_error:factor:factor_err:charge2energy:",3);
+    public FTElasticCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
+        super(d, name, "seed:seed_error:factor:factor_err:charge2energy:",3, ccdb, gConstants);
         this.initRange(0., ebeam*1.1);
     }
 
@@ -168,27 +161,28 @@ public class FTElasticCalibration extends FTCalibrationModule {
             DataBank hitFTCAL     = event.getBank("FTCAL::hits");
             DataBank adcFTCAL     = event.getBank("FTCAL::adc");
             for (int loop = 0; loop < clusterFTCAL.rows(); loop++) {
-                int key = getDetector().getComponent(clusterFTCAL.getFloat("x", loop), clusterFTCAL.getFloat("y", loop));
+                int key = getDetector().getComponent(clusterFTCAL.getFloat("x", loop)/10., clusterFTCAL.getFloat("y", loop)/10.);
                 int    id      = clusterFTCAL.getShort("id", loop);
                 int    size    = clusterFTCAL.getShort("size", loop);
                 double x       = clusterFTCAL.getFloat("x", loop);
                 double y       = clusterFTCAL.getFloat("y", loop);
                 double z       = clusterFTCAL.getFloat("z", loop);
-                double energy  = 2e3 * clusterFTCAL.getFloat("energy", loop);
-                double energyR = 2e3 * clusterFTCAL.getFloat("recEnergy", loop);
+                double energy  = 1e3 *clusterFTCAL.getFloat("energy", loop);
+                double energyR = 1e3 * clusterFTCAL.getFloat("recEnergy", loop);
                 double path    = Math.sqrt(x*x+y*y+z*z);
                 double theta   = Math.atan(Math.sqrt(x*x+y*y)/path);
-                double pela    = mass*ebeam/(2*ebeam*Math.pow(Math.sin(theta/2), 2)+mass);
+                double pela    = PhysicsConstants.massProton()*1000*ebeam/(2*ebeam*Math.pow(Math.sin(theta/2), 2)+PhysicsConstants.massProton()*1000);
                 double energySeed=0;
                 double energyCalib=0;
                 for(int k=0; k<adcFTCAL.rows(); k++) {
                     int component  = adcFTCAL.getInt("component",k);
                     double energyK = (double) adcFTCAL.getInt("ADC",k);
-                    double c2e     = (LSB*nsPerSample/50)*emips/charge2e;
-                    if(this.getConstantsManager()!=null) c2e = 2*charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
+                    double c2e     = (this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
+                    if(this.getConstantsManager()!=null) c2e = 1*charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
 						                *charge2energy.getDoubleValue("mips_energy", 1,1,component)
 						                /charge2energy.getDoubleValue("mips_charge", 1,1,component);
                     if(key == component && energyK>energySeed) energySeed = energyK*c2e;
+//                    System.out.println(key + " " + energyK + " " + c2e + " " + energySeed + " " + energy);
                 }
                 if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
                     for(int k=0; k<hitFTCAL.rows(); k++) {
@@ -198,8 +192,8 @@ public class FTElasticCalibration extends FTCalibrationModule {
                         double energyK = (double) adcFTCAL.getInt("ADC",hitID);
                         if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
                             double calib   = this.getPreviousCalibrationTable().getDoubleValue("charge2energy", 1, 1, component);                    
-                            double conv    = (LSB*nsPerSample/50)*emips;
-                            if(this.getConstantsManager()!=null) conv = 2*charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
+                            double conv    = (this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips;
+                            if(this.getConstantsManager()!=null) conv = 1*charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
                                         		                 *charge2energy.getDoubleValue("mips_energy", 1,1,component);
                              if(clusterID == id) {
                                 energyCalib += energyK*conv/calib;
@@ -213,7 +207,7 @@ public class FTElasticCalibration extends FTCalibrationModule {
                 recParticle.setProperty("energySeed",energySeed);
                 recParticle.setProperty("energyCalib",energyCalib);
                 recParticle.setProperty("elastic",pela);
-                if(energyR>this.clusterEnergyThr && size>this.clusterSizeThr) ftParticles.add(recParticle);
+                if(energyR>this.getConstants().clusterThr && size>this.getConstants().clusterSize) ftParticles.add(recParticle);
 //                System.out.println(energyR + " " + size + " " + pela + " " + ftParticles.size());
             }
             if(ftParticles.size()>0) {
@@ -314,7 +308,7 @@ public class FTElasticCalibration extends FTCalibrationModule {
             double seedE_err   = 0;
             double factorE     = 0;
             double factorE_err = 0;
-            double c2e         = charge2e;
+            double c2e         = this.getConstants().chargeMips;
             if(this.getConstantsManager()!=null) c2e = charge2energy.getDoubleValue("mips_charge", 1,1,key);
                     
              if(hseed.getEntries()>1000 && fseed.getParameter(1)>500) {
