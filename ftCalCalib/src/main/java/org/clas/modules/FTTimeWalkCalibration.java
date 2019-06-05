@@ -158,7 +158,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
         // get start time
         if(event.hasBank("REC::Event")) {
             DataBank recEvent = event.getBank("REC::Event");
-            startTime = recEvent.getFloat("STTime", 0);
+            startTime = recEvent.getFloat("startTime", 0);
         }
         if(event.hasBank("REC::Particle")) {
             DataBank recPart = event.getBank("REC::Particle");

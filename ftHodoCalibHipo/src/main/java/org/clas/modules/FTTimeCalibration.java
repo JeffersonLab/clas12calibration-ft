@@ -156,7 +156,7 @@ private int sector = 3;
         
         if(event.hasBank("REC::Event")) {
             DataBank recEvent = event.getBank("REC::Event");
-            this.startTime = recEvent.getFloat("STTime", 0);
+            this.startTime = recEvent.getFloat("startTime", 0);
         }
         if(event.hasBank("REC::Particle")) {
             DataBank recPart = event.getBank("REC::Particle");

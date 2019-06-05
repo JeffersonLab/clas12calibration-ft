@@ -119,7 +119,7 @@ public class FTPedestalCalibration extends FTCalibrationModule {
         double startTime = -100000;
         if(event.hasBank("REC::Event")) {
             DataBank recEvent = event.getBank("REC::Event");
-            startTime = recEvent.getFloat("STTime", 0);
+            startTime = recEvent.getFloat("startTime", 0);
 //            System.out.println(this.startTime);
         }
         if (event.hasBank("FTCAL::adc")) {
