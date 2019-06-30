@@ -20,16 +20,16 @@ public class FTCalConstants {
 
     // analysis realted info
     public final double nsPerSample  = 4;
-    public final double LSB          = 0.4884;
+    public final double LSB          = 0.4883;
     public final double eMips        = 15.3; //MeV    
     public final double chargeMips   = 6.005; //MeV
-    public final double shower_depth = 6.5; //cm                                                                                                
+    public final double shower_depth = 4.5; //cm                                                                                                
     public final double light_speed  = 15.0; //cm/ns     
 
     // selection cuts
     public final double clusterTh   = 50.0;// Vertical selection
-    public final double chargeThr   = 10.0;// Single channel selection MeV
-    public final double signalThr   = 50.0;
+    public final double chargeThr   = 10.0;
+    public final double signalThr   = 50.0;// Single channel selection MeV
     public final double clusterThr  = 500;// Vertical selection
     public final int    clusterSize = 3;// Vertical selection
 

@@ -40,7 +40,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
     @Override
     public void resetEventListener() {
 
-        H2F htsum = new H2F("htsum", 100, 0., 1000., 400, -10., 10.);
+        H2F htsum = new H2F("htsum", 100, 0., 400., 400, -10., 10.);
         htsum.setTitleX("Charge (pC)");
         htsum.setTitleY("Time Offset (ns)");
         htsum.setTitle("Global Time Walk");
@@ -52,7 +52,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
         gtsum.setMarkerSize(3);  // size in points on the screen
         gtsum.addPoint(0., 0., 0., 0.);
         gtsum.addPoint(1., 1., 0., 0.);
-        F1D ftsum = new F1D("ftsum", "[amp]/pow(x,[lambda])+[offset]", this.getConstants().chargeThr, 1000.);
+        F1D ftsum = new F1D("ftsum", "[amp]/pow(x,[lambda])+[offset]", this.getConstants().chargeThr, 400.);
         ftsum.setParameter(0, 10.0);
         ftsum.setParameter(1, -0.5);
         ftsum.setParLimits(0, 5.0, 15.0);
@@ -61,7 +61,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
         ftsum.setLineColor(24);
         ftsum.setLineWidth(2);
 
-        H2F htsum_calib = new H2F("htsum_calib", 100, 0., 1000., 400, -10., 10.);
+        H2F htsum_calib = new H2F("htsum_calib", 100, 0., 400., 400, -10., 10.);
         htsum_calib.setTitleX("Charge (pC)");
         htsum_calib.setTitleY("Time (ns)");
         htsum_calib.setTitle("Global Time Walk");
@@ -79,7 +79,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
         htwlambda.setLineColor(23);
         htwlambda.setOptStat("1111");
 
-        F1D ftglob = new F1D("ftglob", "[amp]/pow(x,[lambda])+[offset]", this.getConstants().chargeThr, 1000.);
+        F1D ftglob = new F1D("ftglob", "[amp]/pow(x,[lambda])+[offset]", this.getConstants().chargeThr, 400.);
         ftglob.setParameter(0, 10.0);
         ftglob.setParameter(1, 0.55);
         ftglob.setParameter(2, -0.5);
@@ -170,7 +170,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
                 int    key    = adcFTCAL.getInt("component", loop);
                 int    adc    = adcFTCAL.getInt("ADC", loop);
                 double time   = adcFTCAL.getFloat("time", loop);                
-                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
+                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50);
                 double radius = Math.sqrt(Math.pow(this.getDetector().getIdX(key)-0.5,2.0)+Math.pow(this.getDetector().getIdY(key)-0.5,2.0))*this.getConstants().crystal_size;//meters
                 double path   = Math.sqrt(Math.pow(this.getConstants().crystal_distance+this.getConstants().shower_depth,2)+Math.pow(radius,2));
                 double tof    = (path/PhysicsConstants.speedOfLight()); //ns

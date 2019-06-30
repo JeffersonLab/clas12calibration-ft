@@ -130,13 +130,13 @@ public class FTTimeCalibration extends FTCalibrationModule {
                 int    key    = adcFTCAL.getInt("component", loop);
                 int    adc    = adcFTCAL.getInt("ADC", loop);
                 double time   = adcFTCAL.getFloat("time", loop);                
-                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
+                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50);
                 double radius = Math.sqrt(Math.pow(this.getDetector().getIdX(key)-0.5,2.0)+Math.pow(this.getDetector().getIdY(key)-0.5,2.0))*this.getConstants().crystal_size;//meters
                 double path   = Math.sqrt(Math.pow(this.getConstants().crystal_distance+this.getConstants().shower_depth,2)+Math.pow(radius,2));
                 double tof    = (path/PhysicsConstants.speedOfLight()); //ns
                 double timec  = (time -(startTime + (this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed + tof));
                 double twalk  = 0;
-                if(charge>this.getConstants().signalThr) {
+                if(charge>this.getConstants().chargeThr) {
                     if(this.getGlobalCalibration().containsKey("TimeWalk")) {
                         double amp = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("A", 1,1,key);
                         double lam = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("L", 1,1,key);
@@ -149,6 +149,8 @@ public class FTTimeCalibration extends FTCalibrationModule {
                         double offset = this.getPreviousCalibrationTable().getDoubleValue("offset", 1, 1, key);
                         this.getDataGroup().getItem(1,1,key).getH1F("htsum_calib").fill(timec-twalk-offset);
                         this.getDataGroup().getItem(1,1,key).getH1F("htime_calib_"+key).fill(timec-twalk-offset);                        
+//                        System.out.println(key + " " + (time-twalk-offset-(this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed) + " " + adc + " " + charge + " " + time + " " + twalk + " " + offset);
+//                        if(event.hasBank("FTCAL::hits")) {event.getBank("FTCAL::adc").show();event.getBank("FTCAL::hits").show();}
                     }                            
                 } 
             }
