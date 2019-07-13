@@ -15,7 +15,7 @@ echo "Building ftCalCalib..."
     cd ftCalCalib
     mvn install
     mvn package
-    cp target/FTCalCalib-1.0-jar-with-dependencies.jar ../lib/
+    cp target/FTCalCalib-2.0-jar-with-dependencies.jar ../lib/
     cd ..
 
 # ftCalLedAndCosmics
