@@ -296,7 +296,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         this.sector = dsd.getDescriptor().getSector();
         this.layer  = dsd.getDescriptor().getLayer();
         this.component = dsd.getDescriptor().getComponent();
-        System.out.println("Selected shape " + sector + " " + layer + " " + component);
+//        System.out.println("Selected shape " + sector + " " + layer + " " + component);
         IndexedList<DataGroup> group = this.getDataGroup();
         if(group.hasItem(sector,layer,component)==true){
             this.getCanvas().clear();

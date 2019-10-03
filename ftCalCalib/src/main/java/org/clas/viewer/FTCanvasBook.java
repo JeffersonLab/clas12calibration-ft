@@ -73,6 +73,27 @@ public class FTCanvasBook extends JPanel implements ActionListener {
         
     }
 
+    public void setData(IndexedList<DataGroup> dataGroups, int[] iPads){
+        this.canvasDataSets.clear();
+        Map<Long, DataGroup> map = dataGroups.getMap();
+        for( Map.Entry<Long, DataGroup> entry : map.entrySet()) {
+            DataGroup group = entry.getValue();
+            for(int iPad : iPads) {
+                List<IDataSet> dsList = group.getData(iPad);
+                DataGroup newGroup = new DataGroup(1,1);
+                for(IDataSet ds : dsList) newGroup.addDataSet(ds, 0);                    
+                this.canvasDataSets.add(newGroup);
+            }
+        }
+        this.currentPage = 0;
+        this.maxPages = this.canvasDataSets.size()/this.padsPerPage;
+        if(maxPages*this.padsPerPage<this.canvasDataSets.size()){
+            this.maxPages++;
+        }
+        this.updateCanvas();
+        
+    }
+
     public List<DataGroup> getCanvasDataSets() {
         return canvasDataSets;
     }

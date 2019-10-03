@@ -82,7 +82,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     Map<String,CalibrationConstants> globalCalib = new HashMap<>();
     
     private int canvasUpdateTime   = 2000;
-    private int analysisUpdateTime = 20000;
+    private int analysisUpdateTime = 100000;
     private int runNumber  = 0;
     private String workDir = "/Users/devita";
 
@@ -165,8 +165,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                     "/daq/tt/ftcal"}));
 
         // create module viewer
-        modules.add(new FTElasticCalibration(detectorView,"ElasticCalibration",ccdb,globalCalib));
         modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration",ccdb,globalCalib));
+        modules.add(new FTElasticCalibration(detectorView,"ElasticCalibration",ccdb,globalCalib));
         modules.add(new FTTimeCalibration(detectorView,"TimeCalibration",ccdb,globalCalib));
         modules.add(new FTTimeWalkCalibration(detectorView,"TimeWalk",ccdb,globalCalib));
         modules.add(new FTPedestalCalibration(detectorView,"PedestalCalibration",ccdb,globalCalib));

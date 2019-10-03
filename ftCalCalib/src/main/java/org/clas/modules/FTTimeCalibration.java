@@ -115,16 +115,15 @@ public class FTTimeCalibration extends FTCalibrationModule {
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
         double startTime = -100000;
-
+        int   triggerPID = 0;
         // get start time
-        if(event.hasBank("REC::Event")) {
+        if(event.hasBank("REC::Event") && event.hasBank("REC::Particle")) {
             DataBank recEvent = event.getBank("REC::Event");
-            startTime = recEvent.getFloat("startTime", 0);
-        }
-        if(event.hasBank("REC::Particle")) {
             DataBank recPart = event.getBank("REC::Particle");
+            startTime  = recEvent.getFloat("startTime", 0);
+            triggerPID = recPart.getInt("pid",0);
         }
-        if (event.hasBank("FTCAL::adc") && startTime>-1000) {
+        if (event.hasBank("FTCAL::adc") && startTime>-100 && triggerPID==11) {
             DataBank adcFTCAL = event.getBank("FTCAL::adc");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             for (int loop = 0; loop < adcFTCAL.rows(); loop++) {
                 int    key    = adcFTCAL.getInt("component", loop);
@@ -136,11 +135,11 @@ public class FTTimeCalibration extends FTCalibrationModule {
                 double tof    = (path/PhysicsConstants.speedOfLight()); //ns
                 double timec  = (time -(startTime + (this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed + tof));
                 double twalk  = 0;
-                if(charge>this.getConstants().chargeThr) {
+                if(charge>this.getConstants().chargeThr && time>0) {
                     if(this.getGlobalCalibration().containsKey("TimeWalk")) {
                         double amp = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("A", 1,1,key);
                         double lam = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("L", 1,1,key);
-                        twalk = amp/Math.pow(charge,lam);
+                        twalk = amp*Math.exp(-charge*lam);
                     }
                     this.getDataGroup().getItem(1,1,key).getH1F("htsum").fill(timec-twalk);
                     this.getDataGroup().getItem(1,1,key).getH1F("htime_wide_"+key).fill(timec-twalk);
