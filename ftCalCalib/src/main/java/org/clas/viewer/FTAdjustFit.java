@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 
 import javax.swing.JLabel;
@@ -80,12 +81,15 @@ public class FTAdjustFit {
             else this.range[1] = fct.getMax();
         for(int i=0; i<this.pars.size(); i++){
             this.newfct.setParameter(i, this.pars.get(i));
+            this.newfct.setParLimits(i, this.pars.get(i)*0.8,this.pars.get(i)*1.2);
         }
         this.newfct.setRange(range[0], range[1]);
-        DataFitter.fit(newfct,hist,opt);
-        hist.setFunction(null);
-        for(int i=0; i<this.pars.size(); i++){
-            this.err_pars.add(this.newfct.parameter(i).error());
+        if(!panel.fixFit.isSelected()) {
+            DataFitter.fit(newfct,hist,opt);
+            hist.setFunction(null);
+            for(int i=0; i<this.pars.size(); i++){
+                this.err_pars.add(this.newfct.parameter(i).error());
+            }
         }
         this.newfct.setLineColor(3);
         
@@ -97,6 +101,8 @@ public class FTAdjustFit {
     	JTextField minRange = new JTextField(5);
 	JTextField maxRange = new JTextField(5);
 	JTextField[] params = new JTextField[10];
+        JCheckBox    fixFit = new JCheckBox("Fix");
+    
         JButton   fitButton = null;
         
   
@@ -104,7 +110,7 @@ public class FTAdjustFit {
             super(new BorderLayout());
 
             int npar = newfct.getNPars();
-            panel = new JPanel(new GridLayout(npar+2, 2));            
+            panel = new JPanel(new GridLayout(npar+3, 2));            
            
             for (int i = 0; i < npar; i++) {  
                 JLabel l = new JLabel(newfct.parameter(i).name(), JLabel.TRAILING);
@@ -119,6 +125,8 @@ public class FTAdjustFit {
             panel.add(new JLabel("Fit range maximum"));
             maxRange.setText(Double.toString(fct.getRange().getMax()));
             panel.add(maxRange);
+            fixFit.setSelected(false);
+            panel.add(fixFit);
             fitButton = new JButton("Fit");
             fitButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {

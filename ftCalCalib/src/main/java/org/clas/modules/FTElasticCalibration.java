@@ -35,15 +35,15 @@ import org.jlab.clas.pdg.PhysicsConstants;
 public class FTElasticCalibration extends FTCalibrationModule {
 
     // analysis realted info
-    double ebeam=2217;//10604;//6424;//
-    double seed     = 1370;//6980;//1370*ebeam/; 
-    
+    double ebeam=5302;//2217;//10604;//6424;//
+    double seed = 1370*ebeam/2217;//1370;//6980;//1370*ebeam/; 
+    double seedTotRatio = 0.58;
     IndexedTable charge2energy = null;
  
 
     public FTElasticCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "seed:seed_error:factor:factor_err:charge2energy:",3, ccdb, gConstants);
-        this.initRange(0., ebeam*1.1);
+        this.initRange(0., ebeam*1.3);
     }
 
     @Override
@@ -155,13 +155,13 @@ public class FTElasticCalibration extends FTCalibrationModule {
 //						                      /charge2energy.getDoubleValue("mips_charge", 1,1,component);
 //                    if(energyK>500) this.getDataGroup().getItem(1, 1, component).getH1F("hSeed_" + component).fill(energyK);                                              }
 //        }
-        if (event.hasBank("FTCAL::clusters") && event.hasBank("FTCAL::hits")) {
+        if (event.hasBank("FTCAL::clusters") && event.hasBank("FTCAL::hits") && event.hasBank("FTCAL::adc")) {
             ArrayList<Particle> ftParticles = new ArrayList();
             DataBank clusterFTCAL = event.getBank("FTCAL::clusters");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             DataBank hitFTCAL     = event.getBank("FTCAL::hits");
             DataBank adcFTCAL     = event.getBank("FTCAL::adc");
             for (int loop = 0; loop < clusterFTCAL.rows(); loop++) {
-                int key = getDetector().getComponent(clusterFTCAL.getFloat("x", loop)/10., clusterFTCAL.getFloat("y", loop)/10.);
+                int    cluster = getDetector().getComponent(clusterFTCAL.getFloat("x", loop), clusterFTCAL.getFloat("y", loop));
                 int    id      = clusterFTCAL.getShort("id", loop);
                 int    size    = clusterFTCAL.getShort("size", loop);
                 double x       = clusterFTCAL.getFloat("x", loop);
@@ -169,45 +169,59 @@ public class FTElasticCalibration extends FTCalibrationModule {
                 double z       = clusterFTCAL.getFloat("z", loop);
                 double energy  = 1e3 *clusterFTCAL.getFloat("energy", loop);
                 double energyR = 1e3 * clusterFTCAL.getFloat("recEnergy", loop);
+                double maxEnergy  = 1e3 *clusterFTCAL.getFloat("maxEnergy", loop);
                 double path    = Math.sqrt(x*x+y*y+z*z);
                 double theta   = Math.atan(Math.sqrt(x*x+y*y)/path);
                 double pela    = PhysicsConstants.massProton()*1000*ebeam/(2*ebeam*Math.pow(Math.sin(theta/2), 2)+PhysicsConstants.massProton()*1000);
+                int    key = 0;
                 double energySeed=0;
                 double energyCalib=0;
-                for(int k=0; k<adcFTCAL.rows(); k++) {
-                    int component  = adcFTCAL.getInt("component",k);
-                    double energyK = (double) adcFTCAL.getInt("ADC",k);
-                    double c2e     = (this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
+                ArrayList<Integer> crystals = new ArrayList();
+                for(int k=0; k<hitFTCAL.rows(); k++) {
+                    int clusterID  = hitFTCAL.getShort("clusterID", k);
+                    // select hits that belong to cluster 
+                    if(clusterID == id) { 
+                        int hitID = hitFTCAL.getShort("hitID", k);
+                        crystals.add(hitID);
+                    }                            
+                }
+                for(int k : crystals) {
+                    int    component  = adcFTCAL.getInt("component",k);
+                    double adc        = (double) adcFTCAL.getInt("ADC",k);
+                    // start with nominal value, then use CCDB, then use previous iteration
+                    double c2e        = (this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
                     if(this.getConstantsManager()!=null) c2e = 1*charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
 						                *charge2energy.getDoubleValue("mips_energy", 1,1,component)
 						                /charge2energy.getDoubleValue("mips_charge", 1,1,component);
-                    if(key == component && energyK>energySeed) energySeed = energyK*c2e;
+                    if(this.getPreviousCalibrationTable().hasEntry(1,1,component)) {
+                        c2e = charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
+			     *charge2energy.getDoubleValue("mips_energy", 1,1,component)
+			     /this.getPreviousCalibrationTable().getDoubleValue("charge2energy", 1, 1, component);
+                    }                        
+                    double energyK = adc*c2e;
+                    if(energyK>energySeed) {
+                        key = component;
+                        energySeed = energyK;
+                    }                    
+                    energyCalib += energyK;
 //                    System.out.println(key + " " + energyK + " " + c2e + " " + energySeed + " " + energy);
                 }
-                if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
-                    for(int k=0; k<hitFTCAL.rows(); k++) {
-                        int hitID      = hitFTCAL.getShort("hitID",     k);
-                        int clusterID  = hitFTCAL.getShort("clusterID", k);
-                        int component  = adcFTCAL.getShort("component", hitID);
-                        double energyK = (double) adcFTCAL.getInt("ADC",hitID);
-                        if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
-                            double calib   = this.getPreviousCalibrationTable().getDoubleValue("charge2energy", 1, 1, component);                    
-                            double conv    = (this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips;
-                            if(this.getConstantsManager()!=null) conv = 1*charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
-                                        		                 *charge2energy.getDoubleValue("mips_energy", 1,1,component);
-                             if(clusterID == id) {
-                                energyCalib += energyK*conv/calib;
-                            }
-                        }
-                    }
-                    energyCalib = energyCalib+energy-energyR;
-                }
+                energyCalib = energyCalib+energy-energyR;
+//                System.out.println(energy + " " + energyCalib);
+                
+
                 Particle recParticle = new Particle(22, energy*x/path, energy*y/path, energy*z/path, 0,0,0);
                 recParticle.setProperty("key",(double) key);
                 recParticle.setProperty("energySeed",energySeed);
                 recParticle.setProperty("energyCalib",energyCalib);
                 recParticle.setProperty("elastic",pela);
-                if(energyR>this.getConstants().clusterThr && size>this.getConstants().clusterSize) ftParticles.add(recParticle);
+                double ratio = this.seedTotRatio;
+                if(this.isThisCrystalOnTheEdge(key)) ratio=0.65;
+                if(energyR>this.getConstants().clusterThr && 
+                   size>this.getConstants().clusterSize && 
+                   energySeed>ratio*energyCalib &&     
+                   key==cluster && 
+                   energyCalib>3000) ftParticles.add(recParticle);
 //                System.out.println(energyR + " " + size + " " + pela + " " + ftParticles.size());
             }
             if(ftParticles.size()>0) {
@@ -229,6 +243,7 @@ public class FTElasticCalibration extends FTCalibrationModule {
         }
     }
 
+    @Override
     public void analyze() {
 //        System.out.println("Analyzing");
         for (int key : this.getDetector().getDetectorComponents()) {
@@ -296,6 +311,7 @@ public class FTElasticCalibration extends FTCalibrationModule {
         this.updateTable();
     }
     
+    @Override
     public void updateTable() {
         for (int key : this.getDetector().getDetectorComponents()) {
             this.getDataGroup().getItem(1,1,key).getGraph("gefactors").reset();
@@ -310,6 +326,9 @@ public class FTElasticCalibration extends FTCalibrationModule {
             double factorE_err = 0;
             double c2e         = this.getConstants().chargeMips;
             if(this.getConstantsManager()!=null) c2e = charge2energy.getDoubleValue("mips_charge", 1,1,key);
+                if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
+                    c2e = this.getPreviousCalibrationTable().getDoubleValue("charge2energy", 1, 1, key);
+                }                        
                     
              if(hseed.getEntries()>1000 && fseed.getParameter(1)>500) {
                 seedE       = fseed.getParameter(1);
@@ -318,9 +337,9 @@ public class FTElasticCalibration extends FTCalibrationModule {
                 factorE_err = factorE*seedE_err/seedE;
                 c2e         = c2e/factorE;
             }
-             else {
-                 c2e         = c2e/1.25;
-             }
+            else {
+                c2e         = 4.0;
+            }
             this.getDataGroup().getItem(1,1,key).getGraph("gefactors").addPoint(key, factorE, 0, factorE_err);
             getCalibrationTable().setDoubleValue(seedE,       "seed",            1, 1, key);
             getCalibrationTable().setDoubleValue(seedE_err,   "seed_error",      1, 1, key);
@@ -329,6 +348,21 @@ public class FTElasticCalibration extends FTCalibrationModule {
             getCalibrationTable().setDoubleValue(c2e,         "charge2energy" ,  1, 1, key);
         }
         getCalibrationTable().fireTableDataChanged();
+    }
+    
+        public boolean isThisCrystalOnTheEdge(int id) {
+
+        boolean crystalEdge=false;
+        int iy = id / 22;
+        int ix = id - iy * 22;
+
+        double xcrystal = 1.0 * (22 - ix - 0.5);
+        double ycrystal = 1.0 * (22 - iy - 0.5);
+        double rcrystal = Math.sqrt(Math.pow(xcrystal - 1.0 * 11, 2.0) + Math.pow(ycrystal - 1.0 * 11, 2.0));
+        if (rcrystal < 1.0 * 4.8 || rcrystal >1.0 * 10.11) {
+            crystalEdge=true;
+        }
+        return crystalEdge;
     }
     
 }
