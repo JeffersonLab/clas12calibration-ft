@@ -13,4 +13,4 @@ echo "\n"
 echo "INSTALLATION DIRECTORY = " $CLAS12DIR
 echo "LIBRARY DIRECTORY      = " $DISTRO_DIR/lib
 
-java -Dsun.java2d.pmoffscreen=false -Xmx2048m -Xms1024m -cp "$DISTRO_DIR/lib/FTCalLedAndCosmics-*-jar-with-dependencies.jar" org.clas.ftcal.cosmic.FTCalCosmicViewer $*
+java -Dsun.java2d.pmoffscreen=false -Xmx2048m -Xms1024m -cp "$DISTRO_DIR/lib/FTCalLedAndCosmics-1.0-jar-with-dependencies.jar" org.clas.ftcal.cosmic.FTCalCosmicViewer $*
