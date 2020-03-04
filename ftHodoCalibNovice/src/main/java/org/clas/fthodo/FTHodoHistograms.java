@@ -1038,7 +1038,8 @@ public class FTHodoHistograms {
         double gamma = H1.getRMS();
         double exp0 = H1.getBinContent(H1.getMaximumBin()); //set as starting amplitude of exponential the value of the bin at xmin
         double exp1=-0.001;
-        double min=H1.getAxis().min();
+        //double min=H1.getAxis().min();
+        double min=50;
         double max=H1.getAxis().max();
         if (newvars && VoltCharMT ==volt){
             ampl = parsMIPV.get(0);
