@@ -196,6 +196,21 @@ public class FTCalDetector extends FTDetector {
         return crystalExist;
     }
     
+    public boolean isThisCrystalOnTheEdge(int id) {
+
+        boolean crystalEdge=false;
+        int iy = id / nCrystalX;
+        int ix = id - iy * nCrystalX;
+
+        double xcrystal = crystal_size * (nCrystalX - ix - 0.5);
+        double ycrystal = crystal_size * (nCrystalY - iy - 0.5);
+        double rcrystal = Math.sqrt(Math.pow(xcrystal - crystal_size * 11, 2.0) + Math.pow(ycrystal - crystal_size * 11, 2.0));
+        if (rcrystal < crystal_size * 4.8 || rcrystal >crystal_size * 10.11) {
+            crystalEdge=true;
+        }
+        return crystalEdge;
+    }
+
     public class ShapePoint {
         private int x; // the x coordinate
         private int y; // the y coordinate

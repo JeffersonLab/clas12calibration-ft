@@ -40,7 +40,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
     @Override
     public void resetEventListener() {
 
-        H2F htsum = new H2F("htsum", 100, 0., 1000., 400, -10., 10.);
+        H2F htsum = new H2F("htsum", 100, 0., 400., 400, -10., 10.);
         htsum.setTitleX("Charge (pC)");
         htsum.setTitleY("Time Offset (ns)");
         htsum.setTitle("Global Time Walk");
@@ -52,36 +52,36 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
         gtsum.setMarkerSize(3);  // size in points on the screen
         gtsum.addPoint(0., 0., 0., 0.);
         gtsum.addPoint(1., 1., 0., 0.);
-        F1D ftsum = new F1D("ftsum", "[amp]/pow(x,[lambda])+[offset]", this.getConstants().chargeThr, 1000.);
-        ftsum.setParameter(0, 10.0);
-        ftsum.setParameter(1, -0.5);
-        ftsum.setParLimits(0, 5.0, 15.0);
-        ftsum.setParLimits(1, 0.5,  0.6);
+        F1D ftsum = new F1D("ftsum", "[amp]*exp(-x*[lambda])+[offset]", 2*this.getConstants().chargeThr, 400.);
+        ftsum.setParameter(0, 1.300);
+        ftsum.setParameter(1, 0.013);
+        ftsum.setParLimits(0, 0.5,  5.0);
+        ftsum.setParLimits(1, 0.0,  0.6);
         ftsum.setParLimits(2,-1.0,  1.0);
         ftsum.setLineColor(24);
         ftsum.setLineWidth(2);
 
-        H2F htsum_calib = new H2F("htsum_calib", 100, 0., 1000., 400, -10., 10.);
+        H2F htsum_calib = new H2F("htsum_calib", 100, 0., 400., 400, -10., 10.);
         htsum_calib.setTitleX("Charge (pC)");
         htsum_calib.setTitleY("Time (ns)");
         htsum_calib.setTitle("Global Time Walk");
         
-        H1F htwamp = new H1F("htwamp", 100, 0., 22.);
+        H1F htwamp = new H1F("htwamp", 100, 0., 8.);
         htwamp.setTitleX("TW amplitude");
         htwamp.setTitleY("Counts");
         htwamp.setFillColor(42);
         htwamp.setLineColor(22);
         htwamp.setOptStat("1111");
-        H1F htwlambda = new H1F("htwlambda", 100, 0., 1.1);
+        H1F htwlambda = new H1F("htwlambda", 100, 0., 0.1);
         htwlambda.setTitleX("TW lambda");
         htwlambda.setTitleY("Counts");
         htwlambda.setFillColor(43);
         htwlambda.setLineColor(23);
         htwlambda.setOptStat("1111");
 
-        F1D ftglob = new F1D("ftglob", "[amp]/pow(x,[lambda])+[offset]", this.getConstants().chargeThr, 1000.);
-        ftglob.setParameter(0, 10.0);
-        ftglob.setParameter(1, 0.55);
+        F1D ftglob = new F1D("ftglob", "[amp]*exp(-x*[lambda])+[offset]", 2*this.getConstants().chargeThr, 400.);
+        ftglob.setParameter(0,  1.300);
+        ftglob.setParameter(1,  0.013);
         ftglob.setParameter(2, -0.5);
         ftglob.setLineColor(22);
         ftglob.setLineWidth(2);
@@ -112,12 +112,12 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
             htime_calib.setTitleX("Time (ns)");
             htime_calib.setTitleY("Counts");
             htime_calib.setTitle("Component " + key);
-            F1D ftime = new F1D("ftime_" + key, "[amp]/pow(x,[lambda])+[offset]", this.getConstants().chargeThr, 250.);
-            ftime.setParameter(0, 10.0);
-            ftime.setParameter(1, 0.55);
-            ftime.setParameter(2, -0.5);
-            ftime.setParLimits(0, 5.0, 15.0);
-            ftime.setParLimits(1, 0.5,  0.6);
+            F1D ftime = new F1D("ftime_" + key, "[amp]*exp(-x*[lambda])+[offset]", 2*this.getConstants().chargeThr, 250.);
+            ftime.setParameter(0,  1.300);
+            ftime.setParameter(1,  0.013);
+            ftime.setParameter(2, -0.500);
+            ftime.setParLimits(0, 0.5,  5.0);
+            ftime.setParLimits(1, 0.0,  0.1);
             ftime.setParLimits(2,-1.0,  1.0);
             ftime.setLineColor(24);
             ftime.setLineWidth(2);
@@ -155,22 +155,22 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
         double startTime = -100000;
+        int   triggerPID = 0;
         // get start time
-        if(event.hasBank("REC::Event")) {
+        if(event.hasBank("REC::Event") && event.hasBank("REC::Particle")) {
             DataBank recEvent = event.getBank("REC::Event");
-            startTime = recEvent.getFloat("startTime", 0);
-        }
-        if(event.hasBank("REC::Particle")) {
             DataBank recPart = event.getBank("REC::Particle");
+            startTime  = recEvent.getFloat("startTime", 0);
+            triggerPID = recPart.getInt("pid",0);
         }
-        if (event.hasBank("FTCAL::adc") && startTime>-1000 /*&& trigger==11*/) {
+        if (event.hasBank("FTCAL::adc") && startTime>-100 && triggerPID==11) {
             
             DataBank adcFTCAL = event.getBank("FTCAL::adc");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             for (int loop = 0; loop < adcFTCAL.rows(); loop++) {
                 int    key    = adcFTCAL.getInt("component", loop);
                 int    adc    = adcFTCAL.getInt("ADC", loop);
                 double time   = adcFTCAL.getFloat("time", loop);                
-                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
+                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50);
                 double radius = Math.sqrt(Math.pow(this.getDetector().getIdX(key)-0.5,2.0)+Math.pow(this.getDetector().getIdY(key)-0.5,2.0))*this.getConstants().crystal_size;//meters
                 double path   = Math.sqrt(Math.pow(this.getConstants().crystal_distance+this.getConstants().shower_depth,2)+Math.pow(radius,2));
                 double tof    = (path/PhysicsConstants.speedOfLight()); //ns
@@ -179,7 +179,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
                 if(this.getGlobalCalibration().containsKey("TimeCalibration")) {
                     offset = this.getGlobalCalibration().get("TimeCalibration").getDoubleValue("offset", 1,1,key);
                 }
-                if(charge>this.getConstants().chargeThr) {
+                if(charge>this.getConstants().chargeThr && time>0) {
                     this.getDataGroup().getItem(1,1,key).getH2F("htsum").fill(charge, timec-offset);
                     this.getDataGroup().getItem(1,1,key).getH2F("htime_"+key).fill(charge,timec-offset);
                     if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
@@ -189,7 +189,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
                         this.getDataGroup().getItem(1,1,key).getF1D("ftglob").setParameter(0,amp);
                         this.getDataGroup().getItem(1,1,key).getF1D("ftglob").setParameter(1,lam);
                         this.getDataGroup().getItem(1,1,key).getF1D("ftglob").setParameter(2,off);
-                        double twcorr = amp/Math.pow(charge, lam);
+                        double twcorr = amp*Math.exp(-charge*lam);
                         this.getDataGroup().getItem(1,1,key).getH2F("htsum_calib").fill(charge,timec-offset-twcorr);
                         this.getDataGroup().getItem(1,1,key).getH2F("htime_calib_"+key).fill(charge,timec-offset-twcorr);                        
                     }                            
@@ -215,8 +215,8 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
             this.maxGraph(htsum, gtsum);
             this.maxGraph(htime, gtime);
             if(gtsum.getVectorX().size()>10) {
-                ftsum.setParameter(0, 10.0);
-                ftsum.setParameter(1, 0.55);
+                ftsum.setParameter(0, 1.3);
+                ftsum.setParameter(1, 0.013);
                 ftsum.setParameter(2, -0.5);
                 DataFitter.fit(ftsum,gtsum,"LQ");
                 ftsum.setOptStat("1111");

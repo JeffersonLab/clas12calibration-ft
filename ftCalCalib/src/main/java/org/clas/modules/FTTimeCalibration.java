@@ -115,32 +115,31 @@ public class FTTimeCalibration extends FTCalibrationModule {
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
         double startTime = -100000;
-
+        int   triggerPID = 0;
         // get start time
-        if(event.hasBank("REC::Event")) {
+        if(event.hasBank("REC::Event") && event.hasBank("REC::Particle")) {
             DataBank recEvent = event.getBank("REC::Event");
-            startTime = recEvent.getFloat("startTime", 0);
-        }
-        if(event.hasBank("REC::Particle")) {
             DataBank recPart = event.getBank("REC::Particle");
+            startTime  = recEvent.getFloat("startTime", 0);
+            triggerPID = recPart.getInt("pid",0);
         }
-        if (event.hasBank("FTCAL::adc") && startTime>-1000) {
+        if (event.hasBank("FTCAL::adc") && startTime>-100 && triggerPID==11) {
             DataBank adcFTCAL = event.getBank("FTCAL::adc");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
             for (int loop = 0; loop < adcFTCAL.rows(); loop++) {
                 int    key    = adcFTCAL.getInt("component", loop);
                 int    adc    = adcFTCAL.getInt("ADC", loop);
                 double time   = adcFTCAL.getFloat("time", loop);                
-                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
+                double charge =((double) adc)*(this.getConstants().LSB*this.getConstants().nsPerSample/50);
                 double radius = Math.sqrt(Math.pow(this.getDetector().getIdX(key)-0.5,2.0)+Math.pow(this.getDetector().getIdY(key)-0.5,2.0))*this.getConstants().crystal_size;//meters
                 double path   = Math.sqrt(Math.pow(this.getConstants().crystal_distance+this.getConstants().shower_depth,2)+Math.pow(radius,2));
                 double tof    = (path/PhysicsConstants.speedOfLight()); //ns
                 double timec  = (time -(startTime + (this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed + tof));
                 double twalk  = 0;
-                if(charge>this.getConstants().signalThr) {
+                if(charge>this.getConstants().chargeThr && time>0) {
                     if(this.getGlobalCalibration().containsKey("TimeWalk")) {
                         double amp = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("A", 1,1,key);
                         double lam = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("L", 1,1,key);
-                        twalk = amp/Math.pow(charge,lam);
+                        twalk = amp*Math.exp(-charge*lam);
                     }
                     this.getDataGroup().getItem(1,1,key).getH1F("htsum").fill(timec-twalk);
                     this.getDataGroup().getItem(1,1,key).getH1F("htime_wide_"+key).fill(timec-twalk);
@@ -149,6 +148,8 @@ public class FTTimeCalibration extends FTCalibrationModule {
                         double offset = this.getPreviousCalibrationTable().getDoubleValue("offset", 1, 1, key);
                         this.getDataGroup().getItem(1,1,key).getH1F("htsum_calib").fill(timec-twalk-offset);
                         this.getDataGroup().getItem(1,1,key).getH1F("htime_calib_"+key).fill(timec-twalk-offset);                        
+//                        System.out.println(key + " " + (time-twalk-offset-(this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed) + " " + adc + " " + charge + " " + time + " " + twalk + " " + offset);
+//                        if(event.hasBank("FTCAL::hits")) {event.getBank("FTCAL::adc").show();event.getBank("FTCAL::hits").show();}
                     }                            
                 } 
             }

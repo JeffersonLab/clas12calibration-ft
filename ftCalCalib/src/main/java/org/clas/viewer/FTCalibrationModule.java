@@ -106,11 +106,11 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     
     @Override
     public void constantsEvent(CalibrationConstants cc, int col, int row) {
-        System.out.println("Well. it's working " + col + "  " + row);
+//        System.out.println("Well. it's working " + col + "  " + row);
         String str_sector    = (String) cc.getValueAt(row, 0);
         String str_layer     = (String) cc.getValueAt(row, 1);
         String str_component = (String) cc.getValueAt(row, 2);
-        System.out.println(str_sector + " " + str_layer + " " + str_component);
+//        System.out.println(str_sector + " " + str_layer + " " + str_component);
         IndexedList<DataGroup> group = this.getDataGroup();
         
         int sector    = Integer.parseInt(str_sector);
@@ -130,7 +130,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         nProcessed++;
         if (event.getType() == DataEventType.EVENT_START) {
                 System.out.println("EVENT_START");
-                resetEventListener();
+ //               resetEventListener();
                 processEvent(event);
         } else if (event.getType() == DataEventType.EVENT_ACCUMULATE) {
                 processEvent(event);
@@ -154,6 +154,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
             this.getCanvas().setGridX(false);
             this.getCanvas().setGridY(false);
             this.getCanvas().update();
+            this.setDrawOptions();
         }
     }
     
@@ -372,7 +373,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         int sector = dsd.getDescriptor().getSector();
         int layer  = dsd.getDescriptor().getLayer();
         int paddle = dsd.getDescriptor().getComponent();
-        System.out.println("Selected shape " + sector + " " + layer + " " + paddle);
+//        System.out.println("Selected shape " + sector + " " + layer + " " + paddle);
         IndexedList<DataGroup> group = this.getDataGroup();        
         
         if(group.hasItem(sector,layer,paddle)==true){
@@ -450,6 +451,10 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     
     public void setCanvasUpdate(int time) {
         this.getCanvas().initTimer(time);
+    }
+
+    public void setDrawOptions() {
+
     }
 
     public void setGlobalCalibration(Map<String, CalibrationConstants> globalCalib) {
