@@ -3030,13 +3030,17 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
             thisGain=0.0;
         }
         MIPMatchingTilesgain[s][l][c]=thisGain;
+        if (histogramsFTHodo.fQMIPMatching.hasEntry(s, l, c)){
+           MIPSerr_pC_MatchingTiles[s][l][c]=histogramsFTHodo.fQMIPMatching.get(s, l, c).getParameter(2);
+        }
         if (thisGain > 0.0) {
             double n1Error = histogramsFTHodo.fQMIPMatching.get(s, l, c).parameter(1).error()/histogramsFTHodo.fQMIPMatching.get(s, l, c).getParameter(1);
             double n2Error =getGainError(s, l, c, "charge")/getGain(s, l, c, "charge");
             MIPSerr_pC_MatchingTiles[s][l][c]=histogramsFTHodo.fQMIPMatching.get(s, l, c).getParameter(2);
             gainError=thisGain*sqrt(n1Error*n1Error+n2Error*n2Error);
         }else {
-            MIPSerr_pC_MatchingTiles[s][l][c]=1000.0;
+//            MIPSerr_pC_MatchingTiles[s][l][c]=1000.0;
+            //System.out.println(" Value of Gamma: "+ histogramsFTHodo.fQMIPMatching.get(s, l, c).getParameter(2));
             gainError=50.0;
         }
         MIPMatchingTileserrgain[s][l][c]=gainError;
@@ -3646,13 +3650,20 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                         if (charge[l] > qMax[s][l][c]) {
                             qMax[s][l][c] = charge[l];
                         }
+                        if (l==1 && adc.hasEntry(s, 2, c) && adc.get(s, 2, c)>20)
+                            histogramsFTHodo.H_MIP_Q_MatchingTiles.get(s, l, c).fill(charge[l]);
+                        else if (l==2 && adc.hasEntry(s, 1, c)&& adc.get(s, 1, c)>20)
+                            histogramsFTHodo.H_MIP_Q_MatchingTiles.get(s, l, c).fill(charge[l]);
+                        
                         // cut conditions
                         if ((applyTCut[l]&& veryGoodTime[l]) || (applyDTCut&& goodDT) || (applyNoCuts)) {
                             histogramsFTHodo.H_MIP_Q.get(s, l, c).fill(charge[l]);
                             histogramsFTHodo.H_NOISE_Q.get(s, l, c).fill(charge[l]);
                             histogramsFTHodo.H_MIP_V.get(s, l, c).fill(peakVolt[l]);
                             histogramsFTHodo.H_NOISE_V.get(s, l, c).fill(peakVolt[l]);
-
+                            
+                            
+                            
                         } // end of cut conditions
                         histogramsFTHodo.H_MAXV_VS_T.get(s, l, c)
                                 .fill(time[l], peakVolt[l]);
@@ -4043,7 +4054,8 @@ public class FTHODOModule extends JPanel implements CalibrationConstantsListener
                 int    c    = adcFTHODO.getInt("component", loop);
                 int    adc    = adcFTHODO.getInt("ADC", loop);
                 double time   = adcFTHODO.getFloat("time", loop);                
-                double ped    = adcFTHODO.getShort("pedestal", loop);                
+                //double ped    = adcFTHODO.getInt("pedestal", loop);                
+//                double ped    = adcFTHODO.getShort("pedestal", loop);                
                 double charge =((double) adc)*(histogramsFTHodo.LSB*histogramsFTHodo.nsPerSample/50);
                 sim_adc.add(s, l, c, charge);
                 sim_tdc.add(s, l, c, time);

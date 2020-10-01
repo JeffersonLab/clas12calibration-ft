@@ -12,7 +12,8 @@
             <properties>
                 <exec.args>-classpath %classpath org.clas.viewer.FTHodoViewer</exec.args>
                 <exec.executable>java</exec.executable>
-                <Env.CLAS12DIR>/Users/pikkaros/UoE/Hodoscope/Monitor_CJ4/clas12-offline-software-master/coatjava</Env.CLAS12DIR>
+                <!--Env.CLAS12DIR>/Users/pikkaros/UoE/Hodoscope/Monitor_CJ4/clas12-offline-software-master/coatjava</Env.CLAS12DIR-->
+                <Env.CLAS12DIR>/Users/nicholaszachariou/Desktop/Hodo/clas12calibration-ft/coatjava</Env.CLAS12DIR>
                 <!--Env.CCDB_DATABASE>/etc/database/clas12database.db</Env.CCDB_DATABASE-->
             </properties>
         </action>

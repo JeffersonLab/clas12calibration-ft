@@ -236,7 +236,7 @@ private int sector = 3;
                     double integral = htime.getIntegral();
                     double fitwidth = ftime.getParameter(2);
                     double ampl = ftime.getParameter(0);
-                    boolean ToSetToFitValues= (chisq<5.0 && integral>20  && fitwidth>0.4 && ampl>5 )? true : false;
+                    boolean ToSetToFitValues= (chisq<6.0 && integral>20  && fitwidth>0.4 && ampl>5 )? true : false;
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setLineColor(2);
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("ftime_" + ssec + "_" + llay + "_" + key).setLineStyle(1);
                     if (!ToSetToFitValues){
@@ -291,7 +291,7 @@ private int sector = 3;
         ftime.setParLimits(0, hAmp*0.85, hAmp*1.2);
         ftime.setParameter(1, hMean);
         ftime.setParLimits(1, hMean-pm, hMean+pm);
-        ftime.setParameter(2, 0.2);
+        ftime.setParameter(2, 0.9);
         ftime.setParLimits(2, 0.05*hRMS, 0.8*hRMS);
     }
     
