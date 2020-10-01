@@ -107,7 +107,7 @@ public class FTPedestalCalibration extends FTCalibrationModule {
     }
 
     public int getNEvents(int isec, int ilay, int icomp) {
-        return this.getDataGroup().getItem(1, 1, icomp).getH1F("hped_" + icomp).getEntries();
+        return (int) this.getDataGroup().getItem(1, 1, icomp).getH1F("hped_" + icomp).getEntries();
     }
 
     public double getPedestal(int isec, int ilay, int icomp) {

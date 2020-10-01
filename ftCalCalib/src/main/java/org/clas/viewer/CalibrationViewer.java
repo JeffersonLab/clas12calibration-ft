@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -24,7 +23,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -43,6 +41,7 @@ import org.jlab.io.task.DataSourceProcessorPane;
 import org.jlab.io.task.IDataEventListener;
 import org.clas.modules.FTEnergyCorrection;
 import org.clas.modules.FTPedestalCalibration;
+import org.clas.modules.FTThresholdsCalibration;
 import org.clas.modules.FTTimeCalibration;
 import org.clas.modules.FTTimeWalkCalibration;
 import org.clas.view.DetectorListener;
@@ -162,14 +161,17 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         ccdb.init(Arrays.asList(new String[]{
                     "/calibration/ft/ftcal/charge_to_energy",
                     "/calibration/ft/ftcal/time_offsets",
+                    "/calibration/ft/ftcal/energycorr",
                     "/daq/tt/ftcal"}));
-
+        ccdb.setVariation("default");
+        
         // create module viewer
         modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration",ccdb,globalCalib));
         modules.add(new FTElasticCalibration(detectorView,"ElasticCalibration",ccdb,globalCalib));
         modules.add(new FTTimeCalibration(detectorView,"TimeCalibration",ccdb,globalCalib));
         modules.add(new FTTimeWalkCalibration(detectorView,"TimeWalk",ccdb,globalCalib));
         modules.add(new FTPedestalCalibration(detectorView,"PedestalCalibration",ccdb,globalCalib));
+        modules.add(new FTThresholdsCalibration(detectorView,"ThresholdCalibration",ccdb,globalCalib));
         modules.add(new FTEnergyCorrection(detectorView,"EnergyCorrection",ccdb,globalCalib));
         modulePanel = new JTabbedPane();
         for(int k=0; k<modules.size(); k++) {
@@ -349,7 +351,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     public void configureFrame() {
 
-        configFrame.setSize(900, 830);
+        configFrame.setSize(900, 1000);
         //configFrame.setSize(1000, 600); // vnc size
         configFrame.setLocationRelativeTo(mainPanel);
         configFrame.setDefaultCloseOperation(configFrame.DO_NOTHING_ON_CLOSE);
@@ -565,7 +567,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         //frame.add(viewer.getPanel());
         frame.add(viewer.mainPanel);
         frame.setJMenuBar(viewer.menuBar);
-        frame.setSize(1700, 1000);
+        frame.setSize(1600, 900);
         frame.setVisible(true);
         viewer.configureFrame();
     }
