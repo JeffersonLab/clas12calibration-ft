@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -131,6 +132,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         menuItem.getAccessibleContext().setAccessibleDescription("View all constants");
         menuItem.addActionListener(this);
         file.add(menuItem);
+        menuItem = new JMenuItem("View all statuses");
+        menuItem.getAccessibleContext().setAccessibleDescription("View all statuses");
+        menuItem.addActionListener(this);
+        file.add(menuItem);
         menuBar.add(file);
         JMenu settings = new JMenu("Settings");
         settings.setMnemonic(KeyEvent.VK_A);
@@ -188,6 +193,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                     "/daq/tt/fthodo",
                     "/daq/fadc/fthodo",
                     "/calibration/ft/fthodo/charge_to_energy",
+                     "/calibration/ft/fthodo/status",
                     "/calibration/ft/fthodo/time_offsets"}));
         
     }
@@ -255,6 +261,14 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             for(int k=0; k<this.modules.size(); k++) {
                 if(this.modules.get(k).getName()==moduleSelect) {
                     this.modules.get(k).showConstants();
+                }
+            } 
+        }
+        if(e.getActionCommand() == "View all statuses") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(Objects.equals(this.modules.get(k).getName(), "EnergyCalibration")){
+                    this.modules.get(k).showStatuses();
                 }
             } 
         }
@@ -430,6 +444,9 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         for(int k=0; k<this.modules.size(); k++) {
            this.modules.get(k).printPlots(dirName); 
            this.modules.get(k).printConstants(dirName);
+           if (Objects.equals(this.modules.get(k).getName(), "EnergyCalibration")){
+                this.modules.get(k).printStatuses(dirName);
+           }
         } 
 //        DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
 //        String data = this.workDir + "/Plots/clas12rec_run_" + this.runNumber + "_" + df.format(new Date());        

@@ -6,10 +6,15 @@
 package org.clas.modules;
 
 import java.awt.Color;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import javax.swing.JFrame;
 import org.jlab.utils.groups.IndexedList;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
@@ -34,7 +39,7 @@ import org.jlab.utils.groups.IndexedTable;
 
 /**
  *
- * @author devita
+ * @author Zachariou
  */
 public class FTEnergyCalibration extends FTCalibrationModule {
     private int sector = 3;
@@ -44,10 +49,19 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     // analysis realted info
     double nsPerSample=4;
     double LSB = 0.4884;
-    private IndexedTable                 prevCalibIT = null;
-
+    private IndexedTable prevCalibIT = null;
+    private IndexedTable prevCalibIT2 = null;
+    private CalibrationConstants          CCDBcalib2 = null;
+    private CalibrationConstants          prevCalib2 = null;
+    private  String CCDBConstants2=null;
     public FTEnergyCalibration(FTDetector d, String name) {
-        super(d, name, "mips_charge:mips_charge_error:mips_energy", "mips_charge:mips_energy",3);
+        super(d, name, "mips_charge:mips_charge_error:mips_energy:status", "mips_charge:mips_energy",3);
+        CCDBConstants2="status";
+       
+        this.CCDBcalib2 = new CalibrationConstants(3,CCDBConstants2);
+        this.CCDBcalib2.setName("CCDB"+name);
+        this.prevCalib2 = new CalibrationConstants(3,CCDBConstants2);
+        this.prevCalib2.setName("CCDB"+name);
     }
 
     
@@ -83,6 +97,34 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                 gChargeCal.setMarkerStyle(1); // Style can be 1 or 2
                 gChargeCal.addPoint(0., 0., 0., 0.);
                 gChargeCal.addPoint(1., 1., 0., 0.);
+                
+                
+                H1F hgStatus = new H1F("hgStatus_" + ssec + "_" + llay, 500, 0., numcomp);
+                hgStatus.setTitleX("component");
+                hgStatus.setTitleY("Status");
+                hgStatus.setTitle("Status for Sec: " + ssec + " Layer: " + llay);
+                hgStatus.setBinContent(0,6);
+                hgStatus.setBinContent(1,-1);
+                
+                GraphErrors  gStatus = new GraphErrors("gStatus_"+ ssec + "_" + llay);
+                gStatus.setTitle("Status for Sec: "+ ssec + " Layer: " + llay); //  title
+                gStatus.setTitleX("component"); // X axis title
+                gStatus.setTitleY("Status");   // Y axis title
+                gStatus.setMarkerColor(4); // color from 0-9 for given palette
+                gStatus.setMarkerSize(3);  // size in points on the screen
+                gStatus.setMarkerStyle(2); // Style can be 1 or 2
+                gStatus.addPoint(0, -0.5, 0., 0.);
+                gStatus.addPoint(0, -0.5, 0., 0.);
+                
+                GraphErrors  gStatusCal = new GraphErrors("gStatusCal_"+ ssec + "_" + llay);
+                gStatusCal.setTitle("Status for Sec: "+ ssec + " Layer: " + llay); //  title
+                gStatusCal.setTitleX("component"); // X axis title
+                gStatusCal.setTitleY("Status");   // Y axis title
+                gStatusCal.setMarkerColor(2); // color from 0-9 for given palette
+                gStatusCal.setMarkerSize(3);  // size in points on the screen
+                gStatusCal.setMarkerStyle(1); // Style can be 1 or 2
+                gStatusCal.addPoint(0., -0.5, 0., 0.);
+                gStatusCal.addPoint(0, -0.5, 0., 0.);
 
                 for (int key : this.getDetector().getDetectorComponents(ssec,llay)) {
                     // initializa calibration constant table
@@ -122,7 +164,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                         this.getDataGroup().getItem(ssec,llay,key).getGraph("gCharge_"+ ssec + "_" + llay).addPoint(key+0.2, charge2cal, 0, 0);
                     }
                     
-                    DataGroup dg = new DataGroup(3, 1);
+                    DataGroup dg = new DataGroup(4, 1);
                     dg.addDataSet(hcharge,       0);
                     dg.addDataSet(henergy,       1);
                     dg.addDataSet(henergycalib,  1);
@@ -130,6 +172,9 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                     dg.addDataSet(gCharge,       2);
                     dg.addDataSet(gChargeCal,    2);
                     dg.addDataSet(hgCharge,      2);
+                    dg.addDataSet(gStatus,       3);
+                    dg.addDataSet(gStatusCal,    3);
+                    dg.addDataSet(hgStatus,      3);
                     this.getDataGroup().add(dg, ssec, llay, key);
                 }
             }
@@ -198,6 +243,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             for (int llay=1;llay<3;llay++){
                 for (int key : this.getDetector().getDetectorComponents(ssec,llay)) {
                     this.getDataGroup().getItem(ssec,llay,key).getGraph("gChargeCal_"+ ssec + "_" + llay).reset();
+                    this.getDataGroup().getItem(ssec,llay,key).getGraph("gStatusCal_"+ ssec + "_" + llay).reset();
                 }
             }
         }
@@ -211,6 +257,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                     double chisq=fcharge.getChiSquare()/fcharge.getNDF();
                     double ampl2tot = fcharge.getParameter(0)/hcharge.getIntegral();
                     double fitwidth = fcharge.getParameter(2);
+                    int statusval=0;
                     boolean ToSetToFitValues= (chisq>0.89 && ampl2tot>0.014  && fitwidth>18 )? true : false;
                     double mipsen=(llay==1) ? 1.2 : 2.65;
                     this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineColor(2);
@@ -220,11 +267,14 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                         this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setParameter(2,200.0);
                         this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineColor(4);
                         this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).setLineStyle(3);
+                        statusval=5;
                     }
+                    if (hcharge.getIntegral()<10) statusval=1;
 
                     double mipscharge= this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).getParameter(1);
                     double mipschargeerror= this.getDataGroup().getItem(ssec, llay, key).getF1D("fcharge_" + ssec + "_" + llay + "_" + key).getParameter(2);
                     this.getDataGroup().getItem(ssec,llay,key).getGraph("gChargeCal_"+ ssec + "_" + llay).addPoint(key, mipscharge, 0, fcharge.parameter(1).error()+mipschargeerror);
+                    this.getDataGroup().getItem(ssec,llay,key).getGraph("gStatusCal_"+ ssec + "_" + llay).addPoint(key, statusval, 0, 0);
 
 //                    for (int bin=0; bin<hcharge.getAxis().getNBins(); bin++) {
 //                        double bincontent =  hcharge.getBinContent(bin);
@@ -236,6 +286,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                     getCalibrationTable().setDoubleValue(mipscharge, "mips_charge", ssec, llay, key);
                     getCalibrationTable().setDoubleValue(mipschargeerror, "mips_charge_error", ssec, llay, key);
                     getCalibrationTable().setDoubleValue(mipsen, "mips_energy", ssec, llay, key);                    
+                    getCalibrationTable().setIntValue(statusval, "status", ssec, llay, key);                    
                 }
             }
         }
@@ -300,27 +351,35 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         IndexedList<DataGroup> group = this.getDataGroup();
         if(group.hasItem(sector,layer,component)==true){
             this.getCanvas().clear();
-            this.getCanvas().divide(3, 2);
+            this.getCanvas().divide(4, 2);
             this.getCanvas().cd(0);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("hcharge_" + sector + "_" + 1 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getF1D("fcharge_" + sector + "_" + 1 + "_" + component),"same");
-            this.getCanvas().cd(3);
+            this.getCanvas().cd(4);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("hcharge_" + sector + "_" + 2 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getF1D("fcharge_" + sector + "_" + 2 + "_" + component),"same");
             this.getCanvas().cd(1);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("henergy_" + sector + "_" + 1 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("henergycalib_" + sector + "_" + 1 + "_" + component),"same");
-            this.getCanvas().cd(4);
+            this.getCanvas().cd(5);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("henergy_" + sector + "_" + 2 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("henergycalib_" + sector + "_" + 2 + "_" + component),"same");
             this.getCanvas().cd(2);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("hgCharge_"+ sector + "_" + 1));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gCharge_"+ sector + "_" + 1), "same");
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gChargeCal_"+ sector + "_" + 1), "same");
-            this.getCanvas().cd(5);
+            this.getCanvas().cd(6);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("hgCharge_"+ sector + "_" + 2));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gCharge_"+ sector + "_" + 2), "same");
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gChargeCal_"+ sector + "_" + 2), "same");
+            this.getCanvas().cd(3);
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("hgStatus_"+ sector + "_" + 1));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gStatus_"+ sector + "_" + 1), "same");
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gStatusCal_"+ sector + "_" + 1), "same");
+            this.getCanvas().cd(7);
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("hgStatus_"+ sector + "_" + 2));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gStatus_"+ sector + "_" + 2), "same");
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gStatusCal_"+ sector + "_" + 2), "same");                   
             this.getCanvas().update();
         }
         else {
@@ -343,27 +402,35 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         
         if(group.hasItem(sector,layer,component)==true){
             this.getCanvas().clear();
-            this.getCanvas().divide(3, 2);
+            this.getCanvas().divide(4, 2);
             this.getCanvas().cd(0);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("hcharge_" + sector + "_" + 1 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getF1D("fcharge_" + sector + "_" + 1 + "_" + component),"same");
-            this.getCanvas().cd(3);
+            this.getCanvas().cd(4);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("hcharge_" + sector + "_" + 2 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getF1D("fcharge_" + sector + "_" + 2 + "_" + component),"same");
             this.getCanvas().cd(1);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("henergy_" + sector + "_" + 1 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("henergycalib_" + sector + "_" + 1 + "_" + component),"same");
-            this.getCanvas().cd(4);
+            this.getCanvas().cd(5);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("henergy_" + sector + "_" + 2 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("henergycalib_" + sector + "_" + 2 + "_" + component),"same");
             this.getCanvas().cd(2);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("hgCharge_"+ sector + "_" + 1));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gCharge_"+ sector + "_" + 1), "same");
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gChargeCal_"+ sector + "_" + 1), "same");
-            this.getCanvas().cd(5);
+            this.getCanvas().cd(6);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("hgCharge_"+ sector + "_" + 2));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gCharge_"+ sector + "_" + 2), "same");
-            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gChargeCal_"+ sector + "_" + 2), "same");
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gChargeCal_"+ sector + "_" + 2), "same");    
+            this.getCanvas().cd(3);
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("hgStatus_"+ sector + "_" + 1));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gStatus_"+ sector + "_" + 1), "same");
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gStatusCal_"+ sector + "_" + 1), "same");
+            this.getCanvas().cd(7);
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("hgStatus_"+ sector + "_" + 2));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gStatus_"+ sector + "_" + 2), "same");
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getGraph("gStatusCal_"+ sector + "_" + 2), "same");
             this.getCanvas().update();
         } else {
             System.out.println(" ERROR: can not find the data group");
@@ -381,21 +448,131 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             for (int llay=1;llay<3;llay++){
                 for (int key : this.getDetector().getDetectorComponents(ssec,llay)) {
                     this.getDataGroup().getItem(ssec,llay,key).getGraph("gCharge_"+ ssec + "_" + llay).reset();
+                    this.getDataGroup().getItem(ssec,llay,key).getGraph("gStatus_"+ ssec + "_" + llay).reset();
                 }
             }
         }
         System.out.println("Loading calibration values for module " + this.getName() + " from CCDB");
         setConstantsManager(ccdb);
         this.prevCalibIT = getConstantsManager().getConstants(this.runNumber, "/calibration/ft/fthodo/charge_to_energy");
+        this.prevCalibIT2 = getConstantsManager().getConstants(this.runNumber,"/calibration/ft/fthodo/status");
         for (int ssec=1;ssec<9;ssec++){
             for (int llay=1;llay<3;llay++){
                 for (int key : this.getDetector().getDetectorComponents(ssec,llay)) {
                     this.getPreviousCalibrationTable().addEntry(ssec, llay, key);
                     this.getPreviousCalibrationTable().setDoubleValue(this.prevCalibIT.getDoubleValue("mips_charge", ssec, llay, key),"mips_charge",ssec, llay, key);
                     double charge2cal = this.getPreviousCalibrationTable().getDoubleValue("mips_charge", ssec,llay,key);
-                    this.getDataGroup().getItem(ssec,llay,key).getGraph("gCharge_"+ ssec + "_" + llay).addPoint(key+0.2, charge2cal, 0, 0);
+                    this.getDataGroup().getItem(ssec,llay,key).getGraph("gCharge_"+ ssec + "_" + llay).addPoint(key+0.2, charge2cal, 0, 0);                  
+
+                    prevCalib2.addEntry(ssec, llay, key);
+                    prevCalib2.setIntValue(this.prevCalibIT2.getIntValue("status", ssec, llay, key),"status",ssec, llay, key);
+                    int statuss = prevCalib2.getIntValue("status", ssec,llay,key);
+                    this.getDataGroup().getItem(ssec,llay,key).getGraph("gStatus_"+ ssec + "_" + llay).addPoint(key+0.2, statuss, 0, 0);
                 }
             }
+        }
+    }
+    
+    @Override
+    public void putConstantsInCCDBFormat(String CCDBConstants) { 
+        for (int ssec=1;ssec<9;ssec++){
+            for (int llay=1;llay<3;llay++){
+                for (int key : this.getDetector().getDetectorComponents(ssec,llay)) {
+                    String ccdbArray[]= CCDBConstants.split(":");
+                    this.getCCDBCalibrationTable().addEntry(ssec, llay, key);
+                    for (String temp: ccdbArray){
+                         this.getCCDBCalibrationTable().setDoubleValue(getCalibrationTable().getDoubleValue(temp, ssec,llay,key), temp, ssec, llay, key);
+                         //System.out.println("New: "+ temp+" "+this.getCCDBCalibrationTable().getDoubleValue(temp, ssec,llay,key));
+                     
+                    }
+                    String ccdb2Array[]= CCDBConstants2.split(":");
+                    this.CCDBcalib2.addEntry(ssec, llay, key);
+                    for (String temp: ccdb2Array){
+                         this.CCDBcalib2.setIntValue(getCalibrationTable().getIntValue(temp, ssec,llay,key), temp, ssec, llay, key);
+                         //System.out.println("New: "+ temp+" "+this.getCCDBCalibrationTable().getIntValue(temp, ssec,llay,key));
+                    }
+                }
+            }
+        }
+    }
+    
+    @Override
+    public void saveConstants(String name) {
+        String filename = name + "/" + this.getName() + ".txt";
+        try {
+            // Open the output file
+            File outputFile = new File(filename);
+            FileWriter outputFw = new FileWriter(outputFile.getAbsoluteFile());
+            BufferedWriter outputBw = new BufferedWriter(outputFw);
+            
+            for (int i = 0; i < this.getCalibrationTable().getRowCount(); i++) {
+                String line = new String();
+                for (int j = 0; j < this.getCalibrationTable().getColumnCount(); j++) {
+                    line = line + this.getCalibrationTable().getValueAt(i, j);
+                    if (j < this.getCalibrationTable().getColumnCount() - 1) {
+                        line = line + " ";
+                    }
+                }
+                outputBw.write(line);
+                outputBw.newLine();
+            }
+            outputBw.close();
+            System.out.println(this.getName() + "constants save to'" + filename);
+        } catch (IOException ex) {
+            System.out.println("Error writing file '"+ filename + "'");
+            // Or we could just do this:
+            ex.printStackTrace();
+        }
+        this.putConstantsInCCDBFormat(this.getCCDBConstants());
+        filename = name + "/CCDB" + this.getName() + ".txt";
+        try {
+            // Open the output file
+            File outputFile = new File(filename);
+            FileWriter outputFw = new FileWriter(outputFile.getAbsoluteFile());
+            BufferedWriter outputBw = new BufferedWriter(outputFw);
+            
+            for (int i = 0; i < this.getCCDBCalibrationTable().getRowCount(); i++) {
+                String line = new String();
+                for (int j = 0; j < this.getCCDBCalibrationTable().getColumnCount(); j++) {
+                    line = line + this.getCCDBCalibrationTable().getValueAt(i, j);
+                    if (j < this.getCCDBCalibrationTable().getColumnCount() - 1) {
+                        line = line + " ";
+                    }
+                }
+                outputBw.write(line);
+                outputBw.newLine();
+            }
+            outputBw.close();
+            System.out.println(this.getName() + "constants save to'" + filename );
+        } catch (IOException ex) {
+            System.out.println("Error writing file '"+ filename + "'");
+            // Or we could just do this:
+            ex.printStackTrace();
+        }
+        filename = name + "/CCDB" + this.getName() + "Status.txt";
+        try {
+            // Open the output file
+            File outputFile = new File(filename);
+            FileWriter outputFw = new FileWriter(outputFile.getAbsoluteFile());
+            BufferedWriter outputBw = new BufferedWriter(outputFw);
+            
+            for (int i = 0; i < CCDBcalib2.getRowCount(); i++) {
+                String line = new String();
+                for (int j = 0; j < CCDBcalib2.getColumnCount(); j++) {
+                    line = line + CCDBcalib2.getValueAt(i, j);
+                    if (j < CCDBcalib2.getColumnCount() - 1) {
+                        line = line + " ";
+                    }
+                }
+                outputBw.write(line);
+                outputBw.newLine();
+            }
+            outputBw.close();
+            System.out.println(this.getName() + "constants save to'" + filename );
+        } catch (IOException ex) {
+            System.out.println("Error writing file '"+ filename + "'");
+            // Or we could just do this:
+            ex.printStackTrace();
         }
     }
     
@@ -407,6 +584,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         FTAdjustFit cfit = new FTAdjustFit(histtofit, ftofit, "LRQ", "energy");
         cfit.setCalibTable(getCalibrationTable());
         cfit.setSecLayComp(this.sector,this.layer,this.component);
-        cfit.setGraphToUpdate(this.getDataGroup().getItem(this.sector,this.layer,this.component).getGraph("gChargeCal_"+ this.sector + "_" + this.layer));
+        cfit.setGraphToUpdate(this.getDataGroup().getItem(this.sector,this.layer,this.component).getGraph("gChargeCal_"+ this.sector + "_" + this.layer),
+                    this.getDataGroup().getItem(this.sector,this.layer,this.component).getGraph("gStatusCal_"+ this.sector + "_" + this.layer));
     }   
 }

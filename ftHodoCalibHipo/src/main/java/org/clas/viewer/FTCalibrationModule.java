@@ -170,6 +170,14 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         return calib;
     }
     
+    public CalibrationConstants getCCDBCalibrationTable() {
+        return CCDBcalib;
+    }
+    
+    public String getCCDBConstants() {
+        return CCDBConstants;
+    }
+      
     public FTCanvasBook getCanvasBook() {
         return canvasBook;
     }
@@ -421,6 +429,11 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
             String CanvasName=runNumber+"_"+this.moduleName+"_Const_";
             canvasBook.setName(CanvasName);
         }
+        else if (Objects.equals(PlotsToShow, "status")){
+            canvasBook.setDataConstants(this.getDataGroup(), 3);
+            String CanvasName=runNumber+"_"+this.moduleName+"_Stat_";
+            canvasBook.setName(CanvasName);
+        }
     }
     
     public void setCanvasUpdate(int time) {
@@ -486,6 +499,22 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
     }
     
+    public void  showStatuses() {
+        this.setCanvasBookData("status");
+        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+            JFrame frame = new JFrame(this.getName());
+            frame.setSize(1000, 800);
+            frame.add(canvasBook);
+            //frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        }
+        else {
+            System.out.println("Function not implemented in current module");
+        }
+    }
+    
+    
     public void  printPlots(String name) {
         this.setCanvasBookData("fits");
         if(this.canvasBook.getCanvasDataSets().size()!=0) {
@@ -503,6 +532,22 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     }
     public void  printConstants(String name) {
         this.setCanvasBookData("constants");
+        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+            JFrame frame = new JFrame(this.getName());
+            frame.setSize(1000, 800);
+            frame.add(canvasBook);
+            //frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        }
+        else {
+            System.out.println("Function not implemented in current module");
+        }
+        this.canvasBook.printCanvas(name);
+
+    }
+    public void  printStatuses(String name) {
+        this.setCanvasBookData("status");
         if(this.canvasBook.getCanvasDataSets().size()!=0) {
             JFrame frame = new JFrame(this.getName());
             frame.setSize(1000, 800);

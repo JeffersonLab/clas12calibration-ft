@@ -46,6 +46,7 @@ public class FTAdjustFit {
     private int component = 0;
     private String moduleName;
     private GraphErrors gGraphToUpdate  = null;
+    private GraphErrors gGraphToUpdate2  = null;
     
     public FTAdjustFit(H1F h, F1D f, String opt, String moduleName){
         this.fct     = f;
@@ -87,16 +88,19 @@ public class FTAdjustFit {
             this.newfct.setParameter(i, this.pars.get(i));
         }
         this.newfct.setRange(range[0], range[1]);
+        
+        if (toFit)
+            this.newfct.setLineColor(2);
+        else
+            this.newfct.setLineColor(1);
+        
         if (toFit)
             DataFitter.fit(newfct,hist,opt);
         hist.setFunction(null);
         for(int i=0; i<this.pars.size(); i++){
             this.err_pars.add(this.newfct.parameter(i).error());
         }
-        if (toFit)
-            this.newfct.setLineColor(4);
-        else
-            this.newfct.setLineColor(1);
+        
     }
     
     public void setCalibTable(CalibrationConstants calibcons){
@@ -113,18 +117,27 @@ public class FTAdjustFit {
     public void setGraphToUpdate(GraphErrors gGraphToUpdate){
         this.gGraphToUpdate = gGraphToUpdate;
     }
-    
+    public void setGraphToUpdate(GraphErrors gGraphToUpdate,GraphErrors gGraphToUpdate2){
+        this.gGraphToUpdate = gGraphToUpdate;
+        this.gGraphToUpdate2 = gGraphToUpdate2;
+    }    
     
     
     public void SetToDefault(){
         
         if (Objects.equals(moduleName,"energy")){
-            this.calibcons.setDoubleValue(400.0, "mips_charge", this.sector, this.layer, this.component);
-            this.calibcons.setDoubleValue(100.0, "mips_charge_error", this.sector, this.layer, this.component);
+                        this.newfct.setLineColor(4);
+            this.calibcons.setDoubleValue(500.0, "mips_charge", this.sector, this.layer, this.component);
+            this.calibcons.setDoubleValue(200.0, "mips_charge_error", this.sector, this.layer, this.component);
+            this.calibcons.setIntValue(5, "status", this.sector, this.layer, this.component);
                         
             if (gGraphToUpdate != null){
                 this.gGraphToUpdate.setPoint(this.component-1, this.component,500.0);
                 this.gGraphToUpdate.setError(this.component-1, 0, 200.0);
+            }
+            if (gGraphToUpdate2 != null){
+                this.gGraphToUpdate2.setPoint(this.component-1, this.component,5);
+                this.gGraphToUpdate2.setError(this.component-1, 0, 0);
             }
             this.calibcons.fireTableDataChanged();
         }else if (Objects.equals(moduleName,"time")){
@@ -152,10 +165,16 @@ public class FTAdjustFit {
         if (Objects.equals(moduleName,"energy")){
             this.calibcons.setDoubleValue(fct.getParameter(1), "mips_charge", this.sector, this.layer, this.component);
             this.calibcons.setDoubleValue(fct.getParameter(2), "mips_charge_error", this.sector, this.layer, this.component);
+            this.calibcons.setIntValue(0, "status", this.sector, this.layer, this.component);
+
             this.calibcons.fireTableDataChanged();
             if (gGraphToUpdate != null){
                 this.gGraphToUpdate.setPoint(this.component-1, this.component,fct.getParameter(1));
                 this.gGraphToUpdate.setError(this.component-1, 0, fct.getParameter(2));
+            }
+            if (gGraphToUpdate2 != null){
+                this.gGraphToUpdate2.setPoint(this.component-1, this.component,0);
+                this.gGraphToUpdate2.setError(this.component-1, 0, 0);
             }
         }else if (Objects.equals(moduleName,"time")){
             this.calibcons.setDoubleValue(fct.getParameter(1), "time_offset", this.sector, this.layer, this.component);
