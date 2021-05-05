@@ -161,7 +161,8 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
             DataBank recEvent = event.getBank("REC::Event");
             DataBank recPart = event.getBank("REC::Particle");
             startTime  = recEvent.getFloat("startTime", 0);
-            triggerPID = recPart.getInt("pid",0);
+            if(recPart.getShort("status", 0)<-2000) 
+                triggerPID = recPart.getInt("pid",0);
         }
         if (event.hasBank("FTCAL::adc") && startTime>-100 && triggerPID==11) {
             

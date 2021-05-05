@@ -6,6 +6,7 @@
 package org.clas.modules;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.clas.pdg.PhysicsConstants;
+import org.jlab.clas.physics.Particle;
+import org.jlab.groot.data.H2F;
 
 /**
  *
@@ -50,6 +53,22 @@ public class FTTimeCalibration extends FTCalibrationModule {
         htsum_calib.setTitleY("counts");
         htsum_calib.setTitle("Global Time Offset");
         htsum_calib.setFillColor(44);
+        H1F htsum_cluster = new H1F("htsum_cluster" , 100, -2., 2.);
+        htsum_cluster.setTitleX("Time (ns)");
+        htsum_cluster.setTitleY("Counts");
+        htsum_cluster.setTitle("Cluster Time");
+        htsum_cluster.setFillColor(3);
+        htsum_cluster.setLineColor(1);
+        F1D fcluster = new F1D("fcluster", "[amp]*gaus(x,[mean],[sigma])", -1., 1.);
+        fcluster.setParameter(0, 0.0);
+        fcluster.setParameter(1, 0.0);
+        fcluster.setParameter(2, 2.0);
+        fcluster.setLineWidth(2);
+        fcluster.setOptStat("1111");
+        H2F h2d_cluster = new H2F("h2d_cluster" , 100, 0., 12., 100, -2., 2.);
+        h2d_cluster.setTitleY("Energy (GeV)");
+        h2d_cluster.setTitleX("Time (ns)");
+        h2d_cluster.setTitle("Cluster Time");
         GraphErrors  gtoffsets = new GraphErrors("gtoffsets");
         gtoffsets.setTitle("Timing Offsets"); //  title
         gtoffsets.setTitleX("Crystal ID"); // X axis title
@@ -89,14 +108,17 @@ public class FTTimeCalibration extends FTCalibrationModule {
             ftime.setOptStat("1111");
 //            ftime.setLineColor(2);
 //            ftime.setLineStyle(1);
-            DataGroup dg = new DataGroup(3, 2);
-            dg.addDataSet(htsum      , 0);
-            dg.addDataSet(htsum_calib, 1);
-            dg.addDataSet(gtoffsets,   2);
-            dg.addDataSet(htime_wide,  3);
-            dg.addDataSet(htime,       4);
-            dg.addDataSet(ftime,       4);
-            dg.addDataSet(htime_calib, 5);
+            DataGroup dg = new DataGroup(4, 2);
+            dg.addDataSet(htsum,         0);
+            dg.addDataSet(htsum_calib,   1);
+            dg.addDataSet(gtoffsets,     2);
+            dg.addDataSet(htsum_cluster, 3);
+            dg.addDataSet(fcluster,      3);
+            dg.addDataSet(htime_wide,    4);
+            dg.addDataSet(htime,         5);
+            dg.addDataSet(ftime,         5);
+            dg.addDataSet(htime_calib,   6);
+            dg.addDataSet(h2d_cluster,   7);
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
@@ -109,7 +131,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
     }
 
     public int getNEvents(int isec, int ilay, int icomp) {
-        return this.getDataGroup().getItem(1, 1, icomp).getH1F("htime_" + icomp).getEntries();
+        return (int) this.getDataGroup().getItem(1, 1, icomp).getH1F("htime_" + icomp).getEntries();
     }
 
     public void processEvent(DataEvent event) {
@@ -121,7 +143,8 @@ public class FTTimeCalibration extends FTCalibrationModule {
             DataBank recEvent = event.getBank("REC::Event");
             DataBank recPart = event.getBank("REC::Particle");
             startTime  = recEvent.getFloat("startTime", 0);
-            triggerPID = recPart.getInt("pid",0);
+            if(recPart.getShort("status", 0)<-2000) 
+                triggerPID = recPart.getInt("pid",0);
         }
         if (event.hasBank("FTCAL::adc") && startTime>-100 && triggerPID==11) {
             DataBank adcFTCAL = event.getBank("FTCAL::adc");//if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.rows());
@@ -154,16 +177,75 @@ public class FTTimeCalibration extends FTCalibrationModule {
                 } 
             }
         }
+        // loop over FTCAL reconstructed cluster
+        if (event.hasBank("FT::particles") && event.hasBank("FTCAL::clusters") && event.hasBank("FTCAL::hits") && event.hasBank("FTCAL::adc")) {
+            ArrayList<Particle> ftParticles = new ArrayList();
+            DataBank particlesFT  = event.getBank("FT::particles");
+            DataBank clusterFTCAL = event.getBank("FTCAL::clusters");
+            DataBank hitFTCAL     = event.getBank("FTCAL::hits");
+            DataBank adcFTCAL     = event.getBank("FTCAL::adc");
+            // start from clusters
+            for (int loop = 0; loop < clusterFTCAL.rows(); loop++) {
+                int    cluster = getDetector().getComponent(clusterFTCAL.getFloat("x", loop), clusterFTCAL.getFloat("y", loop));
+                int    id      = clusterFTCAL.getShort("id", loop);
+                int    size    = clusterFTCAL.getShort("size", loop);
+                int    charge  = particlesFT.getByte("charge", loop);
+                double x       = clusterFTCAL.getFloat("x", loop);
+                double y       = clusterFTCAL.getFloat("y", loop);
+                double z       = clusterFTCAL.getFloat("z", loop);
+                double time    = clusterFTCAL.getFloat("time", loop);
+                double energy  = clusterFTCAL.getFloat("energy", loop);
+                double energyR = clusterFTCAL.getFloat("recEnergy", loop);
+                double path     = Math.sqrt(x*x+y*y+z*z);
+                double theta = Math.toDegrees(Math.acos(z/path));
+                // find hits associated to clusters
+                if(energy>0.5 && energyR>0.3 && size > 3 && theta>2.5 && theta<4.5 && charge==0) {                            
+                    double clusterTime = 0;
+                    for(int k=0; k<hitFTCAL.rows(); k++) {
+                        int clusterID  = hitFTCAL.getShort("clusterID", k);
+                        // select hits that belong to cluster 
+                        if(clusterID == id) { 
+                            int    hitID     = hitFTCAL.getShort("hitID", k);
+                            double hitEnergy = hitFTCAL.getFloat("energy", k);
+                            int component    = adcFTCAL.getInt("component",hitID);
+                            double hitTime   = adcFTCAL.getFloat("time", hitID);   
+                            double hitCharge =((double) adcFTCAL.getInt("ADC", hitID))*(this.getConstants().LSB*this.getConstants().nsPerSample/50);
+                            double twalk  = 0;
+                            double offset = 0;
+                            if(this.getGlobalCalibration().containsKey("TimeWalk")) {
+                                double amp = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("A", 1,1,component);
+                                double lam = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("L", 1,1,component);
+                                twalk = amp*Math.exp(-hitCharge*lam);
+                            }
+                            if(this.getPreviousCalibrationTable().hasEntry(1,1,component)) {
+                                offset = this.getPreviousCalibrationTable().getDoubleValue("offset", 1, 1, component);
+                            }
+                            hitTime = hitTime - (this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed - twalk - offset;
+                            clusterTime += hitTime*hitEnergy;
+    //                        System.out.println(component + " " + hitEnergy + " " + hitFTCAL.getFloat("time", k) + " " + hitTime);
+                        }
+                    }
+                    clusterTime /= energyR;
+                    this.getDataGroup().getItem(1,1,cluster).getH1F("htsum_cluster").fill(clusterTime-path/PhysicsConstants.speedOfLight()-startTime);
+                    this.getDataGroup().getItem(1,1,cluster).getH2F("h2d_cluster").fill(energy,clusterTime-path/PhysicsConstants.speedOfLight()-startTime);
+    //                System.out.println(time + " " + clusterTime);
+                }
+            }
+        }
     }
 
     public void analyze() {
 //        System.out.println("Analyzing");
+        H1F htime = this.getDataGroup().getItem(1,1,8).getH1F("htsum_cluster");
+        F1D ftime = this.getDataGroup().getItem(1,1,8).getF1D("fcluster");
+        this.initTimeGaussFitPar(ftime,htime);
+        DataFitter.fit(ftime,htime,"LQ");
         for (int key : this.getDetector().getDetectorComponents()) {
             this.getDataGroup().getItem(1,1,key).getGraph("gtoffsets").reset();
         }
         for (int key : this.getDetector().getDetectorComponents()) {
-            H1F htime = this.getDataGroup().getItem(1,1,key).getH1F("htime_" + key);
-            F1D ftime = this.getDataGroup().getItem(1,1,key).getF1D("ftime_" + key);
+            htime = this.getDataGroup().getItem(1,1,key).getH1F("htime_" + key);
+            ftime = this.getDataGroup().getItem(1,1,key).getF1D("ftime_" + key);
             this.initTimeGaussFitPar(ftime,htime);
             DataFitter.fit(ftime,htime,"LQ");
             
@@ -220,7 +302,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
         if(this.getDataGroup().hasItem(sector,layer,component)==true){
             DataGroup dataGroup = this.getDataGroup().getItem(sector,layer,component);
             this.getCanvas().clear();
-            this.getCanvas().divide(3,2);
+            this.getCanvas().divide(4,2);
             this.getCanvas().setGridX(false);
             this.getCanvas().setGridY(false);
             this.getCanvas().cd(0);
@@ -230,11 +312,16 @@ public class FTTimeCalibration extends FTCalibrationModule {
             this.getCanvas().cd(2);
             this.getCanvas().draw(dataGroup.getGraph("gtoffsets"));
             this.getCanvas().cd(3);
-            this.getCanvas().draw(dataGroup.getH1F("htime_wide_" + component));
+            this.getCanvas().draw(dataGroup.getH1F("htsum_cluster"));
             this.getCanvas().cd(4);
-            this.getCanvas().draw(dataGroup.getH1F("htime_" + component));
+            this.getCanvas().draw(dataGroup.getH1F("htime_wide_" + component));
             this.getCanvas().cd(5);
+            this.getCanvas().draw(dataGroup.getH1F("htime_" + component));
+            this.getCanvas().cd(6);
             this.getCanvas().draw(dataGroup.getH1F("htime_calib_" + component));
+            this.getCanvas().cd(7);
+            this.getCanvas().getPad(7).getAxisZ().setLog(true);
+            this.getCanvas().draw(dataGroup.getH2F("h2d_cluster"));
         }
     }
 
