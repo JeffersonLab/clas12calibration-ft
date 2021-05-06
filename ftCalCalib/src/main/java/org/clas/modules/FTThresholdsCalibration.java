@@ -5,7 +5,6 @@
  */
 package org.clas.modules;
 
-import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
-import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataBank;
@@ -22,7 +20,6 @@ import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
-import org.jlab.clas.pdg.PhysicsConstants;
 import org.jlab.utils.groups.IndexedTable;
 
 /**
@@ -35,7 +32,8 @@ public class FTThresholdsCalibration extends FTCalibrationModule {
 
     public FTThresholdsCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "threshold:threshold_error",3, ccdb, gConstants);
-        this.getCalibrationTable().addConstraint(3, 5, 40);                
+        this.getCalibrationTable().addConstraint(3, 5, 40);     
+        this.setCols(0,80);
     }
 
     @Override
@@ -100,14 +98,27 @@ public class FTThresholdsCalibration extends FTCalibrationModule {
         return Arrays.asList(getCalibrationTable());
     }
 
-    public int getNEvents(int isec, int ilay, int icomp) {
-        return (int) this.getDataGroup().getItem(1, 1, icomp).getH1F("hthrs_" + icomp).getEntries();
+    @Override
+    public int getNEvents(DetectorShape2D dsd) {
+        int sector = dsd.getDescriptor().getSector();
+        int layer = dsd.getDescriptor().getLayer();
+        int key = dsd.getDescriptor().getComponent();
+        return (int) this.getDataGroup().getItem(sector,layer,key).getH1F("hthrs_" + key).getIntegral();
     }
 
-    public double getThreshold(int isec, int ilay, int icomp) {
-        return this.getCalibrationTable().getDoubleValue("threshold", isec, ilay, icomp);
+    @Override
+    public double getValue(DetectorShape2D dsd) {
+        // show summary
+        int sector = dsd.getDescriptor().getSector();
+        int layer = dsd.getDescriptor().getLayer();
+        int key = dsd.getDescriptor().getComponent();
+        if (this.getDetector().hasComponent(key)) {
+            return this.getCalibrationTable().getDoubleValue("threshold", sector, layer, key);
+       }
+        return 0;
     }
 
+    @Override
     public void processEvent(DataEvent event) {
         // loop over FTCAL reconstructed cluster
         int run = 0;
@@ -146,6 +157,7 @@ public class FTThresholdsCalibration extends FTCalibrationModule {
         }
     }
 
+    @Override
     public void analyze() {
 //        System.out.println("Analyzing");
 //        this.getCanvas().getPad(0).getAxisY().setLog(true);
@@ -192,26 +204,7 @@ public class FTThresholdsCalibration extends FTCalibrationModule {
     @Override
     public void setCanvasBookData() {
         this.getCanvasBook().setData(this.getDataGroup(), 3);
-    }
-
-    @Override
-    public Color getColor(DetectorShape2D dsd) {
-        // show summary
-        int sector = dsd.getDescriptor().getSector();
-        int layer = dsd.getDescriptor().getLayer();
-        int key = dsd.getDescriptor().getComponent();
-        ColorPalette palette = new ColorPalette();
-        Color col = new Color(100, 100, 100);
-        if (this.getDetector().hasComponent(key)) {
-            double thrs = this.getThreshold(sector, layer, key);
-            if (thrs > 0) {
-                col = palette.getColor3D(thrs, 80, false);
-            }
-        }
-//        col = new Color(100, 0, 0);
-        return col;
-    }
-   
+    }   
     
     @Override
     public void timerUpdate() {

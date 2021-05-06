@@ -5,7 +5,6 @@
  */
 package org.clas.modules;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +16,6 @@ import org.clas.viewer.FTDetector;
 import org.jlab.clas.physics.Particle;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
-import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataBank;
@@ -139,8 +137,12 @@ public class FTElasticCalibration extends FTCalibrationModule {
         return Arrays.asList(getCalibrationTable());
     }    
     
-    public int getNEvents(int isec, int ilay, int icomp) {
-        return (int) this.getDataGroup().getItem(1, 1, icomp).getH1F("hCluster_" + icomp).getEntries();
+    @Override
+    public int getNEvents(DetectorShape2D dsd) {
+        int sector = dsd.getDescriptor().getSector();
+        int layer = dsd.getDescriptor().getLayer();
+        int key = dsd.getDescriptor().getComponent();
+        return (int) this.getDataGroup().getItem(sector,layer,key).getH1F("hCluster_" + key).getIntegral();
     }
 
     @Override
@@ -312,24 +314,6 @@ public class FTElasticCalibration extends FTCalibrationModule {
         fseed.setParLimits(2, 10., 500.);
 //        System.out.println(fseed.getRange().getMin() + " " + fseed.getRange().getMin() + " " + rangeMin + " " + rangeMax);
     }    
-
-    @Override
-    public Color getColor(DetectorShape2D dsd) {
-        // show summary
-        int sector = dsd.getDescriptor().getSector();
-        int layer = dsd.getDescriptor().getLayer();
-        int key = dsd.getDescriptor().getComponent();
-        ColorPalette palette = new ColorPalette();
-        Color col = new Color(100, 100, 100);
-        if (this.getDetector().hasComponent(key)) {
-            int nent = this.getNEvents(sector, layer, key);
-            if (nent > 0) {
-                col = palette.getColor3D(nent, this.getnProcessed(), true);
-            }
-        }
-//        col = new Color(100, 0, 0);
-        return col;
-    }
     
     @Override
     public void setCanvasBookData() {

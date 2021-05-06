@@ -30,6 +30,7 @@ import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.CalibrationConstantsListener;
 import org.jlab.detector.calib.utils.CalibrationConstantsView;
 import org.jlab.detector.calib.utils.ConstantsManager;
+import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.base.GStyle;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.groot.data.H1F;
@@ -41,6 +42,7 @@ import org.jlab.io.base.DataEvent;
 import org.jlab.io.base.DataEventType;
 import org.jlab.utils.groups.IndexedList;
 import org.jlab.groot.graphics.EmbeddedCanvas;
+import org.jlab.groot.math.F1D;
 
 /**
  *
@@ -64,6 +66,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     private int                               nProcessed = 0;
     private int                              selectedKey = 8;
     private double[]                               range = new double[2];
+    private double[]                                cols = null;
 
     // configuration
     public int              calDBSource = 0;
@@ -73,13 +76,13 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     public String  prevCalFilename;
     public int     prevCalRunNo;
     public boolean prevCalRead = false;
-    public boolean engineOn = true;
 
+    
     public FTCalibrationModule(FTDetector d, String ModuleName, String Constants,int Precision, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
-        GStyle.getAxisAttributesX().setTitleFontSize(24);
-        GStyle.getAxisAttributesX().setLabelFontSize(18);
-        GStyle.getAxisAttributesY().setTitleFontSize(24);
-        GStyle.getAxisAttributesY().setLabelFontSize(18);
+        GStyle.getAxisAttributesX().setTitleFontSize(18);
+        GStyle.getAxisAttributesX().setLabelFontSize(14);
+        GStyle.getAxisAttributesY().setTitleFontSize(18);
+        GStyle.getAxisAttributesY().setLabelFontSize(14);
         GStyle.getAxisAttributesZ().setLabelFontSize(14);
         GStyle.setPalette("kDefault");
         GStyle.getAxisAttributesX().setLabelFontName("Avenir");
@@ -187,11 +190,34 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         return ccdb;
     }
     
-    public Color getColor(DetectorShape2D dsd) {
+    public final Color getColor(DetectorShape2D dsd) {
+        int sector = dsd.getDescriptor().getSector();
+        int layer = dsd.getDescriptor().getLayer();
+        int key = dsd.getDescriptor().getComponent();
         Color col = new Color(100, 100, 100);
+        if (this.getDetector().hasComponent(key)) {
+            int nent = this.getNEvents(dsd);
+            if (nent > 0) {
+                col = this.getColor(this.getValue(dsd),this.getNEvents(dsd));
+            }
+        }
         return col;
     }
 
+    private Color getColor(double value, int nevent) {
+        ColorPalette palette = new ColorPalette();
+        if(cols!=null) {
+            return palette.getColor3D(value-cols[0], cols[1]-cols[0], false);
+        }
+        else {
+            return palette.getColor3D(nevent, this.getnProcessed(),true);
+        }
+    }
+
+    public double getValue(DetectorShape2D dsd) {
+        return 0;
+    }
+    
     @Override
     public IndexedList<DataGroup> getDataGroup() {
         return dataGroups;
@@ -209,6 +235,9 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         return moduleName;
     }
 
+    public int getNEvents(DetectorShape2D dsd) {
+        return 0;
+    }
     public CalibrationConstants getPreviousCalibrationTable() {
         return prevCalib;
     }
@@ -329,8 +358,13 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
             ex.printStackTrace();
             return;
         }
+        this.loadConstantsToFunctions();
     }
      
+    public void loadConstantsToFunctions() {
+        
+    }
+    
     public void maxGraph(H2F hist, GraphErrors graph) {
 
             ArrayList<H1F> slices = hist.getSlicesX();
@@ -398,12 +432,16 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
             for(int i = 0; i < nds; i++){
                 List<IDataSet> dsList = group.getData(i);
                 for(IDataSet ds : dsList){
-                    System.out.println("\t --> " + ds.getName());
                     newGroup.addDataSet(dir.getObject(folder, ds.getName()),i);
+                    if(ds instanceof F1D) {
+                        newGroup.getF1D(ds.getName()).setLineColor(((F1D) ds).getLineColor());
+                        newGroup.getF1D(ds.getName()).setLineWidth(((F1D) ds).getLineWidth());
+                    }
                 }
             }
             map.replace(key, newGroup);
         }
+        System.out.println("Histogram loading completed for module " + this.getName());
         this.analyze();
     }   
 
@@ -429,7 +467,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
                 outputBw.newLine();
             }
             outputBw.close();
-            System.out.println(this.getName() + "constants save to'" + filename + ".txt");
+            System.out.println(this.getName() + "constants save to'" + filename);
         } catch (IOException ex) {
             System.out.println(
                     "Error writing file '"
@@ -468,6 +506,13 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         this.resetEventListener();
     }
     
+    public void setCols(double min, double max) {
+        this.cols = new double[2];
+        this.cols[0]=min;
+        this.cols[1]=max;
+        System.out.println("Color range for module " + this.getName() + " set to: " + this.cols[0] + ":" + this.cols[1]);
+    }
+    
     public void setRange() {
         JFrame frame    = new JFrame();
         JLabel label;
@@ -478,21 +523,45 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         
         panel = new JPanel(new GridLayout(2, 2));            
         panel.add(new JLabel("Histogram range minimum"));
-        minRange.setText(Double.toString(0.0));
+        minRange.setText(Double.toString(this.range[0]));
         panel.add(minRange);
         panel.add(new JLabel("Histogram range maximum"));
-        maxRange.setText(Double.toString(100));
+        maxRange.setText(Double.toString(this.range[1]));
         panel.add(maxRange);
         
         int result = JOptionPane.showConfirmDialog(null, panel, 
                         "Set range", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
             if(!minRange.getText().isEmpty())this.range[0] = Double.parseDouble(minRange.getText());
-            else this.range[0] = 0;
             if(!maxRange.getText().isEmpty())this.range[1] = Double.parseDouble(maxRange.getText());
-            else this.range[1] = 100;
             System.out.println("Histogram range for module " + this.getName() + " set to: " + this.range[0] + ":" + this.range[1]);
             this.resetEventListener();
+        }
+
+    }
+    
+    public void setCols() {
+        JFrame frame    = new JFrame();
+        JLabel label;
+        JPanel panel;
+    	JTextField minRange = new JTextField(5);
+	JTextField maxRange = new JTextField(5);
+        	
+        
+        panel = new JPanel(new GridLayout(2, 2));            
+        panel.add(new JLabel("Color map range minimum"));
+        minRange.setText(Double.toString(this.cols[0]));
+        panel.add(minRange);
+        panel.add(new JLabel("Color map range maximum"));
+        maxRange.setText(Double.toString(this.cols[1]));
+        panel.add(maxRange);
+        
+        int result = JOptionPane.showConfirmDialog(null, panel, 
+                        "Set range", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            if(!minRange.getText().isEmpty())this.cols[0] = Double.parseDouble(minRange.getText());
+            if(!maxRange.getText().isEmpty())this.cols[1] = Double.parseDouble(maxRange.getText());
+            System.out.println("Color map range for module " + this.getName() + " set to: " + this.cols[0] + ":" + this.cols[1]);
         }
 
     }

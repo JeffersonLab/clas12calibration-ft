@@ -5,7 +5,6 @@
  */
 package org.clas.modules;
 
-import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
-import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataBank;
@@ -22,7 +20,6 @@ import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
-import org.jlab.clas.pdg.PhysicsConstants;
 
 /**
  *
@@ -34,7 +31,8 @@ public class FTPedestalCalibration extends FTCalibrationModule {
     public FTPedestalCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "pedestal:pedestal_error:pedestal_sigma",3, ccdb, gConstants);
         this.getCalibrationTable().addConstraint(3, 140, 260);
-        this.getCalibrationTable().addConstraint(5, 0, 1);                
+        this.getCalibrationTable().addConstraint(5, 0, 1);  
+        this.setCols(140,260);
     }
 
     @Override
@@ -106,12 +104,24 @@ public class FTPedestalCalibration extends FTCalibrationModule {
         return Arrays.asList(getCalibrationTable());
     }
 
-    public int getNEvents(int isec, int ilay, int icomp) {
-        return (int) this.getDataGroup().getItem(1, 1, icomp).getH1F("hped_" + icomp).getEntries();
+    @Override
+    public int getNEvents(DetectorShape2D dsd) {
+        int sector = dsd.getDescriptor().getSector();
+        int layer = dsd.getDescriptor().getLayer();
+        int key = dsd.getDescriptor().getComponent();
+        return (int) this.getDataGroup().getItem(sector,layer,key).getH1F("hped_" + key).getIntegral();
     }
 
-    public double getPedestal(int isec, int ilay, int icomp) {
-        return this.getCalibrationTable().getDoubleValue("pedestal", isec, ilay, icomp);
+    @Override
+    public double getValue(DetectorShape2D dsd) {
+        // show summary
+        int sector = dsd.getDescriptor().getSector();
+        int layer = dsd.getDescriptor().getLayer();
+        int key = dsd.getDescriptor().getComponent();
+        if (this.getDetector().hasComponent(key)) {
+            return this.getCalibrationTable().getDoubleValue("pedestal", sector, layer, key);
+       }
+        return 0;
     }
 
     public void processEvent(DataEvent event) {
@@ -181,26 +191,7 @@ public class FTPedestalCalibration extends FTCalibrationModule {
     @Override
     public void setCanvasBookData() {
         this.getCanvasBook().setData(this.getDataGroup(), 3);
-    }
-
-    @Override
-    public Color getColor(DetectorShape2D dsd) {
-        // show summary
-        int sector = dsd.getDescriptor().getSector();
-        int layer = dsd.getDescriptor().getLayer();
-        int key = dsd.getDescriptor().getComponent();
-        ColorPalette palette = new ColorPalette();
-        Color col = new Color(100, 100, 100);
-        if (this.getDetector().hasComponent(key)) {
-            double ped = this.getPedestal(sector, layer, key);
-            if (ped > 0) {
-                col = palette.getColor3D(ped, 500, false);
-            }
-        }
-//        col = new Color(100, 0, 0);
-        return col;
-    }
-   
+    }   
     
     @Override
     public void timerUpdate() {

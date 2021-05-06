@@ -97,6 +97,7 @@ public class FTCalDetector extends FTDetector {
         }
     }
     
+    @Override
     public DetectorCollection<Double> getThresholds() {
         return this.thresholds;
     }
@@ -105,14 +106,17 @@ public class FTCalDetector extends FTDetector {
         return this.points;
     }
     
+    @Override
     public int getIdX(int component) {
         return this.points.get(1, 1, component).x();
     }
     
+    @Override
     public int getIdY(int component) {
         return this.points.get(1, 1, component).y();
     }
 
+    @Override
     public int getIX(int component) {
         int i = this.points.get(1, 1, component).x();
         if (i > 0) {
@@ -123,6 +127,7 @@ public class FTCalDetector extends FTDetector {
         return i;
     }
     
+    @Override
     public int getIY(int component) {
         int i = this.points.get(1, 1, component).y();
         if (i > 0) {
@@ -133,44 +138,53 @@ public class FTCalDetector extends FTDetector {
         return i;    
     }
 
+    @Override
     public int getComponent(int ix, int iy) {
         return iy*nCrystalX+ix; 
     }
         
+    @Override
     public int getComponent(double x, double y) {
         int ix = (int) ((x+11*crystal_size)/crystal_size);
         int iy = (int) ((y+11*crystal_size)/crystal_size);
         return iy*nCrystalX+ix; 
     }
 
+    @Override
     public String getComponentName(int component) {
         String title = "(" + this.getIdX(component) + "," + this.getIdY(component) + ")";
         return title;
     }
     
+    @Override
     public Set<Integer> getDetectorComponents() {
         return this.points.getComponents(1, 1);
     }
  
+    @Override
     public boolean hasComponent(int component) {
         return this.points.hasEntry(1, 1, component);
     }
     
+    @Override
     public boolean hasComponent(int ix, int iy) {
         int component = iy*nCrystalX+ix; 
         return this.points.hasEntry(1, 1, component);
     }
 
+    @Override
     public int getNComponents() {
         return this.points.getComponents(1, 1).size();
     }
     
+    @Override
     public int getComponentMaxCount() {
         int keyMax=0;
         for(int key : this.points.getComponents(1, 1)) keyMax=key;
         return keyMax;
     }
 
+    @Override
     public int[] getIDArray() {
         int[] crystalID = new int[this.getNComponents()];
         int ipointer=0;

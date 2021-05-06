@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.nio.file.FileSystems;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -48,14 +49,9 @@ import org.clas.view.DetectorListener;
 import org.clas.view.DetectorShape2D;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
+import org.jlab.groot.base.GStyle;
 import org.jlab.groot.data.TDirectory;
 import org.jlab.io.base.DataBank;
-
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 /**
  *
@@ -65,7 +61,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     
     public int i = 0;
 
-    JPanel                   mainPanel 	   = null;
+    JPanel                   mainPanel     = null;
     JMenuBar                 menuBar       = null;
     DataSourceProcessorPane  processorPane = null;
     JSplitPane               splitPanel    = null;
@@ -81,17 +77,18 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     Map<String,CalibrationConstants> globalCalib = new HashMap<>();
     
     private int canvasUpdateTime   = 2000;
-    private int analysisUpdateTime = 100000;
+    private int analysisUpdateTime = 200000;
     private int runNumber  = 0;
-    private String workDir = "/Users/devita";
-
+    private String workDir = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
     ArrayList<FTCalibrationModule> modules = new ArrayList();
 
     public CalibrationViewer() {
        
+        GStyle.setWorkingDirectory(workDir);
+
         // create main panel
         mainPanel = new JPanel();	
-	mainPanel.setLayout(new BorderLayout());
+        mainPanel.setLayout(new BorderLayout());
         
 	// create menu bar
         menuBar = new JMenuBar();
@@ -133,6 +130,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         file.add(menuItem);
         menuItem = new JMenuItem("Set range...");
         menuItem.getAccessibleContext().setAccessibleDescription("Set histogram range");
+        menuItem.addActionListener(this);
+        file.add(menuItem);
+        menuItem = new JMenuItem("Set color map range...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Set color map range");
         menuItem.addActionListener(this);
         file.add(menuItem);
         menuItem = new JMenuItem("View all");
@@ -201,9 +202,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         this.setCanvasUpdate(canvasUpdateTime);
         
         configFrame.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-        
+     
     }
     
+    @Override
     public void actionPerformed(ActionEvent e) {
         System.out.println(e.getActionCommand());
         if(e.getActionCommand()=="Set analysis update interval...") {
@@ -233,7 +235,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             this.printHistosToFile();
         }
         if(e.getActionCommand()=="Save histograms...") {
-            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
+            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
             String fileName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date()) + ".hipo";
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir + "/FTCalCalib-histos");
@@ -253,6 +255,15 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                     this.modules.get(k).setRange();
                 }
             } 
+        }        
+        if(e.getActionCommand() == "Set color map range...") {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(this.modules.get(k).getName()==moduleSelect) {
+                    this.modules.get(k).setCols();
+                }
+            } 
+            this.detectorView.repaint();
         }        
         if(e.getActionCommand() == "View all") {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
@@ -280,7 +291,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
        }
         if(e.getActionCommand()=="Save...") {
-            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
+            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
             String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
@@ -397,7 +408,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         configFrame.add(configPane);
         configFrame.setVisible(true);
 
-	}
+    }
 
     public void chooseUpdateInterval() {
         String s = (String)JOptionPane.showInputDialog(
@@ -479,10 +490,11 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         for(int k=0; k<this.modules.size(); k++) {
             this.modules.get(k).readDataGroup(dir);
         }
+        this.detectorView.repaint();
     }
     
     public void printHistosToFile() {
-        DateFormat df = new SimpleDateFormat("MM-dd-yyyy_hh.mm.ss_aa");
+        DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
         String data = this.workDir + "/kpp-pictures/clas12rec_run_" + this.runNumber + "_" + df.format(new Date());        
         File theDir = new File(data);
         // if the directory does not exist, create it
@@ -503,6 +515,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         System.out.println(fileName);
     }
     
+    @Override
     public void timerUpdate() {
         this.detectorView.repaint();
 	for(int k=0; k<this.modules.size(); k++) {
@@ -511,6 +524,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
     }
 
+    @Override
     public void resetEventListener() {
 	for(int k=0; k<this.modules.size(); k++) {
             this.modules.get(k).resetEventListener();
@@ -528,9 +542,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     public void update(DetectorShape2D dsd) {
 //        System.out.println("Changing color");
 	for(int k=0; k<this.modules.size(); k++) {
-            if(this.modules.get(k).getName()==moduleSelect) {
+            if(this.modules.get(k).getName().equals(moduleSelect)) {
                 Color col = this.modules.get(k).getColor(dsd);
                 dsd.setColor(col.getRed(), col.getGreen(), col.getBlue());
+                dsd.setCounter(this.modules.get(k).getNEvents(dsd));
             }
         }
     }
@@ -553,6 +568,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
     }
 
+    @Override
    public void stateChanged(ChangeEvent e) {
         JTabbedPane sourceTabbedPane = (JTabbedPane) e.getSource();
         int index = sourceTabbedPane.getSelectedIndex();

@@ -10,12 +10,10 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,7 +124,7 @@ public class DetectorView2D extends JPanel implements MouseMotionListener, Mouse
         this.colorAxis.setVertical(true);
         this.colorAxis.setAxisType(GraphicsAxis.AXISTYPE_COLOR);
         this.colorAxis.setDimension(h-20,h-120);
-        this.colorAxis.setRange(0.0, 10.0);
+        this.colorAxis.setRange(0.0, 1.0);
         this.colorAxis.drawAxis(g2d, 10, h-20);
         
     }
@@ -400,6 +398,7 @@ public class DetectorView2D extends JPanel implements MouseMotionListener, Mouse
                 if(counter==0) axisRange.setMinMax(shape.getValue().getCounter(), shape.getValue().getCounter());
                 axisRange.grow(shape.getValue().getCounter());
                 //if(shape.getValue().isContained(x, y)==true) return shape.getValue();
+                counter++;
             }
             return this.axisRange;
         }
@@ -459,13 +458,13 @@ public class DetectorView2D extends JPanel implements MouseMotionListener, Mouse
                         counterZero++;
                     }
                     //Color mapColor = ;//ColorPalette.gaxisRange.getMax();
-                    shapeColor = palette.getColor3D(shape.getCounter(),axisRange.getMax(), false);
+                    shapeColor = palette.getColor3D(shape.getCounter(),this.getAxisRange().getMax(), false);
                     
-                    //System.out.println(" AXIS MAX = " + axisRange.getMax() + "  VALUE = " + shape.getCounter());
+//                    System.out.println(" AXIS MAX = " + axisRange.getMax() + "  VALUE = " + shape.getCounter());
                 }
 
                 if(this.selectedDescriptor.compare(shape.getDescriptor())==true){
-                    shape.drawShape(g2d, world, Color.red, Color.black);
+                    shape.drawShape(g2d, world, Color.MAGENTA, Color.black);
                 } else {                 
                     shape.drawShape(g2d, world, shapeColor, Color.black);                        
                 }

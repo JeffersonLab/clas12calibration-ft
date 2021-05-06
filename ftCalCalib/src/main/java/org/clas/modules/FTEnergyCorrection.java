@@ -5,7 +5,6 @@
  */
 package org.clas.modules;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +16,6 @@ import org.jlab.clas.physics.Particle;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.geom.prim.Vector3D;
-import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.data.H2F;
 import org.jlab.groot.group.DataGroup;
@@ -39,6 +37,7 @@ public class FTEnergyCorrection extends FTCalibrationModule {
     
     public FTEnergyCorrection(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "c0:c1:c2:c3:c4",7, ccdb, gConstants);
+        this.setCols(0, 0.5);
     }
 
     @Override
@@ -88,7 +87,7 @@ public class FTEnergyCorrection extends FTCalibrationModule {
             hi_dphi.setTitleX("#Delta#phi (deg)");
             hi_dphi.setTitleY("counts");
             hi_dphi.setTitle("Component " + key);
-            H2F hi_de_e = new H2F("hi_de_e_" + key, 100, 0., 11., 75, 0.0, 1.8);//x,y
+            H2F hi_de_e = new H2F("hi_de_e_" + key, 100, 0., 11., 125, 0.0, 2.5);//x,y
             hi_de_e.setTitleX("Erec(GeV)");
             hi_de_e.setTitleY("#DeltaErec (GeV)");
             hi_de_e.setTitle("Component " + key);
@@ -104,11 +103,11 @@ public class FTEnergyCorrection extends FTCalibrationModule {
 //            double c1 = 0.;
 //            double c2 = 0.;
 //            double c3 = 0.;
-            F1D f2 = new F1D("f2_" + key, "([q]+x*[m]+x*x*[c1]+x*x*x*[c2]+x*x*x*x*[c3])/1000.", 0, 10.0);
+            F1D f2 = new F1D("f2_" + key, "([c0]+x*[c1]+x*x*[c2]+x*x*x*[c3]+x*x*x*x*[c4])/1000.", 0, 10.0);
             f2.setLineColor(2);
             f2.setLineStyle(1);
             f2.setLineWidth(2);
-            F1D f2calib = new F1D("f2calib_" + key, "([q]+x*[m]+x*x*[c1]+x*x*x*[c2]+x*x*x*x*[c3])/1000.", 0, 10.0);
+            F1D f2calib = new F1D("f2calib_" + key, "([c0]+x*[c1]+x*x*[c2]+x*x*x*[c3]+x*x*x*x*[c4])/1000.", 0, 10.0);
             f2calib.setLineColor(4);
             f2calib.setLineStyle(1);
             H2F hi_de_e_calib = new H2F("hi_de_e_calib_" + key, 100, 0., 11., 50, -0.5, 0.5);
@@ -127,6 +126,7 @@ public class FTEnergyCorrection extends FTCalibrationModule {
             dg.addDataSet(hi_dtheta,         4);
             dg.addDataSet(hi_dphi,           5);
             dg.addDataSet(hi_de_e,           6);
+            dg.addDataSet(f2calib,           6);
             dg.addDataSet(g_de_e,            7);
             dg.addDataSet(f2,                7);
             dg.addDataSet(f2calib,           7);
@@ -144,10 +144,15 @@ public class FTEnergyCorrection extends FTCalibrationModule {
         return Arrays.asList(getCalibrationTable());
     }
 
-    public int getNEvents(int isec, int ilay, int icomp) {
-        return (int) this.getDataGroup().getItem(1, 1, icomp).getH1F("hi_de_" + icomp).getEntries();
+    @Override
+    public int getNEvents(DetectorShape2D dsd) {
+        int sector = dsd.getDescriptor().getSector();
+        int layer = dsd.getDescriptor().getLayer();
+        int key = dsd.getDescriptor().getComponent();
+        return (int) this.getDataGroup().getItem(sector,layer,key).getH1F("hi_de_" + key).getIntegral();
     }
 
+    @Override
     public void processEvent(DataEvent event) {
         Particle partGen = null;
         // get generated particle information
@@ -190,11 +195,6 @@ public class FTEnergyCorrection extends FTCalibrationModule {
                 
                 if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
                     F1D f2calib = this.getDataGroup().getItem(1, 1, key).getF1D("f2calib_" + key);//Is filled only if costants have been loaded
-                    f2calib.setParameter(0, this.getPreviousCalibrationTable().getDoubleValue("c0", 1, 1, key));
-                    f2calib.setParameter(1, this.getPreviousCalibrationTable().getDoubleValue("c1", 1, 1, key));
-                    f2calib.setParameter(2, this.getPreviousCalibrationTable().getDoubleValue("c2", 1, 1, key));
-                    f2calib.setParameter(3, this.getPreviousCalibrationTable().getDoubleValue("c3", 1, 1, key));
-                    f2calib.setParameter(4, this.getPreviousCalibrationTable().getDoubleValue("c4", 1, 1, key));    
                     
                     energyR_corr = energyR + (f2calib.getParameter(0)+energyR*f2calib.getParameter(1)+energyR*energyR*f2calib.getParameter(2)
                             +energyR*energyR*energyR*f2calib.getParameter(3)+energyR*energyR*energyR*energyR*f2calib.getParameter(4))/1000.;
@@ -211,10 +211,12 @@ public class FTEnergyCorrection extends FTCalibrationModule {
 
     @Override
     public void analyze() {
-
+        
+        this.loadConstantsToFunctions();
+        System.out.print("Analysis of energy correction data ");
         for (int key : this.getDetector().getDetectorComponents()) {
             
-            if(this.getDataGroup().getItem(1, 1, key).getH1F("hi_de_" + key).getEntries()>minNumberOfEvents) {
+            if(this.getDataGroup().getItem(1, 1, key).getH1F("hi_de_" + key).getIntegral()>minNumberOfEvents) {
                 this.getDataGroup().getItem(1, 1, key).getGraph("g_de_e_" + key).reset();
                 ArrayList<H1F> hslice_1 = this.getDataGroup().getItem(1, 1, key).getH2F("hi_de_e_" + key).getSlicesX();
                 for (int i = 0; i < hslice_1.size(); i++) {
@@ -226,15 +228,20 @@ public class FTEnergyCorrection extends FTCalibrationModule {
                     double mean  = hslice_1.get(i).getDataX(hslice_1.get(i).getMaximumBin());
                     double amp   = hslice_1.get(i).getBinContent(hslice_1.get(i).getMaximumBin());
                     double sigma = hslice_1.get(i).getRMS();
-                    F1D f1 = new F1D("gaus", "[amp]*gaus(x,[mean],[sigma])", -1.0, 1.0);
-                    f1.setParameter(0, amp);
-                    f1.setParameter(1, mean);
-                    f1.setParameter(2, 0.01);
-                    DataFitter.fit(f1, hslice_1.get(i), "Q"); //No options uses error for sigma 
-                    if (amp > 1 && f1.parameter(1).error() < 1.0 && f1.getParameter(1) > -1.0) {
-                        this.getDataGroup().getItem(1, 1, key).getGraph("g_de_e_" + key).addPoint(x, f1.getParameter(1), ex, f1.parameter(1).error());
+                    if (amp > 10) {
+                        F1D f1 = new F1D("gaus", "[amp]*gaus(x,[mean],[sigma])", mean-0.4,mean+0.15);
+                        f1.setParameter(0, amp);
+                        f1.setParameter(1, mean);
+                        f1.setParameter(2, 0.01);
+                        DataFitter.fit(f1, hslice_1.get(i), "Q"); //No options uses error for sigma 
+                        f1.setRange(f1.getParameter(1)-4*f1.getParameter(2), f1.getParameter(1)+2*f1.getParameter(2));
+                        DataFitter.fit(f1, hslice_1.get(i), "Q"); //No options uses error for sigma
+                        if (f1.parameter(1).error() < 0.01 && f1.getParameter(1) > -1.0 && x<=8 && f1.getParameter(1)<(0.5+0.4*x)) {
+                            this.getDataGroup().getItem(1, 1, key).getGraph("g_de_e_" + key).addPoint(x, f1.getParameter(1), ex, f1.parameter(1).error());
+                        }
                     }
                 }
+                this.getDataGroup().getItem(1, 1, key).getGraph("g_de_e_" + key).addPoint(0,0,0,0.001);
                 DataFitter.fit(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key), this.getDataGroup().getItem(1, 1, key).getGraph("g_de_e_" + key), "Q");
 
 
@@ -243,33 +250,56 @@ public class FTEnergyCorrection extends FTCalibrationModule {
                 getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(2), "c2", 1, 1, key);
                 getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(3), "c3", 1, 1, key);
                 getCalibrationTable().setDoubleValue(this.getDataGroup().getItem(1, 1, key).getF1D("f2_" + key).getParameter(4), "c4", 1, 1, key);
+                System.out.print(".");
             }
         }
-        getCalibrationTable().show();
+        getCalibrationTable().fireTableDataChanged();
+        System.out.println(" done");
     }
 
     @Override
-    public Color getColor(DetectorShape2D dsd) {
+    public double getValue(DetectorShape2D dsd) {
         // show summary
         int sector = dsd.getDescriptor().getSector();
         int layer = dsd.getDescriptor().getLayer();
         int key = dsd.getDescriptor().getComponent();
-        ColorPalette palette = new ColorPalette();
-        Color col = new Color(100, 100, 100);
         if (this.getDetector().hasComponent(key)) {
-            int nent = this.getNEvents(sector, layer, key);
-            if (nent > 0) {
-                col = palette.getColor3D(nent, this.getnProcessed(), true);
+            return this.getDataGroup().getItem(1, 1, key).getH1F("hi_de_calib_" + key).getRMS();
+       }
+        return 0;
+    }
+
+    @Override
+    public void loadConstantsToFunctions() {
+        if(this.getPreviousCalibrationTable().hasEntry(1,1,8)) {
+            for (int key : this.getDetector().getDetectorComponents()) {
+
+                F1D f2calib = this.getDataGroup().getItem(1, 1, key).getF1D("f2calib_" + key);//Is filled only if costants have been loaded
+                f2calib.setParameter(0, this.getPreviousCalibrationTable().getDoubleValue("c0", 1, 1, key));
+                f2calib.setParameter(1, this.getPreviousCalibrationTable().getDoubleValue("c1", 1, 1, key));
+                f2calib.setParameter(2, this.getPreviousCalibrationTable().getDoubleValue("c2", 1, 1, key));
+                f2calib.setParameter(3, this.getPreviousCalibrationTable().getDoubleValue("c3", 1, 1, key));
+                f2calib.setParameter(4, this.getPreviousCalibrationTable().getDoubleValue("c4", 1, 1, key));   
             }
         }
-//        col = new Color(100, 0, 0);
-        return col;
     }
     
     @Override
     public void setCanvasBookData() {
         int[] pads = {6,7,8};
         this.getCanvasBook().setData(this.getDataGroup(), pads);
+    }
+
+    @Override
+    public void setDrawOptions() {
+        this.getCanvas().getPad(6).getAxisY().setRange(0,2.5);
+//        F1D f2limit = new F1D("f2limit", "[p0]+x*[p1]", 0, 10.0);
+//        f2limit.setLineColor(3);
+//        f2limit.setLineStyle(1);
+//        f2limit.setParameter(0, 0.5);
+//        f2limit.setParameter(1, 0.4); 
+//        this.getCanvas().cd(7);
+//        this.getCanvas().draw(f2limit,"same");
     }
 
 }

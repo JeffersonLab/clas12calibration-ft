@@ -8,6 +8,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.io.File;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -17,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import org.jlab.groot.base.GStyle;
 
 
 public class FTPrevConfigPanel extends JPanel 
@@ -34,8 +37,8 @@ implements ActionListener, FocusListener {
 	public FTPrevConfigPanel(FTCalibrationModule engineIn) {
 
 		module = engineIn;
-		File workDir = new File(System.getProperty("user.dir"));
-		fc.setCurrentDirectory(workDir);
+		File workDir = new File(GStyle.getWorkingDirectory());
+ 		fc.setCurrentDirectory(workDir);
 
 		this.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -91,13 +94,15 @@ implements ActionListener, FocusListener {
 	public void actionPerformed(ActionEvent e) {
 		
 		if (e.getActionCommand() == "Select File") {
+                            File workDir = new File(GStyle.getWorkingDirectory());
+                            fc.setCurrentDirectory(workDir);
 			int returnValue = fc.showOpenDialog(null);
 			if (returnValue == JFileChooser.APPROVE_OPTION) {
 				module.calDBSource = module.CAL_FILE;
 				module.prevCalFilename = fc.getSelectedFile().getAbsolutePath();
 				fileDisp.setText("Selected file: "+ fc.getSelectedFile().getAbsolutePath());
 				fileRad.setSelected(true);
-
+                                     GStyle.setWorkingDirectory(fc.getSelectedFile().getParent());
 			}
 		}
 
