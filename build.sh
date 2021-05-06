@@ -1,47 +1,21 @@
 #!/bin/csh -f
 #=================================================================
 # BUILDING SCRIPT for COATJAVA PROJECT (first maven build)
-# then the documentatoin is build from the sources and commited
+# then the documentation is build from the sources and committed
 # to the documents page
 #=================================================================
 # Maven Build
 
-if(`filetest -e lib` == '0') then
-    mkdir lib
-endif
+set suites = (ftCalCalib ftCalLedAndCosmics ftHodoCalibNovice ftHodoCalibHipo)
 
-# ftCalCalib
-echo "Building ftCalCalib..."
-    cd ftCalCalib
+foreach suite ($suites)
+    echo Building $suite ...
+    cd $suite
+    mvn clean
     mvn install
     mvn package
-    cp target/FTCalCalib-*-jar-with-dependencies.jar ../lib/
     cd ..
-
-# ftCalLedAndCosmics
-echo "Building ftCalLedAndCosmics..."
-    cd ftCalLedAndCosmics
-    mvn install
-    mvn package
-    cp target/FTCalLedAndCosmics-*-jar-with-dependencies.jar ../lib/
-    cd ..
-
-# ftHodoCalib
-echo "Building ftHodoCalib..."
-    cd ftHodoCalibNovice
-    mvn install
-    mvn package
-    cp target/FTHodoCalibNovice-*-SNAPSHOT-jar-with-dependencies.jar ../lib/
-    cd ..
-
-# ftCalCalib
-echo "Building ftHodoCalibHipo..."
-cd ftHodoCalibHipo
-mvn install
-mvn package
-cp target/FTHodoCalibHipo-*-SNAPSHOT-jar-with-dependencies.jar ../lib/
-cd ..
-
+end
 
 # Finishing touches
 echo ""

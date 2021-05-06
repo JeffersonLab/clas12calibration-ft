@@ -6,17 +6,13 @@
 package org.clas.modules;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import org.jlab.utils.groups.IndexedList;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTAdjustFit;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
-import org.jlab.clas.pdg.PhysicsConstants;
-import org.jlab.clas.physics.Particle;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.base.ColorPalette;
@@ -143,7 +139,7 @@ private int sector = 3;
     }
     
     public int getNEvents(int isec, int ilay, int icomp) {
-        return this.getDataGroup().getItem(isec, ilay, icomp).getH1F("htime_small_" + isec + "_" + ilay + "_" + icomp).getEntries();
+        return (int) this.getDataGroup().getItem(isec, ilay, icomp).getH1F("htime_small_" + isec + "_" + ilay + "_" + icomp).getEntries();
     }
  
     public void processEvent(DataEvent event) {

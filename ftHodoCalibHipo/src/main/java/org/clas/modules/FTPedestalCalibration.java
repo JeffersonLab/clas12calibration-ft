@@ -6,23 +6,18 @@
 package org.clas.modules;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.jlab.utils.groups.IndexedList;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
-import org.jlab.clas.pdg.PhysicsConstants;
-import org.jlab.clas.physics.Particle;
-import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.groot.base.ColorPalette;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
-import org.jlab.groot.data.H2F;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.groot.fitter.DataFitter;
 import org.clas.viewer.FTAdjustFit;
@@ -153,7 +148,7 @@ public class FTPedestalCalibration extends FTCalibrationModule {
     }
     
     public int getNEvents(int isec, int ilay, int icomp) {
-        return this.getDataGroup().getItem(isec, ilay, icomp).getH1F("hPedestal_" + isec + "_" + ilay + "_" + icomp).getEntries();
+        return (int) this.getDataGroup().getItem(isec, ilay, icomp).getH1F("hPedestal_" + isec + "_" + ilay + "_" + icomp).getEntries();
     }
     
     public void processEvent(DataEvent event) {

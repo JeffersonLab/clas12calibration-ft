@@ -9,7 +9,7 @@
         <dependency>
             <groupId>org.jlab.coat</groupId>
             <artifactId>coat-libs</artifactId>
-            <version>6.3.1-SNAPSHOT</version>
+            <version>6.6.2-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
 
@@ -52,5 +52,9 @@
             </plugin>
         </plugins>
     </build> 
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
 
 </project>
