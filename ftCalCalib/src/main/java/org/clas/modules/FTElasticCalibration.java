@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.modules;
 
 import java.util.ArrayList;
@@ -11,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTAdjustFit;
+import org.clas.viewer.FTCalConstants;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.clas.physics.Particle;
@@ -33,20 +29,23 @@ import org.jlab.clas.pdg.PhysicsConstants;
 public class FTElasticCalibration extends FTCalibrationModule {
 
     // analysis realted info
-    double ebeam=2217;//10604;//6424;//5302;//
-    double seed = 1370*ebeam/2217;//1370;//6980;//1370*ebeam/; 
+    double ebeam=2221.93;//2217;//10604;//6424;//5302;//
+//    double seed = 1370*ebeam/2217;//1370;//6980;//1370*ebeam/; 
     double seedTotRatio = 0.58;
     IndexedTable charge2energy = null;
  
 
     public FTElasticCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "seed:seed_error:factor:factor_err:charge2energy:",3, ccdb, gConstants);
-        this.initRange(0., ebeam*1.3);
+        this.initRange(ebeam*0.2, ebeam*1.5);
+        this.setCols(ebeam*0.9, ebeam*1.1);
+        this.setReference(ebeam);
+
     }
 
     @Override
     public void resetEventListener() {
-
+        
         H1F hClusterSum = new H1F("hClusterSum", 200, this.getRange()[0], this.getRange()[1]);
         hClusterSum.setTitleX("E (MeV)");
         hClusterSum.setTitleY("Counts");
@@ -57,6 +56,13 @@ public class FTElasticCalibration extends FTCalibrationModule {
         hClusterSum_calib.setTitleY("counts");
         hClusterSum_calib.setTitle("Cluster energy");
         hClusterSum_calib.setFillColor(44);
+        F1D fsum = new F1D("fsum", "[amp]*gaus(x,[mean],[sigma])", this.getRange()[1]*0.3, this.getRange()[1]*0.6);
+        fsum.setParameter(0, 0.0);
+        fsum.setParameter(1, 0.0);
+        fsum.setParameter(2, 2.0);
+        fsum.setLineColor(24);
+        fsum.setLineWidth(2);
+        fsum.setOptStat(1111);
         H1F hClusterSum_theta = new H1F("hClusterSum_theta", 200, this.getRange()[0], this.getRange()[1]);
         hClusterSum_theta.setTitleX("E (MeV)");
         hClusterSum_theta.setTitleY("counts");
@@ -67,10 +73,22 @@ public class FTElasticCalibration extends FTCalibrationModule {
         gefactors.setTitleX("Crystal ID"); // X axis title
         gefactors.setTitleY("Correction Factor");   // Y axis title
         gefactors.setMarkerColor(3); // color from 0-9 for given palette
-        gefactors.setMarkerSize(5);  // size in points on the screen
+        gefactors.setMarkerSize(3);  // size in points on the screen
 //        gtoffsets.setMarkerStyle(1); // Style can be 1 or 2
         gefactors.addPoint(0., 0., 0., 0.);
         gefactors.addPoint(1., 1., 0., 0.);
+        H1F hefactors = new H1F("hefactors", 100, 0.8, 1.2);
+        hefactors.setTitleX("Correction Factor");
+        hefactors.setTitleY("Counts");
+        hefactors.setFillColor(42);
+        hefactors.setLineColor(22);
+        hefactors.setOptStat("1111");
+        H1F heconstants = new H1F("heconstants", 100, 0., 8.0);
+        heconstants.setTitleX("Charge2Energy");
+        heconstants.setTitleY("Counts");
+        heconstants.setFillColor(43);
+        heconstants.setLineColor(23);
+        heconstants.setOptStat("1111");
         for (int key : this.getDetector().getDetectorComponents()) {
             // initializa calibration constant table
             this.getCalibrationTable().addEntry(1, 1, key);
@@ -97,11 +115,11 @@ public class FTElasticCalibration extends FTCalibrationModule {
             hCluster_theta.setTitleY("Counts");
             hCluster_theta.setTitle("Component " + key); 
             hCluster_theta.setFillColor(55);
-            H1F hSeed = new H1F("hSeed_" + key, 100, this.getRange()[1]*0.3, this.getRange()[1]*0.9);
+            H1F hSeed = new H1F("hSeed_" + key, 100, this.getRange()[0], this.getRange()[1]*0.6);
             hSeed.setTitleX("E (MeV)");
             hSeed.setTitleY("Counts");
             hSeed.setTitle("Component " + key);
-            H1F hSeed_calib = new H1F("hSeed_calib_" + key, 100, this.getRange()[1]*0.3, this.getRange()[1]*0.9);
+            H1F hSeed_calib = new H1F("hSeed_calib_" + key, 100, this.getRange()[0], this.getRange()[1]*0.6);
             hSeed_calib.setTitleX("E (MeV)");
             hSeed_calib.setTitleY("Counts");
             hSeed_calib.setTitle("Component " + key);
@@ -113,9 +131,10 @@ public class FTElasticCalibration extends FTCalibrationModule {
             fseed.setLineWidth(2);
             fseed.setOptStat(1111);
 
-            DataGroup dg = new DataGroup(2, 2);
+            DataGroup dg = new DataGroup(3, 2);
             dg.addDataSet(hClusterSum      , 0);
             dg.addDataSet(hClusterSum_calib, 0);
+            dg.addDataSet(fsum,              0);
             dg.addDataSet(hClusterSum_theta, 0);
             dg.addDataSet(hCluster,          1);
             dg.addDataSet(hCluster_calib,    1);
@@ -125,7 +144,8 @@ public class FTElasticCalibration extends FTCalibrationModule {
             dg.addDataSet(hSeed_calib,       2);
             dg.addDataSet(fseed,             2);
             dg.addDataSet(gefactors,         3);
-//            dg.addDataSet(ftime,       3);
+            dg.addDataSet(hefactors,         4);
+            dg.addDataSet(heconstants,       5);
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
@@ -155,6 +175,17 @@ public class FTElasticCalibration extends FTCalibrationModule {
         else {
             return;
         }
+        double ebeamRCDB = ebeam;
+        if(run>3000) {
+            ebeamRCDB = (double) this.getConstantsManager().getRcdbConstant(run, "beam_energy").getValue();
+        }
+        if(ebeamRCDB!=ebeam && ebeamRCDB!=0) {
+            ebeam=ebeamRCDB;
+            System.out.println("Setting beam energy to: " + ebeam + " MeV");
+            this.initRange(ebeam*0.2, ebeam*1.5);
+            this.setCols(ebeam*0.9, ebeam*1.1);
+            this.setReference(ebeam);
+        }
         if(this.getConstantsManager()!=null) charge2energy = this.getConstantsManager().getConstants(run, "/calibration/ft/ftcal/charge_to_energy");
 //        if (event.hasBank("FTCAL::adc")) {
 //            DataBank adcFTCAL     = event.getBank("FTCAL::adc");
@@ -176,7 +207,7 @@ public class FTElasticCalibration extends FTCalibrationModule {
                 int    size    = clusterFTCAL.getShort("size", loop);
                 double x       = clusterFTCAL.getFloat("x", loop);
                 double y       = clusterFTCAL.getFloat("y", loop);
-                double z       = clusterFTCAL.getFloat("z", loop);
+                double z       = clusterFTCAL.getFloat("z", loop)-this.getConstants().z0;
                 double energy  = 1e3 *clusterFTCAL.getFloat("energy", loop);
                 double energyR = 1e3 * clusterFTCAL.getFloat("recEnergy", loop);
                 double maxEnergy  = 1e3 *clusterFTCAL.getFloat("maxEnergy", loop);
@@ -223,7 +254,7 @@ public class FTElasticCalibration extends FTCalibrationModule {
                 Particle recParticle = new Particle(22, energy*x/path, energy*y/path, energy*z/path, 0,0,0);
                 recParticle.setProperty("key",(double) key);
                 recParticle.setProperty("energySeed",energySeed);
-                recParticle.setProperty("energyCalib",energyCalib+180);
+                recParticle.setProperty("energyCalib",energyCalib);
                 recParticle.setProperty("elastic",pela);
                 double ratio = this.seedTotRatio;
                 if(this.isThisCrystalOnTheEdge(key)) ratio=0.65;
@@ -256,18 +287,22 @@ public class FTElasticCalibration extends FTCalibrationModule {
     @Override
     public void analyze() {
 //        System.out.println("Analyzing");
+        H1F hsum = this.getDataGroup().getItem(1, 1, 8).getH1F("hClusterSum_calib");
+        F1D fsum = this.getDataGroup().getItem(1, 1, 8).getF1D("fsum");
+        this.initClusterGaussFitPar(fsum,hsum);
+        DataFitter.fit(fsum,hsum,"LQ");
+        hsum.setFunction(null);
         for (int key : this.getDetector().getDetectorComponents()) {
             H1F hseed = this.getDataGroup().getItem(1,1,key).getH1F("hSeed_" + key);
             F1D fseed = this.getDataGroup().getItem(1,1,key).getF1D("fseed_" + key);
             this.initSeedGaussFitPar(fseed,hseed);
             DataFitter.fit(fseed,hseed,"LQ");
             hseed.setFunction(null);
-            H1F hcluster = this.getDataGroup().getItem(1,1,key).getH1F("hCluster_" + key);
+            H1F hcluster = this.getDataGroup().getItem(1,1,key).getH1F("hCluster_calib_" + key);
             F1D fcluster = this.getDataGroup().getItem(1,1,key).getF1D("fcluster_" + key);
-            this.initSeedGaussFitPar(fseed,hseed);
             this.initClusterGaussFitPar(fcluster,hcluster);
-            DataFitter.fit(fseed,hseed,"LQ");
-            hseed.setFunction(null);
+            DataFitter.fit(fcluster,hcluster,"LQ");
+            hcluster.setFunction(null);
         }
     }
 
@@ -275,8 +310,8 @@ public class FTElasticCalibration extends FTCalibrationModule {
     @Override
     public void adjustFit() {
         System.out.println("Adjusting fit for component " + this.getSelectedKey());
-        H1F hseed = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hSeed_" + this.getSelectedKey());
-        F1D fseed = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getF1D("fseed_" + this.getSelectedKey());
+        H1F hseed = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hCluster_calib_" + this.getSelectedKey());
+        F1D fseed = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getF1D("fcluster_" + this.getSelectedKey());
         FTAdjustFit cfit = new FTAdjustFit(hseed, fseed, "LRQ");
         this.getCanvas().update();
     }
@@ -307,17 +342,30 @@ public class FTElasticCalibration extends FTCalibrationModule {
         double pm = hMean*0.1;
         fseed.setRange(rangeMin, rangeMax);
         fseed.setParameter(0, hAmp);
-        fseed.setParLimits(0, hAmp*0.8, hAmp*1.2);
+//        fseed.setParLimits(0, hAmp*0.8, hAmp*1.2);
         fseed.setParameter(1, hMean);
-        fseed.setParLimits(1, hMean-pm, hMean+pm);
+//        fseed.setParLimits(1, hMean-pm, hMean+pm);
         fseed.setParameter(2, hMean*0.03);
-        fseed.setParLimits(2, 10., 500.);
+//        fseed.setParLimits(2, 10., 500.);
 //        System.out.println(fseed.getRange().getMin() + " " + fseed.getRange().getMin() + " " + rangeMin + " " + rangeMax);
     }    
     
     @Override
+    public double getValue(DetectorShape2D dsd) {
+        // show summary
+        int sector = dsd.getDescriptor().getSector();
+        int layer = dsd.getDescriptor().getLayer();
+        int key = dsd.getDescriptor().getComponent();
+        if (this.getDetector().hasComponent(key)) {
+            F1D fcluster = this.getDataGroup().getItem(1,1,key).getF1D("fcluster_" + key);
+            return fcluster.getParameter(1);
+       }
+        return 0;
+    }
+
+    @Override
     public void setCanvasBookData() {
-        this.getCanvasBook().setData(this.getDataGroup(), 2);
+        this.getCanvasBook().setData(this.getDataGroup(), 1);
     }
     
     @Override
@@ -328,39 +376,47 @@ public class FTElasticCalibration extends FTCalibrationModule {
     
     @Override
     public void updateTable() {
+        
+        double c2eDefault = 4;
+        if(this.getDataGroup().getItem(1,1,8).getH1F("heconstants").getMean()>0) 
+            c2eDefault = this.getDataGroup().getItem(1,1,8).getH1F("heconstants").getMean();
         for (int key : this.getDetector().getDetectorComponents()) {
             this.getDataGroup().getItem(1,1,key).getGraph("gefactors").reset();
+            this.getDataGroup().getItem(1,1,key).getH1F("hefactors").reset();
+            this.getDataGroup().getItem(1,1,key).getH1F("heconstants").reset();
         }
         for (int key : this.getDetector().getDetectorComponents()) {
-            H1F hseed = this.getDataGroup().getItem(1,1,key).getH1F("hSeed_" + key);
-            F1D fseed = this.getDataGroup().getItem(1,1,key).getF1D("fseed_" + key);
+            H1F hcluster = this.getDataGroup().getItem(1,1,key).getH1F("hCluster_calib_" + key);
+            F1D fcluster = this.getDataGroup().getItem(1,1,key).getF1D("fcluster_" + key);
 
-            double seedE       = 0;
-            double seedE_err   = 0;
-            double factorE     = 0;
-            double factorE_err = 0;
-            double c2e         = this.getConstants().chargeMips;
+            double clusterE     = 0;
+            double clusterE_err = 0;
+            double factorE      = 0;
+            double factorE_err  = 0;
+            double c2e          = this.getConstants().chargeMips;
             if(this.getConstantsManager()!=null) c2e = charge2energy.getDoubleValue("mips_charge", 1,1,key);
                 if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
                     c2e = this.getPreviousCalibrationTable().getDoubleValue("charge2energy", 1, 1, key);
                 }                        
                     
-             if(hseed.getEntries()>1000 && fseed.getParameter(1)>500) {
-                seedE       = fseed.getParameter(1);
-                seedE_err   = fseed.parameter(1).error();
-                factorE     = this.seed/fseed.getParameter(1);
-                factorE_err = factorE*seedE_err/seedE;
-                c2e         = c2e/factorE;
+             if(hcluster.getBinContent(hcluster.getMaximumBin())>10 && fcluster.getParameter(1)>500) {
+                clusterE       = fcluster.getParameter(1);
+                clusterE_err   = fcluster.parameter(1).error();
+                factorE        = this.ebeam/fcluster.getParameter(1);
+                factorE_err    = factorE*clusterE_err/clusterE;
+                c2e            = c2e/factorE;
             }
             else {
-                c2e         = 4.0;
+                c2e            = c2eDefault;
             }
             this.getDataGroup().getItem(1,1,key).getGraph("gefactors").addPoint(key, factorE, 0, factorE_err);
-            getCalibrationTable().setDoubleValue(seedE,       "seed",            1, 1, key);
-            getCalibrationTable().setDoubleValue(seedE_err,   "seed_error",      1, 1, key);
-            getCalibrationTable().setDoubleValue(factorE,     "factor",          1, 1, key);
-            getCalibrationTable().setDoubleValue(factorE_err, "factor_err" ,     1, 1, key);
-            getCalibrationTable().setDoubleValue(c2e,         "charge2energy" ,  1, 1, key);
+            this.getDataGroup().getItem(1,1,key).getH1F("hefactors").fill(factorE);
+            this.getDataGroup().getItem(1,1,key).getH1F("heconstants").fill(c2e);
+            getCalibrationTable().setDoubleValue(clusterE,     "seed",            1, 1, key);
+            getCalibrationTable().setDoubleValue(clusterE_err, "seed_error",      1, 1, key);
+            getCalibrationTable().setDoubleValue(factorE,      "factor",          1, 1, key);
+            getCalibrationTable().setDoubleValue(factorE_err,  "factor_err" ,     1, 1, key);
+            getCalibrationTable().setDoubleValue(c2e,          "charge2energy" ,  1, 1, key);
         }
         getCalibrationTable().fireTableDataChanged();
     }

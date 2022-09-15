@@ -77,7 +77,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     Map<String,CalibrationConstants> globalCalib = new HashMap<>();
     
     private int canvasUpdateTime   = 2000;
-    private int analysisUpdateTime = 200000;
+    private int analysisUpdateTime = 2000000;
     private int runNumber  = 0;
     private String workDir = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
     ArrayList<FTCalibrationModule> modules = new ArrayList();
@@ -128,14 +128,6 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         menuItem.getAccessibleContext().setAccessibleDescription("Save histograms to file");
         menuItem.addActionListener(this);
         file.add(menuItem);
-        menuItem = new JMenuItem("Set range...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Set histogram range");
-        menuItem.addActionListener(this);
-        file.add(menuItem);
-        menuItem = new JMenuItem("Set color map range...");
-        menuItem.getAccessibleContext().setAccessibleDescription("Set color map range");
-        menuItem.addActionListener(this);
-        file.add(menuItem);
         menuItem = new JMenuItem("View all");
         menuItem.getAccessibleContext().setAccessibleDescription("View all histograms");
         menuItem.addActionListener(this);
@@ -147,6 +139,22 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         menuItem = new JMenuItem("Set analysis update interval...", KeyEvent.VK_T);
         menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
         menuItem.getAccessibleContext().setAccessibleDescription("Set analysis update interval");
+        menuItem.addActionListener(this);
+        settings.add(menuItem);
+        menuItem = new JMenuItem("Set color map range...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Set color map range");
+        menuItem.addActionListener(this);
+        settings.add(menuItem);
+        menuItem = new JMenuItem("Set range...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Set histogram range");
+        menuItem.addActionListener(this);
+        settings.add(menuItem);
+        menuItem = new JMenuItem("Set reference calibration value...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Set reference calibration value");
+        menuItem.addActionListener(this);
+        settings.add(menuItem);
+        menuItem = new JMenuItem("Set calibration scale factor...");
+        menuItem.getAccessibleContext().setAccessibleDescription("Set calibration scale factor");
         menuItem.addActionListener(this);
         settings.add(menuItem);
         menuBar.add(settings);
@@ -164,7 +172,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                     "/calibration/ft/ftcal/time_offsets",
                     "/calibration/ft/ftcal/energycorr",
                     "/daq/tt/ftcal"}));
-        ccdb.setVariation("default");
+        ccdb.setVariation("ftvertex");
         
         // create module viewer
         modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration",ccdb,globalCalib));
@@ -208,18 +216,53 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     @Override
     public void actionPerformed(ActionEvent e) {
         System.out.println(e.getActionCommand());
-        if(e.getActionCommand()=="Set analysis update interval...") {
+        if("Set analysis update interval...".equals(e.getActionCommand())) {
             this.chooseUpdateInterval();
         }
-        if(e.getActionCommand() == "Adjust fit...") {
+        if("Adjust fit...".equals(e.getActionCommand())) {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
             for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName()==moduleSelect) {
+                if(this.modules.get(k).getName().equals(moduleSelect)) {
                     this.modules.get(k).adjustFit();
                 }
             } 
         }        
-        if(e.getActionCommand()=="Open histograms file...") {
+        if("Set range...".equals(e.getActionCommand())) {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(this.modules.get(k).getName().equals(moduleSelect)) {
+                    this.modules.get(k).setRange();
+                }
+            } 
+        }        
+        if("Set color map range...".equals(e.getActionCommand())) {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(this.modules.get(k).getName().equals(moduleSelect)) {
+                    this.modules.get(k).setCols();
+                }
+            } 
+            this.detectorView.repaint();
+        }        
+        if("Set reference calibration value...".equals(e.getActionCommand())) {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(this.modules.get(k).getName().equals(moduleSelect)) {
+                    this.modules.get(k).setReference();
+                }
+            } 
+            this.detectorView.repaint();
+        }        
+        if("Set calibration scale factor...".equals(e.getActionCommand())) {
+            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
+            for(int k=0; k<this.modules.size(); k++) {
+                if(this.modules.get(k).getName().equals(moduleSelect)) {
+                    this.modules.get(k).setScaleShift();
+                }
+            } 
+            this.detectorView.repaint();
+        }        
+        if("Open histograms file...".equals(e.getActionCommand())) {
             String fileName = null;
             JFileChooser fc = new JFileChooser();
             fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -231,10 +274,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             if(fileName != null) this.loadHistosFromFile(fileName);
         }        
-        if(e.getActionCommand()=="Print histograms to file...") {
+        if("Print histograms to file...".equals(e.getActionCommand())) {
             this.printHistosToFile();
         }
-        if(e.getActionCommand()=="Save histograms...") {
+        if("Save histograms...".equals(e.getActionCommand())) {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
             String fileName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date()) + ".hipo";
             JFileChooser fc = new JFileChooser();
@@ -248,27 +291,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             this.saveHistosToFile(fileName);
         }
-        if(e.getActionCommand() == "Set range...") {
+        if("View all".equals(e.getActionCommand())) {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
             for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName()==moduleSelect) {
-                    this.modules.get(k).setRange();
-                }
-            } 
-        }        
-        if(e.getActionCommand() == "Set color map range...") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName()==moduleSelect) {
-                    this.modules.get(k).setCols();
-                }
-            } 
-            this.detectorView.repaint();
-        }        
-        if(e.getActionCommand() == "View all") {
-            //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName()==moduleSelect) {
+                if(this.modules.get(k).getName().equals(moduleSelect)) {
                     this.modules.get(k).showPlots();
                 }
             } 

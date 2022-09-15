@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.viewer;
 
 import java.awt.Color;
@@ -67,6 +62,8 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     private int                              selectedKey = 8;
     private double[]                               range = new double[2];
     private double[]                                cols = null;
+    private double                             reference = 0;
+    private double[]                          scaleshift = {1,0};
 
     // configuration
     public int              calDBSource = 0;
@@ -212,6 +209,18 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         else {
             return palette.getColor3D(nevent, this.getnProcessed(),true);
         }
+    }
+
+    public double getReference() {
+        return reference;
+    }
+
+    public double getConstantScale() {
+        return scaleshift[0];
+    }
+
+    public double getConstantShift() {
+        return scaleshift[1];
     }
 
     public double getValue(DetectorShape2D dsd) {
@@ -499,20 +508,33 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         this.globalCalib = globalCalib;
     }
 
-    public void setRange(double min, double max) {
+    public final void setRange(double min, double max) {
         this.range[0]=min;
         this.range[1]=max;
         System.out.println("Histogram range for module " + this.getName() + " set to: " + this.range[0] + ":" + this.range[1]);
         this.resetEventListener();
     }
     
-    public void setCols(double min, double max) {
+    public final void setCols(double min, double max) {
         this.cols = new double[2];
         this.cols[0]=min;
         this.cols[1]=max;
         System.out.println("Color range for module " + this.getName() + " set to: " + this.cols[0] + ":" + this.cols[1]);
     }
     
+    public final void setReference(double value) {
+        this.reference=value;
+        System.out.println("Reference calibration value for module " + this.getName() + " set to: " + this.reference);
+        this.resetEventListener();
+    }
+    
+    public final void setScaleShift(double scale, double shift) {
+        this.scaleshift[0]=scale;
+        this.scaleshift[1]=shift;
+        System.out.println("Constant scale/shift for module " + this.getName() + " set to: " + this.scaleshift[0] + "/" + this.scaleshift[1]);
+        this.resetEventListener();
+    }
+
     public void setRange() {
         JFrame frame    = new JFrame();
         JLabel label;
@@ -532,10 +554,10 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         int result = JOptionPane.showConfirmDialog(null, panel, 
                         "Set range", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
-            if(!minRange.getText().isEmpty())this.range[0] = Double.parseDouble(minRange.getText());
-            if(!maxRange.getText().isEmpty())this.range[1] = Double.parseDouble(maxRange.getText());
-            System.out.println("Histogram range for module " + this.getName() + " set to: " + this.range[0] + ":" + this.range[1]);
-            this.resetEventListener();
+            if(!minRange.getText().isEmpty() && !maxRange.getText().isEmpty()) {
+                this.setRange(Double.parseDouble(minRange.getText()), Double.parseDouble(maxRange.getText()));
+                this.resetEventListener();
+            }
         }
 
     }
@@ -559,13 +581,59 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         int result = JOptionPane.showConfirmDialog(null, panel, 
                         "Set range", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
-            if(!minRange.getText().isEmpty())this.cols[0] = Double.parseDouble(minRange.getText());
-            if(!maxRange.getText().isEmpty())this.cols[1] = Double.parseDouble(maxRange.getText());
-            System.out.println("Color map range for module " + this.getName() + " set to: " + this.cols[0] + ":" + this.cols[1]);
+            if(!minRange.getText().isEmpty() && !maxRange.getText().isEmpty()) 
+                this.setCols(Double.parseDouble(minRange.getText()), Double.parseDouble(maxRange.getText()));
+       }
+
+    }
+    
+    public void setReference() {
+        JFrame frame    = new JFrame();
+        JLabel label;
+        JPanel panel;
+        JTextField refValue = new JTextField(5);
+	
+        
+        panel = new JPanel(new GridLayout(2, 1));            
+        panel.add(new JLabel("Reference calibration value"));
+        refValue.setText(Double.toString(this.reference));
+        panel.add(refValue);
+        
+        int result = JOptionPane.showConfirmDialog(null, panel, 
+                        "Set range", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            if(!refValue.getText().isEmpty())this.setReference(Double.parseDouble(refValue.getText()));
         }
 
     }
     
+    public void setScaleShift() {
+        JFrame frame    = new JFrame();
+        JLabel label;
+        JPanel panel;
+    	JTextField scale = new JTextField(5);
+	JTextField shift = new JTextField(5);
+        	
+        
+        panel = new JPanel(new GridLayout(2, 2));            
+        panel.add(new JLabel("Constant scale"));
+        scale.setText(Double.toString(this.scaleshift[0]));
+        panel.add(scale);
+        panel.add(new JLabel("Constant shift"));
+        shift.setText(Double.toString(this.scaleshift[1]));
+        panel.add(shift);
+        
+        int result = JOptionPane.showConfirmDialog(null, panel, 
+                        "Set range", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            if(!scale.getText().isEmpty() && !shift.getText().isEmpty()) {
+                this.setScaleShift(Double.parseDouble(scale.getText()), Double.parseDouble(shift.getText()));
+                this.resetEventListener();
+            }
+        }
+
+    }
+
     public void showPlots() {
         this.setCanvasBookData();
         if(this.canvasBook.getCanvasDataSets().size()!=0) {

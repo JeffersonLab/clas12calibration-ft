@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.modules;
 
 import java.util.Arrays;
@@ -150,7 +145,7 @@ public class FTThresholdsCalibration extends FTCalibrationModule {
 //                    if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
 //                        double offset = this.getPreviousCalibrationTable().getDoubleValue("pedestal", 1, 1, key);
 //                        this.getDataGroup().getItem(1,1,key).getH1F("hpsum_calib").fill(ped+200-offset);
-//                        this.getDataGroup().getItem(1,1,key).getH1F("hped_calib_"+key).fill(ped+200-offset);                        
+//                        this.getDataGroup().getItem(1,1,key).getH1F("hped_calib_"+key).fill(ped+200-offset);
 //                    }                            
                 } 
             }

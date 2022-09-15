@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.modules;
 
 import java.util.Arrays;
@@ -28,7 +23,6 @@ import org.jlab.clas.pdg.PhysicsConstants;
  * @author devita
  */
 public class FTTimeWalkCalibration extends FTCalibrationModule {
-
 
     
     public FTTimeWalkCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
@@ -181,13 +175,14 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
                 int    charge  = particlesFT.getByte("charge", loop);
                 double x       = clusterFTCAL.getFloat("x", loop);
                 double y       = clusterFTCAL.getFloat("y", loop);
-                double z       = clusterFTCAL.getFloat("z", loop);
+                double z       = this.getConstants().crystal_distance+this.getConstants().shower_depth-this.getConstants().z0;//clusterFTCAL.getFloat("z", loop);
                 double time    = clusterFTCAL.getFloat("time", loop);
                 double energy  = clusterFTCAL.getFloat("energy", loop);
                 double energyR = clusterFTCAL.getFloat("recEnergy", loop);
-                double path     = Math.sqrt(x*x+y*y+z*z);
-                double theta = Math.toDegrees(Math.acos(z/path));
-                // find hits associated to clusters
+                double path    = Math.sqrt(x*x+y*y+z*z);
+                double theta   = Math.toDegrees(Math.acos(z/path));
+                double tof     = (path/PhysicsConstants.speedOfLight()); //ns
+                            // find hits associated to clusters
                 if(energy>0.5 && energyR>0.3 && size > 3 && charge==0) {                            
                     double clusterTime = 0;
                     for(int k=0; k<hitFTCAL.rows(); k++) {
@@ -199,9 +194,8 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
                             int component    = adcFTCAL.getInt("component",hitID);
                             double hitTime   = adcFTCAL.getFloat("time", hitID);   
                             double hitCharge =((double) adcFTCAL.getInt("ADC", hitID))*(this.getConstants().LSB*this.getConstants().nsPerSample/50);
-                            double radius    = Math.sqrt(Math.pow(this.getDetector().getIdX(component)-0.5,2.0)+Math.pow(this.getDetector().getIdY(component)-0.5,2.0))*this.getConstants().crystal_size;//meters
-                            double hitPath   = Math.sqrt(Math.pow(this.getConstants().crystal_distance+this.getConstants().shower_depth,2)+Math.pow(radius,2));
-                            double tof       = (hitPath/PhysicsConstants.speedOfLight()); //ns
+//                            double radius    = Math.sqrt(Math.pow(this.getDetector().getIdX(component)-0.5,2.0)+Math.pow(this.getDetector().getIdY(component)-0.5,2.0))*this.getConstants().crystal_size;//meters
+      //                      double hitPath   = Math.sqrt(Math.pow(this.getConstants().crystal_distance+this.getConstants().shower_depth,2)+Math.pow(radius,2));
                             double offset = 0;
                             if(this.getGlobalCalibration().containsKey("TimeCalibration")) {
                                 offset = this.getGlobalCalibration().get("TimeCalibration").getDoubleValue("offset", 1,1,component);
