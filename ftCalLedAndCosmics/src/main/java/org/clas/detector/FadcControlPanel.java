@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.detector;
 
 import java.awt.BorderLayout;
@@ -89,11 +84,12 @@ public class FadcControlPanel extends JPanel implements ActionListener {
         bG7a.setActionCommand("CCDB");
         bG7a.setToolTipText("Use CCDB fADC integration parameters");
         bG7a.addActionListener(this);
-        bG7a.setSelected(true);
         this.mode7.add(bG7b);
         bG7b.setActionCommand("User");
         bG7b.setToolTipText("Use user-selected fADC integration parameters");
         bG7b.addActionListener(this);
+        if(useCCDB) bG7a.setSelected(true);
+        else bG7b.setSelected(true);
         this.mode7.add(new JLabel("TET"));
         this.mode7.add(ttet);
         ttet.setEnabled(false);
@@ -179,10 +175,12 @@ public class FadcControlPanel extends JPanel implements ActionListener {
 
     public void setTET(int tet) {
         this.bG7b.setSelected(true);
+        this.useCCDB=false;
         this.ttet.setEnabled(true);
         this.tnsa.setEnabled(true);
         this.tnsb.setEnabled(true);
         this.tet = tet;
+        System.out.println("\nPulse threshold set to: " + this.tet);
         updateGUI();
     }
 

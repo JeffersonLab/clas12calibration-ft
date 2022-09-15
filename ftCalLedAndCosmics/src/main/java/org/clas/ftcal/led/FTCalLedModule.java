@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.ButtonGroup;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -486,7 +485,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
             canvasEvent.draw(H_WAVE_PED.get(1, 1, keySelect),"same");
             canvasEvent.draw(H_WAVE_PUL.get(1, 1, keySelect),"same");
             if(G_PULSE_ANALYSIS.hasEntry(1, 1, keySelect)) {
-                if(G_PULSE_ANALYSIS.get(1, 1, keySelect).getDataSize(1)>0) canvasEvent.draw(G_PULSE_ANALYSIS.get(1, 1, keySelect),"same");
+                if(G_PULSE_ANALYSIS.get(1, 1, keySelect).getDataSize(1)>1) canvasEvent.draw(G_PULSE_ANALYSIS.get(1, 1, keySelect),"same");
             }
         } 
  // noise
@@ -540,18 +539,22 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
             canvasCharge.draw(hfADCR, "same");               
         }
         canvasCharge.cd(1);
-        canvasCharge.draw(G_LED_CHARGE.get(1, 1, keySelect));
-        if(G_LED_CHARGE_SELECT.get(1, 1, keySelect).getDataSize(1)>0) canvasCharge.draw(G_LED_CHARGE_SELECT.get(1, 1, keySelect),"same");
+        if(G_LED_CHARGE.get(1, 1, keySelect).getDataSize(1)>1) {
+            canvasCharge.draw(G_LED_CHARGE.get(1, 1, keySelect));
+            if(G_LED_CHARGE_SELECT.get(1, 1, keySelect).getDataSize(1)>1) canvasCharge.draw(G_LED_CHARGE_SELECT.get(1, 1, keySelect),"same");
+        }
         canvasCharge.cd(2);
         if(H_LED_CHARGE.hasEntry(1, 1, keySelect)) {
             H1F hled = H_LED_CHARGE.get(1, 1,keySelect);
             canvasCharge.draw(hled,"S");
         } 
         canvasCharge.cd(3);
-        canvasCharge.draw(G_LED_CHARGE_SELECT.get(1, 1, keySelect));
-        canvasCharge.draw(F_LED_CHARGE_SELECT_MEAN.get(1, 1, keySelect),"same");
-        canvasCharge.draw(F_LED_CHARGE_SELECT_LOW.get(1, 1, keySelect),"same");
-        canvasCharge.draw(F_LED_CHARGE_SELECT_HIGH.get(1, 1, keySelect),"same");
+        if(G_LED_CHARGE_SELECT.get(1, 1, keySelect).getDataSize(1)>1){
+            canvasCharge.draw(G_LED_CHARGE_SELECT.get(1, 1, keySelect));
+            canvasCharge.draw(F_LED_CHARGE_SELECT_MEAN.get(1, 1, keySelect),"same");
+            canvasCharge.draw(F_LED_CHARGE_SELECT_LOW.get(1, 1, keySelect),"same");
+            canvasCharge.draw(F_LED_CHARGE_SELECT_HIGH.get(1, 1, keySelect),"same");
+        }
         // Amplitude
         canvasAmpli.cd(0);
         if (H_LED_fADC.hasEntry(1, 1, keySelect)) {
@@ -564,18 +567,22 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
             canvasAmpli.draw(hfADC);               
         }
         canvasAmpli.cd(1);
-        canvasAmpli.draw(G_LED_AMPLI.get(1, 1, keySelect));
-        if(G_LED_AMPLI_SELECT.get(1, 1, keySelect).getDataSize(1)>0) canvasAmpli.draw(G_LED_AMPLI_SELECT.get(1, 1, keySelect),"same");
+        if(G_LED_AMPLI.get(1, 1, keySelect).getDataSize(1)>1) {
+            canvasAmpli.draw(G_LED_AMPLI.get(1, 1, keySelect));
+            if(G_LED_AMPLI_SELECT.get(1, 1, keySelect).getDataSize(1)>1) canvasAmpli.draw(G_LED_AMPLI_SELECT.get(1, 1, keySelect),"same");
+        }
         canvasAmpli.cd(2);
         if(H_LED_VMAX.hasEntry(1, 1, keySelect)) {
             H1F hled = H_LED_VMAX.get(1, 1,keySelect);
             canvasAmpli.draw(hled,"S");
         }
         canvasAmpli.cd(3);
+        if(G_LED_AMPLI_SELECT.get(1, 1, keySelect).getDataSize(1)>1) {
         canvasAmpli.draw(G_LED_AMPLI_SELECT.get(1, 1, keySelect));
-        canvasAmpli.draw(F_LED_AMPLI_SELECT_MEAN.get(1, 1, keySelect),"same");
-        canvasAmpli.draw(F_LED_AMPLI_SELECT_LOW.get(1, 1, keySelect),"same");
-        canvasAmpli.draw(F_LED_AMPLI_SELECT_HIGH.get(1, 1, keySelect),"same");
+            canvasAmpli.draw(F_LED_AMPLI_SELECT_MEAN.get(1, 1, keySelect),"same");
+            canvasAmpli.draw(F_LED_AMPLI_SELECT_LOW.get(1, 1, keySelect),"same");
+            canvasAmpli.draw(F_LED_AMPLI_SELECT_HIGH.get(1, 1, keySelect),"same");
+        }
         // Width
         GraphErrors  G_WIDTH = new GraphErrors("FWHM",crystalID,fullWidthHM);
         G_WIDTH.setTitle(" "); //  title
@@ -601,7 +608,7 @@ public class FTCalLedModule extends JPanel implements DetectorListener,Calibrati
             canvasWidth.draw(hwidth,"S");
         }        
         canvasWidth.cd(3);
-        canvasWidth.draw(G_LED_WIDTH.get(1, 1, keySelect));
+        if(G_LED_WIDTH.get(1, 1, keySelect).getDataSize(0)>1) canvasWidth.draw(G_LED_WIDTH.get(1, 1, keySelect));
         // Time
         GraphErrors  G_TCROSS = new GraphErrors("TCross",crystalID,timeCross);
         G_TCROSS.setTitle(" "); //  title
