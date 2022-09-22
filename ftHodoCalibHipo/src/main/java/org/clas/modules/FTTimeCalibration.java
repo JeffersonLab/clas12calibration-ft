@@ -160,9 +160,12 @@ private int sector = 3;
         }
         
         
-        if (event.hasBank("FTHODO::hits") && event.hasBank("FTHODO::adc") && this.startTime>-1000 && trigger==11) {
+        if (event.hasBank("FTHODO::hits") && event.hasBank("FTHODO::adc") && event.hasBank("FT::particles") && this.startTime>-1000 && trigger==11) {
             DataBank hitsFTHODO = event.getBank("FTHODO::hits");
             DataBank adcFTHODO = event.getBank("FTHODO::adc");
+            DataBank particlesFT = event.getBank("FT::particles");
+                  double targPosZ   = particlesFT.getFloat("vz", 0);
+                //                  System.out.println("Target Position: " + targPosZ);
             for (int loop1 = 0; loop1 < hitsFTHODO.rows()-1; loop1++) {
                 int clusterID1 = hitsFTHODO.getShort("clusterID", loop1);
                 int hitID1 = hitsFTHODO.getShort("hitID", loop1);
@@ -172,7 +175,7 @@ private int sector = 3;
                 double charge1FromADC = ((double) adcFTHODO.getInt("ADC", hitID1))*(LSB*nsPerSample/50);
                 double time1   = adcFTHODO.getFloat("time", hitID1);
                 double radius1 = Math.sqrt(Math.pow(hitsFTHODO.getFloat("x",loop1),2.0)+Math.pow(hitsFTHODO.getFloat("y",loop1),2.0));//cm
-                double path1   = Math.sqrt(Math.pow(hitsFTHODO.getFloat("z",loop1),2)+Math.pow(radius1,2));
+                double path1   = Math.sqrt(Math.pow(hitsFTHODO.getFloat("z",loop1)-targPosZ,2)+Math.pow(radius1,2));
                 double tof1    = (path1/c); //ns
                 double timediff1  = (time1 -(this.startTime + tof1));
                 for (int loop2 = loop1+1; loop2 < hitsFTHODO.rows(); loop2++) {
@@ -184,7 +187,7 @@ private int sector = 3;
                     double charge2FromADC = ((double) adcFTHODO.getInt("ADC", hitID2))*(LSB*nsPerSample/50);
                     double time2   = adcFTHODO.getFloat("time", hitID2);
                     double radius2 = Math.sqrt(Math.pow(hitsFTHODO.getFloat("x",loop2),2.0)+Math.pow(hitsFTHODO.getFloat("y",loop2),2.0));//cm
-                    double path2   = Math.sqrt(Math.pow(hitsFTHODO.getFloat("z",loop2),2)+Math.pow(radius2,2));
+                    double path2   = Math.sqrt(Math.pow(hitsFTHODO.getFloat("z",loop2)-targPosZ,2)+Math.pow(radius2,2));
                     double tof2    = (path2/c); //ns
                     double timediff2  = (time2 -(this.startTime + tof2));
                     if (clusterID1==clusterID2){
