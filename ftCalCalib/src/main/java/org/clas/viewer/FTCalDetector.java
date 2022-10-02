@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.viewer;
 
 import java.util.Set;
@@ -27,8 +22,8 @@ public class FTCalDetector extends FTDetector {
     private double x0=0;
     private double y0=0;
     
-    private DetectorCollection<ShapePoint> points = new DetectorCollection<ShapePoint>();
-    DetectorCollection<Double> thresholds = new DetectorCollection<Double>();
+    private DetectorCollection<ShapePoint> points = new DetectorCollection<>();
+    DetectorCollection<Double> thresholds = new DetectorCollection<>();
         
 
     public FTCalDetector(String name) {
@@ -87,6 +82,9 @@ public class FTCalDetector extends FTDetector {
         this.getView().addShape(this.getName(),paddle);
     }
     
+    public DetectorShape2D getDefaultShape() {
+        return new DetectorShape2D(DetectorType.FTCAL, 1, 1, 245);
+    }
     
     public void setThresholds(double threshold) {
         for (int component : this.getDetectorComponents()) {

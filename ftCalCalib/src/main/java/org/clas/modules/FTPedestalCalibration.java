@@ -1,12 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.modules;
 
-import java.util.Arrays;
-import java.util.List;
+import org.clas.ftdata.FTCalADC;
+import org.clas.ftdata.FTCalEvent;
 import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
@@ -15,8 +10,6 @@ import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
-import org.jlab.io.base.DataBank;
-import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
@@ -59,9 +52,6 @@ public class FTPedestalCalibration extends FTCalibrationModule {
         gpedestals.addPoint(1., 1., 0., 0.);
 
         for (int key : this.getDetector().getDetectorComponents()) {
-            // initializa calibration constant table
-            this.getCalibrationTable().addEntry(1, 1, key);
-
             // initialize data group
             H1F hped_wide = new H1F("hped_wide_" + key, 200, 100.0, 300.0);
             hped_wide.setTitleX("Pedestal (channel)");
@@ -96,12 +86,6 @@ public class FTPedestalCalibration extends FTCalibrationModule {
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
-        getCalibrationTable().fireTableDataChanged();
-    }
-
-    @Override
-    public List<CalibrationConstants> getCalibrationConstants() {
-        return Arrays.asList(getCalibrationTable());
     }
 
     @Override
@@ -124,20 +108,14 @@ public class FTPedestalCalibration extends FTCalibrationModule {
         return 0;
     }
 
-    public void processEvent(DataEvent event) {
-        // loop over FTCAL reconstructed cluster
-        double startTime = -100000;
-        if(event.hasBank("REC::Event")) {
-            DataBank recEvent = event.getBank("REC::Event");
-            startTime = recEvent.getFloat("startTime", 0);
-//            System.out.println(this.startTime);
-        }
-        if (event.hasBank("FTCAL::adc")) {
-            DataBank adcFTCAL = event.getBank("FTCAL::adc");
-            for (int loop = 0; loop < adcFTCAL.rows(); loop++) {
-                int    key    = adcFTCAL.getInt("component", loop);
-                int    adc    = adcFTCAL.getInt("ADC", loop);
-                double ped    = adcFTCAL.getShort("ped", loop);                
+    @Override
+    public void processEvent(FTCalEvent event) {
+
+        if (!event.getADCs().isEmpty()) {
+            for (FTCalADC hit : event.getADCs()) {
+                int    key    = hit.component();
+                int    adc    = hit.adc();
+                double ped    = hit.pedestal();                
                 if(adc>0) {
                     this.getDataGroup().getItem(1,1,key).getH1F("hpsum").fill(ped);
                     this.getDataGroup().getItem(1,1,key).getH1F("hped_wide_"+key).fill(ped);
@@ -152,6 +130,7 @@ public class FTPedestalCalibration extends FTCalibrationModule {
         }
     }
 
+    @Override
     public void analyze() {
 //        System.out.println("Analyzing");
         this.getCanvas().getPad(0).getAxisY().setLog(true);

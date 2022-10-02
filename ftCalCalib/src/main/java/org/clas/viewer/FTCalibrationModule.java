@@ -1,5 +1,6 @@
 package org.clas.viewer;
 
+import org.clas.ftdata.FTCalEvent;
 import java.awt.Color;
 import java.awt.GridLayout;
 import java.io.BufferedReader;
@@ -10,7 +11,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JFrame;
@@ -20,7 +20,6 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import org.clas.view.DetectorShape2D;
-import org.jlab.detector.calib.tasks.CalibrationEngine;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.CalibrationConstantsListener;
 import org.jlab.detector.calib.utils.CalibrationConstantsView;
@@ -33,27 +32,26 @@ import org.jlab.groot.data.H2F;
 import org.jlab.groot.data.IDataSet;
 import org.jlab.groot.data.TDirectory;
 import org.jlab.groot.group.DataGroup;
-import org.jlab.io.base.DataEvent;
-import org.jlab.io.base.DataEventType;
 import org.jlab.utils.groups.IndexedList;
 import org.jlab.groot.graphics.EmbeddedCanvas;
 import org.jlab.groot.math.F1D;
+import org.jlab.utils.groups.IndexedTable;
 
 /**
  *
  * @author devita
  */
-public class FTCalibrationModule extends CalibrationEngine implements CalibrationConstantsListener {
+public class FTCalibrationModule implements CalibrationConstantsListener {
     
     //private final int[] npaddles = new int[]{23,62,5};
     private String                            moduleName = null;
     private FTDetector                                ft = null;
-    ConstantsManager                                ccdb = null;
+    private ConstantsManager                        ccdb = null;
     private FTCalConstants                      costants = new FTCalConstants();
     private CalibrationConstants                   calib = null;
     private CalibrationConstants               prevCalib = null;
     private Map<String,CalibrationConstants> globalCalib = null;
-    private final IndexedList<DataGroup>      dataGroups = new IndexedList<DataGroup>(3);
+    private final IndexedList<DataGroup>      dataGroups = new IndexedList<>(3);
     private JSplitPane                        moduleView = null;
     private EmbeddedCanvas                        canvas = null;
     private CalibrationConstantsView              ccview = null;
@@ -73,7 +71,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     public String  prevCalFilename;
     public int     prevCalRunNo;
     public boolean prevCalRead = false;
-
+    public String  ccdbTableName;
     
     public FTCalibrationModule(FTDetector d, String ModuleName, String Constants,int Precision, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         GStyle.getAxisAttributesX().setTitleFontSize(18);
@@ -124,26 +122,23 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
         this.selectedKey = component;
     }
-    
-    @Override
-    public void dataEventAction(DataEvent event) {
+        
+    public static void copyConstants(CalibrationConstants origin, CalibrationConstants destination) {
+        for(int i=0; i<origin.getRowCount(); i++) {
+            int sector    = Integer.parseInt((String) origin.getValueAt(i, 0));
+            int layer     = Integer.parseInt((String) origin.getValueAt(i, 1));
+            int component = Integer.parseInt((String) origin.getValueAt(i, 2)); 
+            for (int j = 3; j < origin.getColumnCount(); j++) {
+                double value = origin.getDoubleValue(origin.getColumnName(j), sector, layer, component);
+                destination.setDoubleValue(value, origin.getColumnName(j), sector, layer, component);
+            }
+        }
+        destination.fireTableDataChanged();
+    }
+
+    public void dataEventAction(FTCalEvent event) {
         nProcessed++;
-        if (event.getType() == DataEventType.EVENT_START) {
-                System.out.println("EVENT_START");
- //               resetEventListener();
-                processEvent(event);
-        } else if (event.getType() == DataEventType.EVENT_ACCUMULATE) {
-                processEvent(event);
-        }
-        else if (event.getType()==DataEventType.EVENT_SINGLE) {
-                processEvent(event);
-                System.out.println("EVENT_SINGLE from FTCalibrationModule");
-        }
-        else if (event.getType() == DataEventType.EVENT_STOP) {
-                System.out.println("EVENT_STOP");
-                analyze();
-                updateTable();
-        }
+        this.processEvent(event);
     }
 
     public void drawDataGroup(int sector, int layer, int component) {
@@ -164,11 +159,6 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
 
     public CalibrationConstantsView getCcview() {
         return ccview;
-    }
-
-    @Override
-    public List<CalibrationConstants> getCalibrationConstants() {
-	return Arrays.asList(calib);
     }
     
     public CalibrationConstants getCalibrationTable() {
@@ -227,7 +217,6 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         return 0;
     }
     
-    @Override
     public IndexedList<DataGroup> getDataGroup() {
         return dataGroups;
     }
@@ -266,18 +255,30 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     public JSplitPane getView() {
         return moduleView;
     }
-
-    public void initModule(String name, String Constants, int Precision, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
+    
+    public void initializeConstants(CalibrationConstants cc) {
+        for (int key : this.getDetector().getDetectorComponents()) {
+            cc.addEntry(1, 1, key);
+            for(int i=0; i<cc.getColumnCount(); i++) {
+                cc.setDoubleValue(0.0, cc.getColumnName(i), 1, 1, key);
+            }
+        }
+        cc.fireTableDataChanged();
+    }
+    
+    public final void initModule(String name, String Constants, int Precision, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         this.moduleName = name;
         this.nProcessed = 0;
         // create calibration constants viewer
         ccview = new CalibrationConstantsView();
         this.calib = new CalibrationConstants(3,Constants);
         this.calib.setName(name);
+        this.initializeConstants(calib);
+        ccview.addConstants(this.calib,this);
         this.prevCalib = new CalibrationConstants(3,Constants);
         this.prevCalib.setName(name);
 	this.setCalibrationTablePrecision(Precision);
-        ccview.addConstants(this.getCalibrationConstants().get(0),this);
+        
         
         this.ccdb        = ccdb;
         this.globalCalib = gConstants;
@@ -297,26 +298,38 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         this.range[1]=r2;
         this.resetEventListener();
     }
-    
-    public void loadConstants(ConstantsManager ccdb) {   
-        this.ccdb = ccdb;
-    }  
-    
+        
     public void loadConstants() {   
         if(this.calDBSource==this.CAL_DB) {
-            System.out.println("Reading Constants from CCDB: option not implemented for module " + this.getName() + " , using default costants");
+            this.loadConstants(this.prevCalRunNo);
         }
         else if(this.calDBSource==this.CAL_FILE) {
             this.loadConstants(this.prevCalFilename);
         }
         else {
-            System.out.println("Using default constants for module " + this.getName());            
+            System.out.println(this.getName() + " set to default");            
         }
+        if(this.prevCalib.getRowCount()!=0)
+            copyConstants(prevCalib, calib);
     }  
     
+    public void loadConstants(IndexedTable ccdbTable) {
+
+    }
+    
+    public void loadConstants(int run) {
+        if(prevCalib.getRowCount()==0 && ccdb!=null && ccdbTableName!=null) {
+            System.out.println(this.getName() + " module constants will be read  from " + ccdbTableName + " with run number " + run);
+            this.loadConstants(ccdb.getConstants(run, ccdbTableName));
+            if(prevCalib.getRowCount()!=0) {
+                this.getGlobalCalibration().put(moduleName, prevCalib);
+                this.loadConstantsToFunctions();
+            }
+        }
+    }
+    
     public void loadConstants(String fileName) {     
-	System.out.println("Loading calibration values for module " + this.getName());
-        System.out.println("File: " + fileName);
+	System.out.println(this.getName() + " module constants will be read from file: " + fileName);
         // read in the left right values from the text file			
         String line = null;
         try {
@@ -338,7 +351,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
                 }
                 else {
                     int sector = Integer.parseInt(lineValues[0]);
-                    int layer = Integer.parseInt(lineValues[1]);
+                    int layer  = Integer.parseInt(lineValues[1]);
                     int paddle = Integer.parseInt(lineValues[2]);
                     prevCalib.addEntry(sector, layer, paddle);
 //                    System.out.println(lineValues.length + " " + prevCalib.getColumnCount() + " " + prevCalib.getRowCount()+ " " + line);
@@ -353,7 +366,6 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
             }
 
             bufferedReader.close();
-            prevCalib.show();
             this.getGlobalCalibration().put(moduleName, prevCalib);
         } catch (FileNotFoundException ex) {
             System.out.println(
@@ -407,8 +419,9 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
                 }
             }
     }
-
-    public void processEvent(DataEvent event) {
+    
+    public void processEvent(FTCalEvent event) {
+    
     }
     
     public void processShape(DetectorShape2D dsd) {
@@ -454,6 +467,15 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         this.analyze();
     }   
 
+    public void reset() {
+        nProcessed=0;
+        this.resetEventListener();
+    }
+     
+    public void resetEventListener() {
+        
+    }
+     
     public void saveConstants(String name) {
 
        String filename = name + "/" + this.getName() + ".txt";
@@ -487,6 +509,14 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
 
     }
 
+    public void savePicture(String path) {
+        this.getCanvas().save(path + "/" + this.getName() + ".png");
+    }
+    
+    public void setPreviousCalibrationTable(CalibrationConstants prevCalib) {
+        this.prevCalib = prevCalib;
+    }
+
     public void setCalibrationTablePrecision(int nDigits) {
 	this.calib.setPrecision(nDigits);
 	this.prevCalib.setPrecision(nDigits);        
@@ -500,6 +530,11 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         this.getCanvas().initTimer(time);
     }
 
+    public void setCCDBTable(String table) {
+        this.ccdbTableName = table;
+        System.out.println(this.getName() + " module calibration table set to " + this.ccdbTableName);
+    }
+    
     public void setDrawOptions() {
 
     }
@@ -511,7 +546,7 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
     public final void setRange(double min, double max) {
         this.range[0]=min;
         this.range[1]=max;
-        System.out.println("Histogram range for module " + this.getName() + " set to: " + this.range[0] + ":" + this.range[1]);
+        System.out.println(this.getName() + " module histogram range set to: " + String.format("%.3f:%.3f", this.range[0], this.range[1]));
         this.resetEventListener();
     }
     
@@ -519,19 +554,19 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         this.cols = new double[2];
         this.cols[0]=min;
         this.cols[1]=max;
-        System.out.println("Color range for module " + this.getName() + " set to: " + this.cols[0] + ":" + this.cols[1]);
+        System.out.println(this.getName() + " module color range et to: " + String.format("%.3f:%.3f", this.cols[0], this.cols[1]));
     }
     
     public final void setReference(double value) {
         this.reference=value;
-        System.out.println("Reference calibration value for module " + this.getName() + " set to: " + this.reference);
+        System.out.println(this.getName() + " module reference calibration value set to: " + String.format("%.3f", this.reference));
         this.resetEventListener();
     }
     
     public final void setScaleShift(double scale, double shift) {
         this.scaleshift[0]=scale;
         this.scaleshift[1]=shift;
-        System.out.println("Constant scale/shift for module " + this.getName() + " set to: " + this.scaleshift[0] + "/" + this.scaleshift[1]);
+        System.out.println(this.getName() + " module constant scale/shift set to: " + String.format("%.3f/%.3f", this.scaleshift[0], this.scaleshift[1]));
         this.resetEventListener();
     }
 
@@ -634,9 +669,13 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
 
     }
 
+    public void setConstantsManager(ConstantsManager ccdb) {
+        this.ccdb = ccdb;
+    }
+
     public void showPlots() {
         this.setCanvasBookData();
-        if(this.canvasBook.getCanvasDataSets().size()!=0) {
+        if(!this.canvasBook.getCanvasDataSets().isEmpty()) {
             JFrame frame = new JFrame(this.getName());
             frame.setSize(1000, 800);        
             frame.add(canvasBook);
@@ -649,6 +688,21 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
         }
     }
     
+    public void timerUpdate() {
+        this.analyze();
+        this.updateTable();
+    }
+    
+    public void updatePreviousConstants() {
+        if(this.calDBSource == FTCalibrationModule.CAL_FILE) {
+            copyConstants(calib, prevCalib);
+        }
+    }
+    
+    public void updateTable() {
+
+    }
+
     public void writeDataGroup(TDirectory dir) {
         String folder = "/" + this.getName();
         dir.mkdir(folder);
@@ -667,17 +721,5 @@ public class FTCalibrationModule extends CalibrationEngine implements Calibratio
                 }
             }
         }
-    }
-
-    public void setConstantsManager(ConstantsManager ccdb) {
-        this.ccdb = ccdb;
-    }
-    
-    public void timeUpdate() {
-
-    }
-
-    public void updateTable() {
-
     }
 }

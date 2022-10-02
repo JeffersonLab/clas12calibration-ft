@@ -1,6 +1,8 @@
 package org.clas.viewer;
 
 
+import org.clas.ftdata.FTCalDataProvider;
+import org.clas.ftdata.FTCalEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dialog;
@@ -13,11 +15,13 @@ import java.io.File;
 import java.nio.file.FileSystems;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
@@ -38,7 +42,6 @@ import org.clas.modules.FTElasticCalibration;
 import org.clas.modules.FTEnergyCalibration;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.base.DataEventType;
-import org.jlab.io.task.DataSourceProcessorPane;
 import org.jlab.io.task.IDataEventListener;
 import org.clas.modules.FTEnergyCorrection;
 import org.clas.modules.FTPedestalCalibration;
@@ -52,6 +55,8 @@ import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.base.GStyle;
 import org.jlab.groot.data.TDirectory;
 import org.jlab.io.base.DataBank;
+import org.jlab.logging.DefaultLogger;
+import org.jlab.utils.options.OptionParser;
 
 /**
  *
@@ -63,7 +68,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     JPanel                   mainPanel     = null;
     JMenuBar                 menuBar       = null;
-    DataSourceProcessorPane  processorPane = null;
+    FTProcessorPane          processorPane = null;
     JSplitPane               splitPanel    = null;
     JPanel                   detectorPanel = null;
     FTCalDetector            detectorView  = null;
@@ -76,14 +81,25 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     ConstantsManager                        ccdb = new ConstantsManager();
     Map<String,CalibrationConstants> globalCalib = new HashMap<>();
     
-    private int canvasUpdateTime   = 2000;
-    private int analysisUpdateTime = 2000000;
-    private int runNumber  = 0;
-    private String workDir = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
-    ArrayList<FTCalibrationModule> modules = new ArrayList();
+    FTCalDataProvider dataProvider = null;
+    
+    private int     canvasUpdateTime   = 2000;
+    private int     analysisUpdateTime = 2000000;
+    private int     runNumber          = 0;
+    private boolean saveConstants      = false;
+    private boolean quitWhenDone       = false;
+    private int     nIterations        = 10; 
+    private int     currentIteration   = 0;
+    private String  workDir            = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
+    
+    Map<String, FTCalibrationModule> modules = new LinkedHashMap();
 
-    public CalibrationViewer() {
+    public static Logger LOGGER = Logger.getLogger(CalibrationViewer.class.getName());
+    
+    public CalibrationViewer(boolean saveConstants, boolean quitWhenDone, int nIterations) {
        
+        LOGGER.setLevel(Level.INFO);
+        
         GStyle.setWorkingDirectory(workDir);
 
         // create main panel
@@ -170,25 +186,29 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         ccdb.init(Arrays.asList(new String[]{
                     "/calibration/ft/ftcal/charge_to_energy",
                     "/calibration/ft/ftcal/time_offsets",
+                    "/calibration/ft/ftcal/time_walk",
                     "/calibration/ft/ftcal/energycorr",
                     "/daq/tt/ftcal"}));
-        ccdb.setVariation("ftvertex");
+        ccdb.setVariation("default");
         
         // create module viewer
-        modules.add(new FTEnergyCalibration(detectorView,"EnergyCalibration",ccdb,globalCalib));
-        modules.add(new FTElasticCalibration(detectorView,"ElasticCalibration",ccdb,globalCalib));
-        modules.add(new FTTimeCalibration(detectorView,"TimeCalibration",ccdb,globalCalib));
-        modules.add(new FTTimeWalkCalibration(detectorView,"TimeWalk",ccdb,globalCalib));
-        modules.add(new FTPedestalCalibration(detectorView,"PedestalCalibration",ccdb,globalCalib));
-        modules.add(new FTThresholdsCalibration(detectorView,"ThresholdCalibration",ccdb,globalCalib));
-        modules.add(new FTEnergyCorrection(detectorView,"EnergyCorrection",ccdb,globalCalib));
+        modules.put("EnergyCalibration",    new FTEnergyCalibration(detectorView,"EnergyCalibration",ccdb,globalCalib));
+        modules.put("ElasticCalibration",   new FTElasticCalibration(detectorView,"ElasticCalibration",ccdb,globalCalib));
+        modules.put("TimeCalibration",      new FTTimeCalibration(detectorView,"TimeCalibration",ccdb,globalCalib));
+        modules.put("TimeWalk",             new FTTimeWalkCalibration(detectorView,"TimeWalk",ccdb,globalCalib));
+        modules.put("PedestalCalibration",  new FTPedestalCalibration(detectorView,"PedestalCalibration",ccdb,globalCalib));
+        modules.put("ThresholdCalibration", new FTThresholdsCalibration(detectorView,"ThresholdCalibration",ccdb,globalCalib));
+        modules.put("EnergyCorrection",     new FTEnergyCorrection(detectorView,"EnergyCorrection",ccdb,globalCalib));
         modulePanel = new JTabbedPane();
-        for(int k=0; k<modules.size(); k++) {
-            
-            modulePanel.add(modules.get(k).getName(),modules.get(k).getView());
-            if(moduleSelect == null) moduleSelect = modules.get(k).getName();
+        for(String name : this.modules.keySet()) {
+            modulePanel.add(name,modules.get(name).getView());
         }
         modulePanel.addChangeListener(this);
+        if(moduleSelect == null) moduleSelect = "EnergyCalibration";
+        this.modules.get(moduleSelect).processShape(detectorView.getDefaultShape());
+        this.detectorView.repaint();
+        
+        dataProvider = new FTCalDataProvider(detectorView);
         
         // create split panel to host detector view and canvas+constants view
         splitPanel = new JSplitPane();
@@ -199,9 +219,9 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
 
         // create data processor panel
-        processorPane = new DataSourceProcessorPane();
-        processorPane.setUpdateRate(analysisUpdateTime);
+        processorPane = new FTProcessorPane();
         processorPane.addEventListener(this);
+        processorPane.setUpdateRate(analysisUpdateTime);
     
         // compose main panel
         mainPanel.add(splitPanel);
@@ -209,6 +229,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         this.setCanvasUpdate(canvasUpdateTime);
         
+        this.saveConstants = saveConstants;
+        this.quitWhenDone  = quitWhenDone;
+        this.nIterations   = nIterations;
+
         configFrame.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
      
     }
@@ -221,45 +245,25 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
         if("Adjust fit...".equals(e.getActionCommand())) {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName().equals(moduleSelect)) {
-                    this.modules.get(k).adjustFit();
-                }
-            } 
+            this.modules.get(moduleSelect).adjustFit();
         }        
         if("Set range...".equals(e.getActionCommand())) {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName().equals(moduleSelect)) {
-                    this.modules.get(k).setRange();
-                }
-            } 
+            this.modules.get(moduleSelect).setRange();
         }        
         if("Set color map range...".equals(e.getActionCommand())) {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName().equals(moduleSelect)) {
-                    this.modules.get(k).setCols();
-                }
-            } 
+            this.modules.get(moduleSelect).setCols();
             this.detectorView.repaint();
         }        
         if("Set reference calibration value...".equals(e.getActionCommand())) {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName().equals(moduleSelect)) {
-                    this.modules.get(k).setReference();
-                }
-            } 
+            this.modules.get(moduleSelect).setReference();
             this.detectorView.repaint();
         }        
         if("Set calibration scale factor...".equals(e.getActionCommand())) {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName().equals(moduleSelect)) {
-                    this.modules.get(k).setScaleShift();
-                }
-            } 
+            this.modules.get(moduleSelect).setScaleShift();
             this.detectorView.repaint();
         }        
         if("Open histograms file...".equals(e.getActionCommand())) {
@@ -275,7 +279,18 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             if(fileName != null) this.loadHistosFromFile(fileName);
         }        
         if("Print histograms to file...".equals(e.getActionCommand())) {
-            this.printHistosToFile();
+            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
+            String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
+            JFileChooser fc = new JFileChooser();
+            File workingDirectory = new File(this.workDir);
+            fc.setCurrentDirectory(workingDirectory);
+            File file = new File(dirName);
+            fc.setSelectedFile(file);
+            int returnValue = fc.showSaveDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+               dirName = fc.getSelectedFile().getAbsolutePath();            
+            }
+            this.savePictures(dirName);
         }
         if("Save histograms...".equals(e.getActionCommand())) {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
@@ -293,13 +308,13 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
         if("View all".equals(e.getActionCommand())) {
             //System.out.println("Adjusting fits for module " + this.modules.get(moduleParSelect).getName());
-            for(int k=0; k<this.modules.size(); k++) {
-                if(this.modules.get(k).getName().equals(moduleSelect)) {
-                    this.modules.get(k).showPlots();
+            for(String name : this.modules.keySet()) {
+                if(this.modules.get(name).getName().equals(moduleSelect)) {
+                    this.modules.get(name).showPlots();
                 }
             } 
         }
-        if(e.getActionCommand()=="Load...") {
+        if("Load...".equals(e.getActionCommand())) {
             String filePath = null;
             JFileChooser fc = new JFileChooser();
             fc.setDialogTitle("Choose Constants Folder...");
@@ -311,12 +326,9 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                filePath = fc.getSelectedFile().getAbsolutePath();            
             }
-            for(int k=0; k<this.modules.size(); k++) {
-                String fileName = filePath + "/" + this.modules.get(k).getName() + ".txt";
-                this.modules.get(k).loadConstants(filePath);
-            }
-       }
-        if(e.getActionCommand()=="Save...") {
+            this.loadConstants(filePath, null);
+        }
+        if("Save...".equals(e.getActionCommand())) {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
             String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
             JFileChooser fc = new JFileChooser();
@@ -328,28 +340,11 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                dirName = fc.getSelectedFile().getAbsolutePath();            
             }
-            File theDir = new File(dirName);
-            // if the directory does not exist, create it
-            if (!theDir.exists()) {
-                boolean result = false;
-                try{
-                    theDir.mkdir();
-                    result = true;
-                } 
-                catch(SecurityException se){
-                    //handle it
-                }        
-                if(result) {    
-                System.out.println("Created directory: " + dirName);
-                }
-            }
-            for(int k=0; k<this.modules.size(); k++) {
-                this.modules.get(k).saveConstants(dirName);
-            }
+            this.saveConstants(dirName);
         }
-        if(e.getActionCommand()=="Update table") {
-            for(int k=0; k<this.modules.size(); k++) {
-                this.modules.get(k).updateTable();
+        if("Update table".equals(e.getActionCommand())) {
+            for(String name : this.modules.keySet()) {
+                this.modules.get(name).updateTable();
             }
         }
         if (e.getActionCommand().compareTo("Next")==0) {
@@ -380,9 +375,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             System.out.println("Configuration settings - Previous calibration values");
             System.out.println("----------------------------------------------------");
             // get the previous iteration calibration values
-            for(int k=0; k<this.modules.size(); k++) {
-                this.modules.get(k).loadConstants();
+            for(String name : this.modules.keySet()) {
+                this.modules.get(name).loadConstants();
             }
+            dataProvider.loadConstants(globalCalib);
         }
     }
 
@@ -399,16 +395,17 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         stepOuterPanel.add(stepPanel, BorderLayout.NORTH);
         GridBagConstraints c  = new GridBagConstraints();
 
-        
-        for(int k=0; k<this.modules.size(); k++) {
+        int k = 0;
+        for(String name : this.modules.keySet()) {
             c.gridx = 0; c.gridy = k;
             c.anchor = c.WEST;
             JCheckBox stepCheck = new JCheckBox();
-            stepCheck.setName(this.modules.get(k).getName());
-            stepCheck.setText(this.modules.get(k).getName());
+            stepCheck.setName(name);
+            stepCheck.setText(name);
             stepCheck.setSelected(true);
             stepCheck.addActionListener(this);
             stepPanel.add(stepCheck,c);
+            k++;
         }
 		
         JPanel butPage1 = new configButtonPanel(this, false, "Next");
@@ -420,8 +417,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         JPanel confOuterPanel = new JPanel(new BorderLayout());
         Box confPanel = new Box(BoxLayout.Y_AXIS);
         
-        for(int k=0; k<this.modules.size(); k++) {        
-            FTPrevConfigPanel configPanel = new FTPrevConfigPanel(this.modules.get(k));
+        for(String name : this.modules.keySet()) {
+            FTPrevConfigPanel configPanel = new FTPrevConfigPanel(this.modules.get(name));
             confPanel.add(configPanel);
         }
 		
@@ -484,26 +481,63 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     public void dataEventAction(DataEvent de) {
         
         if(de!=null) this.runNumber = this.getRunNumber(de);
-        if (de.getType()==DataEventType.EVENT_START) {
-                //System.out.println(" EVENT_START");
+        
+        if(runNumber>0) {
+            for(String name : this.modules.keySet()) {
+                this.modules.get(name).loadConstants(runNumber);
+            }
+            dataProvider.loadConstants(globalCalib);
         }
-        else if (de.getType()==DataEventType.EVENT_ACCUMULATE) {
-               // System.out.println(" EVENT_ACCUMULATE" + i);
-        }
-        else if (de.getType()==DataEventType.EVENT_SINGLE) {
-             //   System.out.println("EVENT_SINGLE from CalibrationViewer");
+        
+        if (de.getType()==DataEventType.EVENT_START ||
+            de.getType()==DataEventType.EVENT_ACCUMULATE ||
+            de.getType()==DataEventType.EVENT_SINGLE) {
+            FTCalEvent ftEvent = dataProvider.getEvent(de);
+            for(String name : this.modules.keySet()) {
+                this.modules.get(name).dataEventAction(ftEvent);
+            }
         }
         else if (de.getType()==DataEventType.EVENT_STOP) {
-               // System.out.println(" EVENT_STOP else");
-               // System.out.println(" Analyzed");
-        } 
-	for(int k=0; k<this.modules.size(); k++) {
-            this.modules.get(k).dataEventAction(de);
-        }
-        this.detectorView.repaint();
+            
+            System.out.println("EVENT_STOP");           
 
+           for(String name : this.modules.keySet()) {
+                this.modules.get(name).analyze();
+                this.modules.get(name).updateTable();
+                this.modules.get(name).processShape(detectorView.getDefaultShape());
+            }
+            this.detectorView.repaint(); 
+
+            if(this.saveConstants) this.saveAll();
+
+            currentIteration++;
+            if(currentIteration<nIterations) {
+                System.out.println("\nResetting for iteration " + currentIteration);
+                for(String name : this.modules.keySet()) {
+                    this.modules.get(name).updatePreviousConstants();
+                }
+                this.dataProvider.loadConstants(globalCalib);
+                this.processorPane.setHipo4File(this.processorPane.getDataFile());
+            }
+            else if(this.quitWhenDone)  {
+                System.exit(0);
+            }
+        }
     }
 
+    public void loadConstants(String path, String[] loadingModules) {
+        if(loadingModules==null && loadingModules.length==0) {
+            loadingModules = (String[]) this.modules.keySet().toArray();
+        }
+        for(String name : loadingModules) {
+            String fileName = path + "/" + name + ".txt";
+            this.modules.get(name).calDBSource = FTCalibrationModule.CAL_FILE;
+            this.modules.get(name).prevCalFilename = fileName;
+            this.modules.get(name).loadConstants();
+        }
+        dataProvider.loadConstants(globalCalib);        
+    }
+    
     public void loadHistosFromFile(String fileName) {
         // TXT table summary FILE //
         System.out.println("Opening file: " + fileName);
@@ -513,16 +547,23 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         dir.cd();
         dir.pwd();
         
-        for(int k=0; k<this.modules.size(); k++) {
-            this.modules.get(k).readDataGroup(dir);
+        for(String name : this.modules.keySet()) {
+            this.modules.get(name).readDataGroup(dir);
         }
         this.detectorView.repaint();
     }
     
-    public void printHistosToFile() {
+    public void saveAll() {
         DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
-        String data = this.workDir + "/kpp-pictures/clas12rec_run_" + this.runNumber + "_" + df.format(new Date());        
-        File theDir = new File(data);
+        String dirName = this.workDir + "/ftCalCalib_" + this.runNumber;
+        this.saveConstants(dirName + "_" + df.format(new Date()));
+        this.savePictures(dirName + "_" + df.format(new Date()));
+        this.saveConstants(dirName);
+    }
+    
+    public void saveConstants(String dirName) {
+        System.out.println();
+        File theDir = new File(dirName);
         // if the directory does not exist, create it
         if (!theDir.exists()) {
             boolean result = false;
@@ -534,44 +575,69 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 //handle it
             }        
             if(result) {    
-            System.out.println("Created directory: " + data);
+            System.out.println("Created directory: " + dirName);
+            }
+        }        
+        for(String name : this.modules.keySet()) {
+            this.modules.get(name).saveConstants(dirName);
+        }
+    }
+    
+    public void savePictures(String dirName) {
+        File theDir = new File(dirName);
+        // if the directory does not exist, create it
+        if (!theDir.exists()) {
+            boolean result = false;
+            try{
+                theDir.mkdir();
+                result = true;
+            } 
+            catch(SecurityException se){
+                //handle it
+            }        
+            if(result) {    
+            System.out.println("Created directory: " + dirName);
             }
         }
-        String fileName = data + "/clas12_canvas.png";
-        System.out.println(fileName);
+        for(String name : this.modules.keySet()) {
+            this.modules.get(name).savePicture(dirName);
+        }
     }
     
     @Override
     public void timerUpdate() {
-        this.detectorView.repaint();
-	for(int k=0; k<this.modules.size(); k++) {
-            this.modules.get(k).timerUpdate();
+        if(this.processorPane.getProgress()>0) {
+            for(String name : this.modules.keySet()) {
+                this.modules.get(name).timerUpdate();
+            }
+            this.detectorView.repaint(); 
         }
-        
+        wait(5000);
     }
 
     @Override
     public void resetEventListener() {
-	for(int k=0; k<this.modules.size(); k++) {
-            this.modules.get(k).resetEventListener();
+        System.out.println("Resetting modules");
+	for(String name : this.modules.keySet()) {
+            this.modules.get(name).resetEventListener();
         }
     }
 
     @Override
     public void processShape(DetectorShape2D dsd) {
-	for(int k=0; k<this.modules.size(); k++) {
-            this.modules.get(k).processShape(dsd);
+	for(String name : this.modules.keySet()) {
+            this.modules.get(name).processShape(dsd);
         }
     }
 
     @Override
     public void update(DetectorShape2D dsd) {
 //        System.out.println("Changing color");
-	for(int k=0; k<this.modules.size(); k++) {
-            if(this.modules.get(k).getName().equals(moduleSelect)) {
-                Color col = this.modules.get(k).getColor(dsd);
+	for(String name : this.modules.keySet()) {
+            if(name.equals(moduleSelect)) {
+                Color col = this.modules.get(name).getColor(dsd);
                 dsd.setColor(col.getRed(), col.getGreen(), col.getBlue());
-                dsd.setCounter(this.modules.get(k).getNEvents(dsd));
+                dsd.setCounter(this.modules.get(name).getNEvents(dsd));
             }
         }
     }
@@ -579,8 +645,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
    public void saveHistosToFile(String fileName) {
         // TXT table summary FILE //
         TDirectory dir = new TDirectory();
-        for(int k=0; k<this.modules.size(); k++) {
-            this.modules.get(k).writeDataGroup(dir);
+        for(String name : this.modules.keySet()) {
+            this.modules.get(name).writeDataGroup(dir);
         }
         System.out.println("Saving histograms to file " + fileName);
         dir.writeFile(fileName);
@@ -589,8 +655,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     public void setCanvasUpdate(int time) {
         System.out.println("Setting " + time + " ms update interval");
         this.canvasUpdateTime = time;
-        for(int k=0; k<this.modules.size(); k++) {
-            this.modules.get(k).setCanvasUpdate(time);
+        for(String name : this.modules.keySet()) {
+            this.modules.get(name).setCanvasUpdate(time);
         }
     }
 
@@ -602,16 +668,61 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         this.detectorView.repaint();
     }
 
+    public static void wait(int ms)
+    {
+        try
+        {
+            Thread.sleep(ms);
+        }
+        catch(InterruptedException ex)
+        {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     public static void main(String[] args){
-        JFrame frame = new JFrame("Calibration");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        CalibrationViewer viewer = new CalibrationViewer();
-        //frame.add(viewer.getPanel());
-        frame.add(viewer.mainPanel);
-        frame.setJMenuBar(viewer.menuBar);
-        frame.setSize(1600, 900);
-        frame.setVisible(true);
-        viewer.configureFrame();
+        
+        OptionParser parser = new OptionParser();
+        
+        parser.addOption("-i", "",  "input file");
+        parser.addOption("-d", "",  "path to previous calibration constants folder");
+        parser.addOption("-l", "",  "colon-separated list of modules that should load constants from text files");
+        parser.addOption("-n", "1", "number of iterations");
+        parser.addOption("-q", "0", "quit when completed (0=false; 1=true)");
+        parser.addOption("-s", "0", "save constants (0=false; 1=true)");
+        parser.addOption("-w", "1", "open GUI window (0=false; 1=true)");
+        
+        parser.parse(args);
+        
+        String inputFileName  = parser.getOption("-i").stringValue();
+        String constantsDir   = parser.getOption("-d").stringValue();
+        String[] loadModules  = parser.getOption("-l").stringValue().split(":");
+        int     nIterations   = parser.getOption("-n").intValue();
+        boolean quitWhenDone  = parser.getOption("-q").intValue()!=0;
+        boolean saveConstants = parser.getOption("-s").intValue()==1;
+        boolean openWindow    = parser.getOption("-w").intValue()==1;
+        
+        DefaultLogger.initialize();
+        
+        CalibrationViewer viewer = new CalibrationViewer(saveConstants, quitWhenDone, nIterations);
+
+        if(openWindow) {
+            JFrame frame = new JFrame("Calibration");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.add(viewer.mainPanel);
+            frame.setJMenuBar(viewer.menuBar);
+            frame.setSize(1600, 900);
+            frame.setVisible(true);
+        }
+        
+        if(constantsDir.isBlank())
+            viewer.configureFrame();
+        else 
+            viewer.loadConstants(constantsDir, loadModules);
+
+        if(!inputFileName.isEmpty()) {
+            viewer.processorPane.setHipo4File(inputFileName);
+        }
     }
 
 

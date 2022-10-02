@@ -1,8 +1,8 @@
 package org.clas.modules;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.clas.ftdata.FTCalCluster;
+import org.clas.ftdata.FTCalEvent;
+import org.clas.ftdata.FTCalHit;
 import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
@@ -11,14 +11,12 @@ import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
-import org.jlab.io.base.DataBank;
-import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
 import org.jlab.clas.pdg.PhysicsConstants;
-import org.jlab.clas.physics.Particle;
 import org.jlab.groot.data.H2F;
+import org.jlab.utils.groups.IndexedTable;
 
 /**
  *
@@ -30,9 +28,10 @@ public class FTTimeCalibration extends FTCalibrationModule {
     
     public FTTimeCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "offset:offset_error:delta:resolution",3, ccdb, gConstants);
+        this.setCCDBTable("/calibration/ft/ftcal/time_offsets");
         this.getCalibrationTable().addConstraint(5, -0.1, 0.1);
         this.setRange(30.,40.);
-        this.setRange(-10.,0.);
+//        this.setRange(-10.,0.);
         this.setCols(-2, 2);
     }
 
@@ -90,10 +89,6 @@ public class FTTimeCalibration extends FTCalibrationModule {
         htoffsets.setOptStat("1111");
 
         for (int key : this.getDetector().getDetectorComponents()) {
-            // initializa calibration constant table
-            this.getCalibrationTable().addEntry(1, 1, key);
-            this.getCalibrationTable().setDoubleValue(0.0, "offset",   1,1,key);
-
             // initialize data group
             H1F htime_wide = new H1F("htime_wide_" + key, 275, -400.0, 150.0);
             htime_wide.setTitleX("Time (ns)");
@@ -155,13 +150,8 @@ public class FTTimeCalibration extends FTCalibrationModule {
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
-        getCalibrationTable().fireTableDataChanged();
     }
 
-    @Override
-    public List<CalibrationConstants> getCalibrationConstants() {
-        return Arrays.asList(getCalibrationTable());
-    }
 
     @Override
     public int getNEvents(DetectorShape2D dsd) {
@@ -172,85 +162,54 @@ public class FTTimeCalibration extends FTCalibrationModule {
     }
 
     @Override
-    public void processEvent(DataEvent event) {
-        // loop over FTCAL reconstructed cluster
-        double startTime = -100000;
-        int   triggerPID = 0;
-        // get start time
-        if(event.hasBank("REC::Event") && event.hasBank("REC::Particle")) {
-            DataBank recEvent = event.getBank("REC::Event");
-            DataBank recPart = event.getBank("REC::Particle");
-            startTime  = recEvent.getFloat("startTime", 0);
-            if(recPart.getShort("status", 0)<-2000) 
-                triggerPID = recPart.getInt("pid",0);
+    public void loadConstants(IndexedTable table) {
+        for(int i=0; i<table.getRowCount(); i++) {
+            int sector = Integer.valueOf((String)table.getValueAt(i, 0));
+            int layer  = Integer.valueOf((String)table.getValueAt(i, 1));
+            int comp   = Integer.valueOf((String)table.getValueAt(i, 2));
+            double offset     = table.getDoubleValue("time_offset", sector, layer, comp);
+            double resolution = table.getDoubleValue("time_rms",    sector, layer, comp);
+            this.getPreviousCalibrationTable().addEntry(sector, layer, comp);
+            for(int j=3; j<this.getPreviousCalibrationTable().getColumnCount(); j++) {
+                this.getPreviousCalibrationTable().setDoubleValue(0.0, this.getPreviousCalibrationTable().getColumnName(j), sector, layer, comp);
+            }                
+            this.getPreviousCalibrationTable().setDoubleValue(offset,     "offset",     sector, layer, comp);
+            this.getPreviousCalibrationTable().setDoubleValue(resolution, "resolution", sector, layer, comp);
         }
+        this.getPreviousCalibrationTable().fireTableDataChanged();    
+    }
+
+    @Override
+    public void processEvent(FTCalEvent event) {
         // loop over FTCAL reconstructed cluster
-        if (event.hasBank("FT::particles") && event.hasBank("FTCAL::clusters") && event.hasBank("FTCAL::hits") && event.hasBank("FTCAL::adc")) {
-            ArrayList<Particle> ftParticles = new ArrayList();
-            DataBank particlesFT  = event.getBank("FT::particles");
-            DataBank clusterFTCAL = event.getBank("FTCAL::clusters");
-            DataBank hitFTCAL     = event.getBank("FTCAL::hits");
-            DataBank adcFTCAL     = event.getBank("FTCAL::adc");
+        if(event.getTriggerPID()==11 && event.getStartTime()>0 && !event.getClusters().isEmpty()) {
             // start from clusters
-            for (int loop = 0; loop < clusterFTCAL.rows(); loop++) {
-                int    cluster = getDetector().getComponent(clusterFTCAL.getFloat("x", loop), clusterFTCAL.getFloat("y", loop));
-                int    id      = clusterFTCAL.getShort("id", loop);
-                int    size    = clusterFTCAL.getShort("size", loop);
-                int    charge  = particlesFT.getByte("charge", loop);
-                double x       = clusterFTCAL.getFloat("x", loop);
-                double y       = clusterFTCAL.getFloat("y", loop);
-                double z       = this.getConstants().crystal_distance+this.getConstants().shower_depth-this.getConstants().z0;//clusterFTCAL.getFloat("z", loop);
-                double time    = clusterFTCAL.getFloat("time", loop);
-                double energy  = clusterFTCAL.getFloat("energy", loop);
-                double energyR = clusterFTCAL.getFloat("recEnergy", loop);
-                double path    = Math.sqrt(x*x+y*y+z*z);
-                double theta   = Math.toDegrees(Math.acos(z/path));
-                double tof     = (path/PhysicsConstants.speedOfLight()); //ns
-                            // find hits associated to clusters
-                if(energy>0.5 && energyR>0.3 && size > 3 && charge==0) {                            
-                    double clusterTime = 0;
-                    double seedTime = 0;
-                    for(int k=0; k<hitFTCAL.rows(); k++) {
-                        int clusterID  = hitFTCAL.getShort("clusterID", k);
-                        // select hits that belong to cluster 
-                        if(clusterID == id) { 
-                            int    hitID     = hitFTCAL.getShort("hitID", k);
-                            double hitEnergy = hitFTCAL.getFloat("energy", k);
-                            int component    = adcFTCAL.getInt("component",hitID);
-                            double hitTime   = adcFTCAL.getFloat("time", hitID);   
-                            double hitCharge =((double) adcFTCAL.getInt("ADC", hitID))*(this.getConstants().LSB*this.getConstants().nsPerSample/50);
-//                            double radius    = Math.sqrt(Math.pow(this.getDetector().getIdX(component)-0.5,2.0)+Math.pow(this.getDetector().getIdY(component)-0.5,2.0))*this.getConstants().crystal_size;//meters
-//                            double hitPath   = Math.sqrt(Math.pow(this.getConstants().crystal_distance+this.getConstants().shower_depth,2)+Math.pow(radius,2));
-//                            double hitTof    = (hitPath/PhysicsConstants.speedOfLight()); //ns
-                            double twalk  = 0;
-                            double offset = 0;
-                            if(this.getGlobalCalibration().containsKey("TimeWalk")) {
-                                double amp = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("A", 1,1,component);
-                                double lam = this.getGlobalCalibration().get("TimeWalk").getDoubleValue("L", 1,1,component);
-                                twalk = amp*Math.exp(-hitCharge*lam);
-                            }
-                            if(this.getPreviousCalibrationTable().hasEntry(1,1,component)) {
-                                offset = this.getPreviousCalibrationTable().getDoubleValue("offset", 1, 1, component);
-                            }
-                            hitTime = hitTime - (this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed - twalk - offset;
-                            clusterTime += hitTime*hitEnergy;
-                            double timec = (adcFTCAL.getFloat("time", hitID) -(startTime  + tof + (this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed));
-    //                        System.out.println(component + " " + hitEnergy + " " + hitFTCAL.getFloat("time", k) + " " + hitTime);
-                            this.getDataGroup().getItem(1,1,component).getH1F("htsum").fill(timec-twalk);
-//                            this.getDataGroup().getItem(1,1,component).getH1F("htime_wide_"+component).fill(timec-twalk);
-                            this.getDataGroup().getItem(1,1,component).getH1F("htime_"+component).fill(timec-twalk);
-                            this.getDataGroup().getItem(1,1,component).getH1F("htsum_calib").fill(timec-twalk-offset);
-                            this.getDataGroup().getItem(1,1,component).getH1F("htime_calib_"+component).fill(timec-twalk-offset); 
- //                        System.out.println(key + " " + (time-twalk-offset-(this.getConstants().crystal_length-this.getConstants().shower_depth)/this.getConstants().light_speed) + " " + adc + " " + charge + " " + time + " " + twalk + " " + offset);
-//                        if(event.hasBank("FTCAL::hits")) {event.getBank("FTCAL::adc").show();event.getBank("FTCAL::hits").show();}
-                                               
+            for (FTCalCluster c : event.getClusters()) {
+                
+                double theta = Math.toDegrees(c.position(true).toVector3D().theta());
+                
+                if(c.energy(true)>0.5 && c.energyR(true)>0.3 && c.size() > 3 && c.charge()==0) {                            
+
+                    for(FTCalHit h : c) {
+                        
+                        int component = h.component();
+
+                        double offset = 0;
+                        if(this.getPreviousCalibrationTable().hasEntry(1,1,component)) {
+                            offset = this.getPreviousCalibrationTable().getDoubleValue("offset", 1, 1, component);
                         }
+
+                        double time0 = h.getZeroOffsetTime(false) - event.getStartTime() - h.path()/PhysicsConstants.speedOfLight();
+                        double timec = h.getZeroOffsetTime(true)  - event.getStartTime() - h.path()/PhysicsConstants.speedOfLight();
+                        this.getDataGroup().getItem(1,1,component).getH1F("htsum").fill(time0);
+                        this.getDataGroup().getItem(1,1,component).getH1F("htime_"+component).fill(time0);
+                        this.getDataGroup().getItem(1,1,component).getH1F("htsum_calib").fill(timec-offset);
+                        this.getDataGroup().getItem(1,1,component).getH1F("htime_calib_"+component).fill(timec-offset); 
                     }
-                    clusterTime /= energyR;
                     if(theta>2.5 && theta<4.5) {
-                        this.getDataGroup().getItem(1,1,cluster).getH1F("htsum_cluster").fill(clusterTime-tof-startTime);
-                        this.getDataGroup().getItem(1,1,cluster).getH2F("h2d_cluster").fill(energy,clusterTime-tof-startTime);
-                        this.getDataGroup().getItem(1,1,cluster).getH1F("htcluster_"+cluster).fill(clusterTime-tof-startTime);                                
+                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htsum_cluster").fill(c.vertexTime(true)-event.getStartTime());
+                        this.getDataGroup().getItem(1,1,c.seed()).getH2F("h2d_cluster").fill(c.energy(true),c.vertexTime(true)-event.getStartTime());
+                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htcluster_"+c.seed()).fill(c.vertexTime(true)-event.getStartTime());                                
                   //                System.out.println(time + " " + clusterTime);
                     }
                 }
@@ -266,7 +225,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
         this.initTimeGaussFitPar(ftime,htime, 0.35, false);
         DataFitter.fit(ftime,htime,"LQ");
         for (int key : this.getDetector().getDetectorComponents()) {
-//            this.getDataGroup().getItem(1,1,key).getGraph("gtoffsets").reset();
+//            this.getDataGroup().getItem(1,1,key).getGraph("gtoffsets").resetEventListener();
             this.getDataGroup().getItem(1,1,key).getH1F("htoffsets").reset();
         }
         for (int key : this.getDetector().getDetectorComponents()) {
