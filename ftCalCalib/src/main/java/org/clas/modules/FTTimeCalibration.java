@@ -94,11 +94,11 @@ public class FTTimeCalibration extends FTCalibrationModule {
             htime_wide.setTitleX("Time (ns)");
             htime_wide.setTitleY("Counts");
             htime_wide.setTitle("Component " + key);
-            H1F htime = new H1F("htime_" + key, 500, this.getRange()[0], this.getRange()[1]);
+            H1F htime = new H1F("htime_" + key, 250, this.getRange()[0], this.getRange()[1]);
             htime.setTitleX("Time (ns)");
             htime.setTitleY("Counts");
             htime.setTitle("Component " + key);
-            H1F htime_calib = new H1F("htime_calib_" + key, 200, -4., 4.);
+            H1F htime_calib = new H1F("htime_calib_" + key, 100, -4., 4.);
             htime_calib.setTitleX("Time (ns)");
             htime_calib.setTitleY("Counts");
             htime_calib.setTitle("Component " + key);
@@ -120,7 +120,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
             ftime_calib.setOptStat("1111");
 //            ftime.setLineColor(2);
 //            ftime.setLineStyle(1);
-            H1F htcluster = new H1F("htcluster_" + key, 200, -2., 2.);
+            H1F htcluster = new H1F("htcluster_" + key, 100, -2., 2.);
             htcluster.setTitleX("Time (ns)");
             htcluster.setTitleY("Counts");
             htcluster.setTitle("Cluster Time");
@@ -222,35 +222,29 @@ public class FTTimeCalibration extends FTCalibrationModule {
 //        System.out.println("Analyzing");
         H1F htime = this.getDataGroup().getItem(1,1,8).getH1F("htsum_cluster");
         F1D ftime = this.getDataGroup().getItem(1,1,8).getF1D("fsum_cluster");
-        this.initTimeGaussFitPar(ftime,htime, 0.35, false);
-        DataFitter.fit(ftime,htime,"LQ");
+        this.gaussFit(ftime,htime, 2.0, false);
+
         for (int key : this.getDetector().getDetectorComponents()) {
-//            this.getDataGroup().getItem(1,1,key).getGraph("gtoffsets").resetEventListener();
             this.getDataGroup().getItem(1,1,key).getH1F("htoffsets").reset();
         }
         for (int key : this.getDetector().getDetectorComponents()) {
             htime = this.getDataGroup().getItem(1,1,key).getH1F("htime_" + key);
             ftime = this.getDataGroup().getItem(1,1,key).getF1D("ftime_" + key);
-            this.initTimeGaussFitPar(ftime,htime, 0.5, false);
-            DataFitter.fit(ftime,htime,"LQ");
-
-     //       this.getDataGroup().getItem(1,1,key).getGraph("gtoffsets").addPoint(key, ftime.getParameter(1), 0, ftime.parameter(1).error());
+            this.gaussFit(ftime,htime, 1.5, true);
             
             htime = this.getDataGroup().getItem(1,1,key).getH1F("htime_calib_" + key);
             ftime = this.getDataGroup().getItem(1,1,key).getF1D("ftime_calib_" + key);
-            this.initTimeGaussFitPar(ftime,htime, 0.5, false);
-            DataFitter.fit(ftime,htime,"LQ");
+            this.gaussFit(ftime,htime, 1.5, true);
             
             double hoffset = ftime.getParameter(1);
             if(Math.abs(hoffset)<2) this.getDataGroup().getItem(1,1,key).getH1F("htoffsets").fill(hoffset);
             
             htime = this.getDataGroup().getItem(1,1,key).getH1F("htcluster_" + key);
             ftime = this.getDataGroup().getItem(1,1,key).getF1D("fcluster_" + key);
-            this.initTimeGaussFitPar(ftime,htime, 0.4, false);
-            DataFitter.fit(ftime,htime,"LQ");
+            this.gaussFit(ftime,htime, 2.0, false);
             
             double finalOffset = this.getDataGroup().getItem(1, 1, key).getF1D("ftime_" + key).getParameter(1);
-            if(this.getDataGroup().getItem(1, 1, key).getF1D("fcluster_" + key).getParameter(0)>20) {
+            if(this.getDataGroup().getItem(1, 1, key).getF1D("fcluster_" + key).getParameter(0)>8) {
                 finalOffset = finalOffset
                             + this.getDataGroup().getItem(1, 1, key).getF1D("fcluster_" + key).getParameter(1)
                             - this.getDataGroup().getItem(1, 1, key).getF1D("ftime_calib_" + key).getParameter(1);
@@ -269,21 +263,22 @@ public class FTTimeCalibration extends FTCalibrationModule {
         this.getCanvasBook().setData(this.getDataGroup(), pads);   
     }
 
-    private void initTimeGaussFitPar(F1D ftime, H1F htime, double range, boolean limits) {
+    private void gaussFit(F1D ftime, H1F htime, double range, boolean limits) {
         double hAmp  = htime.getBinContent(htime.getMaximumBin());
         double hMean = htime.getAxis().getBinCenter(htime.getMaximumBin());
-        double hRMS  = 2; //ns
-        double rangeMin = (hMean - range); 
-        double rangeMax = (hMean + range);  
-        double pm = (hMean*10.0)/100.0;
-        ftime.setRange(rangeMin, rangeMax);
+        double hRMS  = 0.4; //ns
         ftime.setParameter(0, hAmp);
         ftime.setParLimits(0, hAmp*0.8, hAmp*1.2);
         ftime.setParameter(1, hMean);
-        ftime.setParameter(2, 0.2);
+        ftime.setParameter(2, hRMS/2);
         if(limits) {
-            ftime.setParLimits(1, hMean-pm, hMean+(pm));
-            ftime.setParLimits(2, 0.05*hRMS, 0.8*hRMS);
+            ftime.setParLimits(1, hMean-hRMS/2, hMean+hRMS/2);
+        }
+        for(int i=0; i<5; i++) {
+            double rangeMin = (ftime.getParameter(1) - range*ftime.getParameter(2)); 
+            double rangeMax = (ftime.getParameter(1) + range*ftime.getParameter(2));  
+            ftime.setRange(rangeMin, rangeMax);
+            DataFitter.fit(ftime,htime,"LQ");
         }
     }    
 
