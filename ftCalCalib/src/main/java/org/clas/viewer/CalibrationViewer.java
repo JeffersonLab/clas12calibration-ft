@@ -83,20 +83,24 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     
     FTCalDataProvider dataProvider = null;
     
-    private int     canvasUpdateTime   = 2000;
-    private int     analysisUpdateTime = 2000000;
-    private int     runNumber          = 0;
-    private boolean saveConstants      = false;
-    private boolean quitWhenDone       = false;
-    private int     nIterations        = 10; 
-    private int     currentIteration   = 0;
-    private String  workDir            = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
+    private int      canvasUpdateTime   = 2000;
+    private int      analysisUpdateTime = 2000000;
+    private int      runNumber          = 0;
+    private String[] saveConstants      = null;
+    private String   constantsDir       = null;
+    private boolean  quitWhenDone       = false;
+    private int      nIterations        = 10; 
+    private int      currentIteration   = 0;
+    private String   workDir            = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
+    private String   saveDir            = null;
+    private String   oldSaveDir         = null;
+    
     
     Map<String, FTCalibrationModule> modules = new LinkedHashMap();
 
     public static Logger LOGGER = Logger.getLogger(CalibrationViewer.class.getName());
     
-    public CalibrationViewer(boolean saveConstants, boolean quitWhenDone, int nIterations) {
+    public CalibrationViewer(String[] saveConstants, boolean quitWhenDone, int nIterations) {
        
         LOGGER.setLevel(Level.INFO);
         
@@ -508,7 +512,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             this.detectorView.repaint(); 
 
-            if(this.saveConstants) this.saveAll();
+            if(this.saveConstants.length>0) this.saveAll();
 
             currentIteration++;
             if(currentIteration<nIterations) {
@@ -526,6 +530,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     }
 
     public void loadConstants(String path, String[] loadingModules) {
+        if(!path.isEmpty())
+            this.constantsDir = path;
         if(loadingModules==null && loadingModules.length==0) {
             loadingModules = (String[]) this.modules.keySet().toArray();
         }
@@ -556,9 +562,17 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     public void saveAll() {
         DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
         String dirName = this.workDir + "/ftCalCalib_" + this.runNumber;
-        this.saveConstants(dirName + "_" + df.format(new Date()));
-        this.savePictures(dirName + "_" + df.format(new Date()));
-        this.saveConstants(dirName);
+        oldSaveDir = saveDir;
+        saveDir =  dirName + "_" + df.format(new Date());
+        this.saveConstants(this.saveDir);
+        if(this.oldSaveDir!=null) 
+            this.savePictures(this.oldSaveDir);
+        else
+            this.savePictures(this.saveDir);
+        if(this.constantsDir==null)
+            this.saveConstants(dirName);
+        else 
+            this.saveConstants(this.constantsDir);
     }
     
     public void saveConstants(String dirName) {
@@ -578,8 +592,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             System.out.println("Created directory: " + dirName);
             }
         }        
-        for(String name : this.modules.keySet()) {
-            this.modules.get(name).saveConstants(dirName);
+        for(String name : this.saveConstants) {
+            if(this.modules.containsKey(name)) this.modules.get(name).saveConstants(dirName);
         }
     }
     
@@ -694,13 +708,13 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         parser.parse(args);
         
-        String inputFileName  = parser.getOption("-i").stringValue();
-        String constantsDir   = parser.getOption("-d").stringValue();
-        String[] loadModules  = parser.getOption("-l").stringValue().split(":");
-        int     nIterations   = parser.getOption("-n").intValue();
-        boolean quitWhenDone  = parser.getOption("-q").intValue()!=0;
-        boolean saveConstants = parser.getOption("-s").intValue()==1;
-        boolean openWindow    = parser.getOption("-w").intValue()==1;
+        String inputFileName   = parser.getOption("-i").stringValue();
+        String constantsDir    = parser.getOption("-d").stringValue();
+        String[] loadModules   = parser.getOption("-l").stringValue().split(":");
+        int     nIterations    = parser.getOption("-n").intValue();
+        boolean quitWhenDone   = parser.getOption("-q").intValue()!=0;
+        String[] saveConstants = parser.getOption("-s").stringValue().split(":");
+        boolean openWindow     = parser.getOption("-w").intValue()==1;
         
         DefaultLogger.initialize();
         

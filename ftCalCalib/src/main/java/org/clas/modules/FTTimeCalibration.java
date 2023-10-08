@@ -48,6 +48,12 @@ public class FTTimeCalibration extends FTCalibrationModule {
         htsum_calib.setTitleY("Counts");
         htsum_calib.setTitle("Global Time Offset");
         htsum_calib.setFillColor(44);
+        H1F htsum_cluster0 = new H1F("htsum_cluster0" , 400, -2., 2.);
+        htsum_cluster0.setTitleX("Time (ns)");
+        htsum_cluster0.setTitleY("Counts");
+        htsum_cluster0.setTitle("Cluster Time");
+        htsum_cluster0.setFillColor(44);
+        htsum_cluster0.setLineColor(1);
         H1F htsum_cluster = new H1F("htsum_cluster" , 400, -2., 2.);
         htsum_cluster.setTitleX("Time (ns)");
         htsum_cluster.setTitleY("Counts");
@@ -136,6 +142,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
             dg.addDataSet(htsum,         0);
             dg.addDataSet(htsum_calib,   1);
             dg.addDataSet(htoffsets,     2);
+            dg.addDataSet(htsum_cluster0,3);
             dg.addDataSet(htsum_cluster, 3);
             dg.addDataSet(fsum_cluster,  3);
 //            dg.addDataSet(htime_wide,    4);
@@ -207,6 +214,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
                         this.getDataGroup().getItem(1,1,component).getH1F("htime_calib_"+component).fill(timec-offset); 
                     }
                     if(theta>2.5 && theta<4.5) {
+                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htsum_cluster0").fill(c.vertexTime(false)-event.getStartTime());
                         this.getDataGroup().getItem(1,1,c.seed()).getH1F("htsum_cluster").fill(c.vertexTime(true)-event.getStartTime());
                         this.getDataGroup().getItem(1,1,c.seed()).getH2F("h2d_cluster").fill(c.energy(true),c.vertexTime(true)-event.getStartTime());
                         this.getDataGroup().getItem(1,1,c.seed()).getH1F("htcluster_"+c.seed()).fill(c.vertexTime(true)-event.getStartTime());                                
@@ -311,7 +319,8 @@ public class FTTimeCalibration extends FTCalibrationModule {
             this.getCanvas().draw(dataGroup.getH1F("htoffsets"));
             this.getCanvas().getPad(2).getAxisY().setLog(true);
             this.getCanvas().cd(3);
-            this.getCanvas().draw(dataGroup.getH1F("htsum_cluster"));
+            this.getCanvas().draw(dataGroup.getH1F("htsum_cluster0"));
+            this.getCanvas().draw(dataGroup.getH1F("htsum_cluster"), "same");
 //            this.getCanvas().cd(4);
 //            this.getCanvas().draw(dataGroup.getH1F("htime_wide_" + component));
             this.getCanvas().cd(4);
