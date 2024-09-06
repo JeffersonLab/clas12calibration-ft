@@ -34,11 +34,16 @@ public class FTCalConstants {
     public final static double THETAMAX    = 4.5; // maximum angle for FT acceptance
     
     // target position
-    public final static double Z0 = -3.0; // cm
-    public final static Point3D VERTEX = new Point3D(0, 0, Z0);
+    public static double Z0 = -3.0; // cm
+    public static Point3D VERTEX = new Point3D(0, 0, Z0);
 
     public FTCalConstants() {
         System.out.println("Constants loaded");
     }
 
+    public static void setVertex(double z) {
+        Z0 = z;
+        VERTEX = new Point3D(0, 0, Z0);
+        System.out.println("Target position set to Z0 = " + Z0 + " (cm)");
+    }
 }

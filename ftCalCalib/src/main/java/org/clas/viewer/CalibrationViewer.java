@@ -100,7 +100,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     public static Logger LOGGER = Logger.getLogger(CalibrationViewer.class.getName());
     
-    public CalibrationViewer(String[] saveConstants, boolean quitWhenDone, int nIterations) {
+    public CalibrationViewer(String[] saveConstants, boolean quitWhenDone, int nIterations, double target, boolean vertex) {
        
         LOGGER.setLevel(Level.INFO);
         
@@ -236,6 +236,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         this.saveConstants = saveConstants;
         this.quitWhenDone  = quitWhenDone;
         this.nIterations   = nIterations;
+        FTCalConstants.setVertex(target);
 
         configFrame.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
      
@@ -698,27 +699,31 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         OptionParser parser = new OptionParser();
         
-        parser.addOption("-i", "",  "input file");
-        parser.addOption("-d", "",  "path to previous calibration constants folder");
-        parser.addOption("-l", "",  "colon-separated list of modules that should load constants from text files");
-        parser.addOption("-n", "1", "number of iterations");
-        parser.addOption("-q", "0", "quit when completed (0=false; 1=true)");
-        parser.addOption("-s", "0", "save constants (0=false; 1=true)");
-        parser.addOption("-w", "1", "open GUI window (0=false; 1=true)");
+        parser.setRequiresInputList(true);
+        parser.addOption("-d", "",   "path to previous calibration constants folder");
+        parser.addOption("-l", "",   "colon-separated list of modules that should load constants from text files");
+        parser.addOption("-n", "1",  "number of iterations");
+        parser.addOption("-q", "0",  "quit when completed (0=false; 1=true)");
+        parser.addOption("-s", "",   "colon-separated list of modules that should save constants to text files");
+        parser.addOption("-t", "-3", "target position in cm");
+        parser.addOption("-v", "0",  "use target center (0) or trigger particle vertex to set the FT particle vertex");
+        parser.addOption("-w", "1",  "open GUI window (0=false; 1=true)");
         
         parser.parse(args);
         
-        String inputFileName   = parser.getOption("-i").stringValue();
+        String inputFileName   = parser.getInputList().get(0);
         String constantsDir    = parser.getOption("-d").stringValue();
         String[] loadModules   = parser.getOption("-l").stringValue().split(":");
         int     nIterations    = parser.getOption("-n").intValue();
         boolean quitWhenDone   = parser.getOption("-q").intValue()!=0;
         String[] saveConstants = parser.getOption("-s").stringValue().split(":");
+        double  targetPosition = parser.getOption("-t").doubleValue();
+        boolean vertexMode     = parser.getOption("-v").intValue()==1;
         boolean openWindow     = parser.getOption("-w").intValue()==1;
         
         DefaultLogger.initialize();
         
-        CalibrationViewer viewer = new CalibrationViewer(saveConstants, quitWhenDone, nIterations);
+        CalibrationViewer viewer = new CalibrationViewer(saveConstants, quitWhenDone, nIterations, targetPosition, vertexMode);
 
         if(openWindow) {
             JFrame frame = new JFrame("Calibration");
