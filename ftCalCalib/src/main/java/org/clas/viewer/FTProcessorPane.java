@@ -418,6 +418,10 @@ public class FTProcessorPane extends JPanel implements ActionListener {
         return this.dataProcessor.getProgress();
     }
     
+    public JLabel getStatus() {
+        return statusLabel;
+    }
+    
     public static void main(String[] args){
         JFrame frame = new JFrame();
         JPanel panel = new JPanel();

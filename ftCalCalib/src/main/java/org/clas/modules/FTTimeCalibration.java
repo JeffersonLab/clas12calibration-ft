@@ -100,7 +100,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
             htime_wide.setTitleX("Time (ns)");
             htime_wide.setTitleY("Counts");
             htime_wide.setTitle("Component " + key);
-            H1F htime = new H1F("htime_" + key, 250, this.getRange()[0], this.getRange()[1]);
+            H1F htime = new H1F("htime_" + key, 10000, -350, 50);
             htime.setTitleX("Time (ns)");
             htime.setTitleY("Counts");
             htime.setTitle("Component " + key);
@@ -195,7 +195,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
                 
                 double theta = Math.toDegrees(c.position(true).toVector3D().theta());
                 
-                if(c.energy(true)>0.5 && c.energyR(true)>0.3 && c.size() > 3 && c.charge()==0) {                            
+                if(c.energy(true)>0.5 && c.energyR(true)>0.3 && c.size()>3 && c.charge()==0) {                            
 
                     for(FTCalHit h : c) {
                         
@@ -228,10 +228,13 @@ public class FTTimeCalibration extends FTCalibrationModule {
     @Override
     public void analyze() {
 //        System.out.println("Analyzing");
+        H1F htsum = this.getDataGroup().getItem(1,1,8).getH1F("htsum");
+        this.recenterRange(htsum.getAxis().getBinCenter(htsum.getMaximumBin()), this.getRangeWidth()/2);
+
         H1F htime = this.getDataGroup().getItem(1,1,8).getH1F("htsum_cluster");
         F1D ftime = this.getDataGroup().getItem(1,1,8).getF1D("fsum_cluster");
         this.gaussFit(ftime,htime, 2.0, false);
-
+        
         for (int key : this.getDetector().getDetectorComponents()) {
             this.getDataGroup().getItem(1,1,key).getH1F("htoffsets").reset();
         }
@@ -325,6 +328,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
 //            this.getCanvas().draw(dataGroup.getH1F("htime_wide_" + component));
             this.getCanvas().cd(4);
             this.getCanvas().draw(dataGroup.getH1F("htime_" + component));
+            this.getCanvas().getPad().getAxisX().setRange(this.getRange()[0], this.getRange()[1]);
             this.getCanvas().cd(5);
             this.getCanvas().draw(dataGroup.getH1F("htime_calib_" + component));
             this.getCanvas().cd(6);

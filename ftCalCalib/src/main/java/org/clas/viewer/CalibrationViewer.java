@@ -506,7 +506,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             
             System.out.println("EVENT_STOP");           
 
-           for(String name : this.modules.keySet()) {
+            for(String name : this.modules.keySet()) {
                 this.modules.get(name).analyze();
                 this.modules.get(name).updateTable();
                 this.modules.get(name).processShape(detectorView.getDefaultShape());
@@ -627,6 +627,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             this.detectorView.repaint(); 
         }
+        System.out.print("\r" + this.processorPane.getStatus().getText());
         wait(5000);
     }
 
@@ -699,7 +700,6 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         OptionParser parser = new OptionParser();
         
-        parser.setRequiresInputList(true);
         parser.addOption("-d", "",   "path to previous calibration constants folder");
         parser.addOption("-l", "",   "colon-separated list of modules that should load constants from text files");
         parser.addOption("-n", "1",  "number of iterations");
@@ -711,7 +711,6 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         parser.parse(args);
         
-        String inputFileName   = parser.getInputList().get(0);
         String constantsDir    = parser.getOption("-d").stringValue();
         String[] loadModules   = parser.getOption("-l").stringValue().split(":");
         int     nIterations    = parser.getOption("-n").intValue();
@@ -739,8 +738,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         else 
             viewer.loadConstants(constantsDir, loadModules);
 
-        if(!inputFileName.isEmpty()) {
-            viewer.processorPane.setHipo4File(inputFileName);
+        if(!parser.getInputList().isEmpty()) {
+            viewer.processorPane.setHipo4File(parser.getInputList().get(0));
         }
     }
 

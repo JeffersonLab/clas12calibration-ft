@@ -248,6 +248,14 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
         return range;
     }
 
+    public double getRangeMean() {
+        return (range[0]+range[1])/2;
+    }
+
+    public double getRangeWidth() {
+        return range[1]-range[0];
+    }
+
     public int getSelectedKey() {
         return selectedKey;
     }
@@ -294,8 +302,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     }
            
     public void initRange(double r1, double r2) {
-        this.range[0]=r1;
-        this.range[1]=r2;
+        this.setRange(r1, r2);
         this.resetEventListener();
     }
         
@@ -467,6 +474,13 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
         this.analyze();
     }   
 
+    public void recenterRange(double center, double resolution) {
+        if(center!=this.getRangeMean()) {
+            center = Math.round(center/resolution)*resolution;
+            this.setRange(center-this.getRangeWidth()/2, center+this.getRangeWidth()/2);
+        }
+    }
+    
     public void reset() {
         nProcessed=0;
         this.resetEventListener();
@@ -510,7 +524,11 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     }
 
     public void savePicture(String path) {
-        this.getCanvas().save(path + "/" + this.getName() + ".png");
+        if(this.getCanvas().getSize().height==0 || this.getCanvas().getSize().width==0) {
+            this.getCanvas().setSize(1600, 700);
+            this.getCanvas().doLayout();
+        }
+        this.getCanvas().save(path + "/" + this.getName() + ".pdf");
     }
     
     public void setPreviousCalibrationTable(CalibrationConstants prevCalib) {
@@ -547,7 +565,6 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
         this.range[0]=min;
         this.range[1]=max;
         System.out.println(this.getName() + " module histogram range set to: " + String.format("%.3f:%.3f", this.range[0], this.range[1]));
-        this.resetEventListener();
     }
     
     public final void setCols(double min, double max) {
