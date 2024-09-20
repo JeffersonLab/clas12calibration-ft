@@ -485,15 +485,15 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     @Override
     public void dataEventAction(DataEvent de) {
         
-        if(de!=null) this.runNumber = this.getRunNumber(de);
+        if(de!=null && this.getRunNumber(de)>0) 
+            this.runNumber = this.getRunNumber(de);
         
-        if(runNumber<=0) return;
-            
-        for(String name : this.modules.keySet()) {
-            this.modules.get(name).loadConstants(runNumber);
+        if(runNumber>0) {
+            for(String name : this.modules.keySet()) {
+                this.modules.get(name).loadConstants(runNumber);
+            }
+            dataProvider.loadConstants(globalCalib);
         }
-        dataProvider.loadConstants(globalCalib);
-        
         
         if (de.getType()==DataEventType.EVENT_START ||
             de.getType()==DataEventType.EVENT_ACCUMULATE ||
