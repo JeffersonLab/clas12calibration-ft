@@ -289,7 +289,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             this.initCalibGaussFitPar(fcalib,hcalib,-1);
             DataFitter.fit(fcalib,hcalib,"LQ");
             if(Math.abs(fcalib.getParameter(4)/fcalib.getParameter(0))>1) {
-                fcalib = new F1D("fcal_" + key, "[amp]*gaus(x,[mean],[sigma])+[p0]+[p1]*x+[p2]*x", 0.9, 1.1);
+                fcalib = new F1D("fcal_" + key, "[amp]*gaus(x,[mean],[sigma])+[p0]+[p1]*x+[p2]*x*x", 0.9, 1.1);
                 this.initCalibGaussFitPar(fcalib, hcalib, -1);
                 for(int i=0; i<hcalib.getFunction().getNPars(); i++) {
                     fcalib.setParameter(i, hcalib.getFunction().getParameter(i));
