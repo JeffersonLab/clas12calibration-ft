@@ -100,7 +100,7 @@ public class FTTimeCalibration extends FTCalibrationModule {
             htime_wide.setTitleX("Time (ns)");
             htime_wide.setTitleY("Counts");
             htime_wide.setTitle("Component " + key);
-            H1F htime = new H1F("htime_" + key, 10000, -350, 50);
+            H1F htime = new H1F("htime_" + key, 12500, -450, 50);
             htime.setTitleX("Time (ns)");
             htime.setTitleY("Counts");
             htime.setTitle("Component " + key);

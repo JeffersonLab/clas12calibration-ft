@@ -627,7 +627,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             this.detectorView.repaint(); 
         }
-        System.out.print("\r" + this.processorPane.getStatus().getText());
+        System.out.println(this.processorPane.getStatus().getText());
         wait(5000);
     }
 
