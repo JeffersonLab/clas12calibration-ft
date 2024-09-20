@@ -487,12 +487,13 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         if(de!=null) this.runNumber = this.getRunNumber(de);
         
-        if(runNumber>0) {
-            for(String name : this.modules.keySet()) {
-                this.modules.get(name).loadConstants(runNumber);
-            }
-            dataProvider.loadConstants(globalCalib);
+        if(runNumber<=0) return;
+            
+        for(String name : this.modules.keySet()) {
+            this.modules.get(name).loadConstants(runNumber);
         }
+        dataProvider.loadConstants(globalCalib);
+        
         
         if (de.getType()==DataEventType.EVENT_START ||
             de.getType()==DataEventType.EVENT_ACCUMULATE ||
