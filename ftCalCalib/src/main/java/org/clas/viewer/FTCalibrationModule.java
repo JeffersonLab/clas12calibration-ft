@@ -491,6 +491,14 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     }
      
     public void saveConstants(String name) {
+        this.saveConstants(name, calib);
+    }
+    
+    public void saveOldConstants(String name) {
+        this.saveConstants(name, prevCalib);
+    }
+    
+    public void saveConstants(String name, CalibrationConstants constants) {
 
        String filename = name + "/" + this.getName() + ".txt";
             
@@ -500,11 +508,11 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
             FileWriter outputFw = new FileWriter(outputFile.getAbsoluteFile());
             BufferedWriter outputBw = new BufferedWriter(outputFw);
 
-            for (int i = 0; i < calib.getRowCount(); i++) {
+            for (int i = 0; i < constants.getRowCount(); i++) {
                 String line = new String();
-                for (int j = 0; j < calib.getColumnCount(); j++) {
-                    line = line + calib.getValueAt(i, j);
-                    if (j < calib.getColumnCount() - 1) {
+                for (int j = 0; j < constants.getColumnCount(); j++) {
+                    line = line + constants.getValueAt(i, j);
+                    if (j < constants.getColumnCount() - 1) {
                         line = line + " ";
                     }
                 }

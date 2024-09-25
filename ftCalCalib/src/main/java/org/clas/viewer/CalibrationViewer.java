@@ -86,6 +86,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     private int      canvasUpdateTime   = 2000;
     private int      analysisUpdateTime = 2000000;
     private int      runNumber          = 0;
+    private String[] loadConstants      = null;
     private String[] saveConstants      = null;
     private String   constantsDir       = null;
     private boolean  quitWhenDone       = false;
@@ -100,7 +101,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     public static Logger LOGGER = Logger.getLogger(CalibrationViewer.class.getName());
     
-    public CalibrationViewer(String[] saveConstants, boolean quitWhenDone, int nIterations, double target, boolean vertex) {
+    public CalibrationViewer(String[] loadConstants, String[] saveConstants, boolean quitWhenDone, int nIterations, double target, boolean vertex) {
        
         LOGGER.setLevel(Level.INFO);
         
@@ -233,6 +234,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         this.setCanvasUpdate(canvasUpdateTime);
         
+        this.loadConstants = loadConstants;
         this.saveConstants = saveConstants;
         this.quitWhenDone  = quitWhenDone;
         this.nIterations   = nIterations;
@@ -331,7 +333,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                filePath = fc.getSelectedFile().getAbsolutePath();            
             }
-            this.loadConstants(filePath, null);
+            this.loadConstants(filePath);
         }
         if("Save...".equals(e.getActionCommand())) {
             DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
@@ -531,13 +533,13 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
     }
 
-    public void loadConstants(String path, String[] loadingModules) {
+    public void loadConstants(String path) {
         if(!path.isEmpty())
             this.constantsDir = path;
-        if(loadingModules==null && loadingModules.length==0) {
-            loadingModules = (String[]) this.modules.keySet().toArray();
+        if(loadConstants==null && loadConstants.length==0) {
+            loadConstants = (String[]) this.modules.keySet().toArray();
         }
-        for(String name : loadingModules) {
+        for(String name : loadConstants) {
             String fileName = path + "/" + name + ".txt";
             this.modules.get(name).calDBSource = FTCalibrationModule.CAL_FILE;
             this.modules.get(name).prevCalFilename = fileName;
@@ -591,9 +593,12 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 //handle it
             }        
             if(result) {    
-            System.out.println("Created directory: " + dirName);
+                System.out.println("Created directory: " + dirName);
             }
         }        
+        for(String name : this.loadConstants) {
+            if(this.modules.containsKey(name)) this.modules.get(name).saveOldConstants(dirName);
+        }
         for(String name : this.saveConstants) {
             if(this.modules.containsKey(name)) this.modules.get(name).saveConstants(dirName);
         }
@@ -612,7 +617,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 //handle it
             }        
             if(result) {    
-            System.out.println("Created directory: " + dirName);
+                System.out.println("Created directory: " + dirName);
             }
         }
         for(String name : this.modules.keySet()) {
@@ -678,7 +683,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     }
 
     @Override
-   public void stateChanged(ChangeEvent e) {
+    public void stateChanged(ChangeEvent e) {
         JTabbedPane sourceTabbedPane = (JTabbedPane) e.getSource();
         int index = sourceTabbedPane.getSelectedIndex();
         moduleSelect = sourceTabbedPane.getTitleAt(index);
@@ -712,8 +717,13 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         parser.parse(args);
         
+        if(parser.getInputList().isEmpty()) {
+            System.out.println("[ERROR] No input file was specified, exiting");
+            System.exit(1);
+        }
+        
         String constantsDir    = parser.getOption("-d").stringValue();
-        String[] loadModules   = parser.getOption("-l").stringValue().split(":");
+        String[] loadConstants = parser.getOption("-l").stringValue().split(":");
         int     nIterations    = parser.getOption("-n").intValue();
         boolean quitWhenDone   = parser.getOption("-q").intValue()!=0;
         String[] saveConstants = parser.getOption("-s").stringValue().split(":");
@@ -723,10 +733,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         DefaultLogger.initialize();
         
-        CalibrationViewer viewer = new CalibrationViewer(saveConstants, quitWhenDone, nIterations, targetPosition, vertexMode);
+        CalibrationViewer viewer = new CalibrationViewer(loadConstants, saveConstants, quitWhenDone, nIterations, targetPosition, vertexMode);
 
         if(openWindow) {
-            JFrame frame = new JFrame("Calibration");
+            JFrame frame = new JFrame(parser.getInputList().get(0));
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(viewer.mainPanel);
             frame.setJMenuBar(viewer.menuBar);
@@ -737,11 +747,9 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         if(constantsDir.isBlank())
             viewer.configureFrame();
         else 
-            viewer.loadConstants(constantsDir, loadModules);
+            viewer.loadConstants(constantsDir);
 
-        if(!parser.getInputList().isEmpty()) {
-            viewer.processorPane.setHipo4File(parser.getInputList().get(0));
-        }
+        viewer.processorPane.setHipo4File(parser.getInputList().get(0));
     }
 
 

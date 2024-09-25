@@ -68,7 +68,12 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         gefactors.setMarkerSize(4);  // size in points on the screen
         gefactors.addPoint(0., 0., 0., 0.);
         gefactors.addPoint(1., 1., 0., 0.);
-        H1F hemass = new H1F("hemass", 100, this.getReference()-1, this.getReference()+1); 
+        H1F homass = new H1F("homass", 400, this.getReference()-4, this.getReference()+4); 
+        homass.setTitle("2#gamma invariant mass");
+        homass.setTitleX("M (MeV)");
+        homass.setTitleY("Counts");
+        homass.setOptStat("1111");
+        H1F hemass = new H1F("hemass", 400, this.getReference()-4, this.getReference()+4); 
         hemass.setTitle("2#gamma invariant mass");
         hemass.setTitleX("M (MeV)");
         hemass.setTitleY("Counts");
@@ -138,7 +143,8 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             dg.addDataSet(hmassangle,    1);
             dg.addDataSet(hmassangle,    1);
             dg.addDataSet(hemass,        2);
-            dg.addDataSet(hefactors,     3);
+            dg.addDataSet(homass,        2);
+             dg.addDataSet(hefactors,     3);
 //            dg.addDataSet(ffactor,       3);
             dg.addDataSet(hpi0,          4);
             dg.addDataSet(hpi0_calib,    4);          
@@ -246,7 +252,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_" + key1).fill(invmassOrg);
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_calib_" + key1).fill(invmass);
                                 this.getDataGroup().getItem(1, 1, key1).getH2F("hcal2d_" + key1).fill(ecal1,gamma1.p()*1E3);
-                                this.getDataGroup().getItem(1, 1, key1).getH1F("hcal_" + key1).fill(ecal1/gamma1.p()/1E3);
+                                this.getDataGroup().getItem(1, 1, key1).getH1F("hcal_" + key1).fill(Math.sqrt(ecal1/gamma1.p()/1E3));
                             }
                             if(ecal2>0 && 
                                theta1>FTCalConstants.THETAMIN && 
@@ -254,7 +260,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                                 this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_" + key2).fill(invmassOrg);
                                 this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_calib_" + key2).fill(invmass);
                                 this.getDataGroup().getItem(1, 1, key2).getH2F("hcal2d_" + key2).fill(ecal2,gamma2.p());
-                                this.getDataGroup().getItem(1, 1, key2).getH1F("hcal_" + key2).fill(ecal2/gamma2.p());
+                                this.getDataGroup().getItem(1, 1, key2).getH1F("hcal_" + key2).fill(Math.sqrt(ecal2/gamma2.p()));
                             }
                         }
                     }
@@ -266,6 +272,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     @Override
     public void analyze() {
         for (int key : this.getDetector().getDetectorComponents()) {
+            this.getDataGroup().getItem(1,1,key).getH1F("homass").reset();
             this.getDataGroup().getItem(1,1,key).getH1F("hemass").reset();
             this.getDataGroup().getItem(1,1,key).getH1F("hefactors").reset();
             this.getDataGroup().getItem(1,1,key).getH1F("heconstants").reset();
@@ -372,8 +379,11 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             if(hcalib.getMax()>=3) cmips = cmips/factorE;
             else                   cmips = FTCalConstants.DEFAULTEMIPS;
 
+            double pi0OldMassDiff = this.getPreviousCalibrationTable().getDoubleValue("pi0mass", 1, 1, key) - this.getReference();
             double pi0MassDiff = pi0Mass - this.getReference();
-            if(Math.abs(pi0MassDiff)<1) this.getDataGroup().getItem(1,1,key).getH1F("hemass").fill(pi0Mass);
+            if(Math.abs(pi0OldMassDiff)<4) this.getDataGroup().getItem(1,1,key).getH1F("homass").fill(this.getPreviousCalibrationTable().getDoubleValue("pi0mass", 1, 1, key));
+            if(Math.abs(pi0MassDiff)<4) this.getDataGroup().getItem(1,1,key).getH1F("hemass").fill(pi0Mass);
+            
             if(factorE>0) this.getDataGroup().getItem(1,1,key).getH1F("hefactors").fill(factorE);
             this.getDataGroup().getItem(1,1,key).getH1F("heconstants").fill(cmips);
 
@@ -384,5 +394,8 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             getCalibrationTable().setDoubleValue(cmips,       "mips_charge",    1, 1, key);
         }
         getCalibrationTable().fireTableDataChanged();
+        System.out.println(this.getName() + " QA = " + this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getEntries() + "/" +
+                                                       this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getMean()+ "/" +
+                                                       this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getRMS() );
     }
 }
