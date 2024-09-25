@@ -125,7 +125,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             F1D fcal2d = new F1D("fcal2d_" + key, "x", 500., 4500.);
             fcal2d.setLineColor(2);
             fcal2d.setLineWidth(1);
-            H1F hcal = new H1F("hcal_" + key, 60, 0, 2);
+            H1F hcal = new H1F("hcal_" + key, 60, 0.5, 1.5);
             hcal.setTitleX("Correction Factor");
             hcal.setTitleY("Counts");
             hcal.setTitle("Component " + key);
