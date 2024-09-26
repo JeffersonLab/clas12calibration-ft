@@ -17,9 +17,9 @@ if ($#argv == 5) then
 endif  
 
 $executable -l EnergyCalibration -s EnergyCalibration $inputfile -d ./ftCalCalib $niteration $target $window -q 1
-$executable -l EnergyCalibration -s EnergyCalibration:TimeCalibration $inputfile -d ./ftCalCalib -n 1 $target $window -q 1
-$executable -l EnergyCalibration:TimeCalibration -s EnergyCalibration:TimeWalk $inputfile -d ./ftCalCalib -n 1 $target $window -q 1
-$executable -l EnergyCalibration:TimeCalibration:TimeWalk -s EnergyCalibration:TimeCalibration $inputfile -d ./ftCalCalib -n 1 $target $window -q 1
+$executable -l EnergyCalibration -s TimeCalibration $inputfile -d ./ftCalCalib -n 1 $target $window -q 1
+$executable -l EnergyCalibration:TimeCalibration -s TimeWalk $inputfile -d ./ftCalCalib -n 1 $target $window -q 1
+$executable -l EnergyCalibration:TimeCalibration:TimeWalk -s TimeCalibration $inputfile -d ./ftCalCalib -n 1 $target $window -q 1
 $executable -l EnergyCalibration:TimeCalibration:TimeWalk $inputfile -d ./ftCalCalib -n 1 $target $window 
 
 

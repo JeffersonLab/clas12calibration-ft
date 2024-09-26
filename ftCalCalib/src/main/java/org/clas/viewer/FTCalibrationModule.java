@@ -494,7 +494,8 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
         this.saveConstants(name, calib);
     }
     
-    public void saveOldConstants(String name) {
+    public void savePreviousConstants(String name) {
+        System.out.println("old constants");
         this.saveConstants(name, prevCalib);
     }
     
@@ -719,9 +720,10 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     }
     
     public void updatePreviousConstants() {
-        if(this.calDBSource == FTCalibrationModule.CAL_FILE) {
+//        if(this.calDBSource == FTCalibrationModule.CAL_FILE) {
+            System.out.println(this.getName() + " updating constants for next iteration");
             copyConstants(calib, prevCalib);
-        }
+//        }
     }
     
     public void updateTable() {

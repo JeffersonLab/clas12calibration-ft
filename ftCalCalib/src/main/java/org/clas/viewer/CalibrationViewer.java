@@ -15,10 +15,12 @@ import java.io.File;
 import java.nio.file.FileSystems;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,22 +88,19 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     private int      canvasUpdateTime   = 2000;
     private int      analysisUpdateTime = 2000000;
     private int      runNumber          = 0;
-    private String[] loadConstants      = null;
-    private String[] saveConstants      = null;
+    private List<List<String>> loadConstants = new ArrayList<>();
+    private List<List<String>> saveConstants = new ArrayList<>();
     private String   constantsDir       = null;
     private boolean  quitWhenDone       = false;
-    private int      nIterations        = 10; 
     private int      currentIteration   = 0;
     private String   workDir            = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
-    private String   saveDir            = null;
-    private String   oldSaveDir         = null;
-    
+   
     
     Map<String, FTCalibrationModule> modules = new LinkedHashMap();
 
     public static Logger LOGGER = Logger.getLogger(CalibrationViewer.class.getName());
     
-    public CalibrationViewer(String[] loadConstants, String[] saveConstants, boolean quitWhenDone, int nIterations, double target, boolean vertex) {
+    public CalibrationViewer(boolean quitWhenDone, double target, boolean vertex) {
        
         LOGGER.setLevel(Level.INFO);
         
@@ -234,10 +233,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         this.setCanvasUpdate(canvasUpdateTime);
         
-        this.loadConstants = loadConstants;
-        this.saveConstants = saveConstants;
         this.quitWhenDone  = quitWhenDone;
-        this.nIterations   = nIterations;
         FTCalConstants.setVertex(target);
 
         configFrame.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
@@ -389,6 +385,15 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
     }
 
+    public void addIteration(String toLoad, String toSave) {
+        String[] l = toLoad.split(":");
+        String[] s = toSave.split(":");
+        if(l.length>0)
+            this.loadConstants.add(Arrays.asList(l));
+        if(s.length>0)
+            this.saveConstants.add(Arrays.asList(s));          
+    }
+    
     public void configureFrame() {
 
         configFrame.setSize(900, 1000);
@@ -515,15 +520,16 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 this.modules.get(name).processShape(detectorView.getDefaultShape());
             }
             this.detectorView.repaint(); 
-
-            if(this.saveConstants.length>0) this.saveAll();
+System.out.println(this.saveConstants.get(currentIteration).size());
+            for(String name : saveConstants.get(currentIteration)) {
+                System.out.println(name);
+                this.modules.get(name).updatePreviousConstants();
+            }
+            this.saveAll();
 
             currentIteration++;
-            if(currentIteration<nIterations) {
+            if(currentIteration<loadConstants.size()) {
                 System.out.println("\nResetting for iteration " + currentIteration);
-                for(String name : this.modules.keySet()) {
-                    this.modules.get(name).updatePreviousConstants();
-                }
                 this.dataProvider.loadConstants(globalCalib);
                 this.processorPane.setHipo4File(this.processorPane.getDataFile());
             }
@@ -536,10 +542,11 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     public void loadConstants(String path) {
         if(!path.isEmpty())
             this.constantsDir = path;
-        if(loadConstants==null && loadConstants.length==0) {
-            loadConstants = (String[]) this.modules.keySet().toArray();
+        if(loadConstants==null || loadConstants.size()==0) {
+            loadConstants.add(new ArrayList<>(this.modules.keySet()));
+            saveConstants.add(new ArrayList<>(this.modules.keySet()));
         }
-        for(String name : loadConstants) {
+        for(String name : loadConstants.get(currentIteration)) {
             String fileName = path + "/" + name + ".txt";
             this.modules.get(name).calDBSource = FTCalibrationModule.CAL_FILE;
             this.modules.get(name).prevCalFilename = fileName;
@@ -565,14 +572,10 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     
     public void saveAll() {
         DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
-        String dirName = this.workDir + "/ftCalCalib_" + this.runNumber;
-        oldSaveDir = saveDir;
-        saveDir =  dirName + "_" + df.format(new Date());
-        this.saveConstants(this.saveDir);
-        if(this.oldSaveDir!=null) 
-            this.savePictures(this.oldSaveDir);
-        else
-            this.savePictures(this.saveDir);
+        String dirName = String.format("%s/ftCalCalib_%06d", this.workDir, this.runNumber);
+        String saveDir =  dirName + "_" + df.format(new Date());
+        this.saveConstants(saveDir);
+        this.savePictures(saveDir);
         if(this.constantsDir==null)
             this.saveConstants(dirName);
         else 
@@ -596,11 +599,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 System.out.println("Created directory: " + dirName);
             }
         }        
-        for(String name : this.loadConstants) {
-            if(this.modules.containsKey(name)) this.modules.get(name).saveOldConstants(dirName);
-        }
-        for(String name : this.saveConstants) {
-            if(this.modules.containsKey(name)) this.modules.get(name).saveConstants(dirName);
+        for(String name : loadConstants.get(currentIteration)) {
+            this.modules.get(name).savePreviousConstants(dirName);
         }
     }
     
@@ -706,6 +706,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         OptionParser parser = new OptionParser();
         
+        parser.addOption("-c", "",   "calibrate (0/1)");
         parser.addOption("-d", "",   "path to previous calibration constants folder");
         parser.addOption("-l", "",   "colon-separated list of modules that should load constants from text files");
         parser.addOption("-n", "1",  "number of iterations");
@@ -722,19 +723,32 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             System.exit(1);
         }
         
-        String constantsDir    = parser.getOption("-d").stringValue();
-        String[] loadConstants = parser.getOption("-l").stringValue().split(":");
+        boolean calibrate      = parser.getOption("-c").intValue()!=0;
+        String  constantsDir   = parser.getOption("-d").stringValue();
+        String  loadConstants  = parser.getOption("-l").stringValue();
         int     nIterations    = parser.getOption("-n").intValue();
         boolean quitWhenDone   = parser.getOption("-q").intValue()!=0;
-        String[] saveConstants = parser.getOption("-s").stringValue().split(":");
+        String  saveConstants  = parser.getOption("-s").stringValue();
         double  targetPosition = parser.getOption("-t").doubleValue();
         boolean vertexMode     = parser.getOption("-v").intValue()==1;
         boolean openWindow     = parser.getOption("-w").intValue()==1;
         
         DefaultLogger.initialize();
         
-        CalibrationViewer viewer = new CalibrationViewer(loadConstants, saveConstants, quitWhenDone, nIterations, targetPosition, vertexMode);
-
+        CalibrationViewer viewer = new CalibrationViewer(quitWhenDone, targetPosition, vertexMode);
+        if(calibrate) {
+            for(int i=0; i<nIterations; i++) {
+                viewer.addIteration("EnergyCalibration", "EnergyCalibration");
+            }
+            viewer.addIteration("EnergyCalibration", "TimeCalibration");
+            viewer.addIteration("EnergyCalibration:TimeCalibration", "TimeWalk");
+            viewer.addIteration("EnergyCalibration:TimeCalibration:TimeWalk", "TimeCalibration");
+            viewer.addIteration("EnergyCalibration:TimeCalibration:TimeWalk", "");
+        }
+        else if(!loadConstants.isBlank() || !saveConstants.isBlank()) {
+            viewer.addIteration(loadConstants, saveConstants);
+        }
+        
         if(openWindow) {
             JFrame frame = new JFrame(parser.getInputList().get(0));
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

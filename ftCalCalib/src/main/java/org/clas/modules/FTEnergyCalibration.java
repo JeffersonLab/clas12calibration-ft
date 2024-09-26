@@ -80,7 +80,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         hemass.setFillColor(44);
         hemass.setLineColor(24);
         hemass.setOptStat("1111");
-        H1F hefactors = new H1F("hefactors", 100, 0.8, 1.2);
+        H1F hefactors = new H1F("hefactors", 100, 0.9, 1.1);
         hefactors.setTitleX("Correction Factor");
         hefactors.setTitleY("Counts");
         hefactors.setFillColor(42);
