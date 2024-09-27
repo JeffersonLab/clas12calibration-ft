@@ -76,8 +76,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     FTCalDetector            detectorView  = null;
     JTabbedPane               modulePanel  = null;
     String                    moduleSelect = null;
-    JFrame                innerConfigFrame = new JFrame("Select FTCal calibration settings");
-    JDialog                    configFrame = new JDialog(innerConfigFrame, "Select FTCal calibration settings");
+    JDialog                    configFrame = null;
     JTabbedPane                 configPane = new JTabbedPane();
     
     ConstantsManager                        ccdb = new ConstantsManager();
@@ -235,8 +234,6 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         this.quitWhenDone  = quitWhenDone;
         FTCalConstants.setVertex(target);
-
-        configFrame.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
      
     }
     
@@ -404,6 +401,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     
     public void configureFrame() {
 
+        configFrame = new JDialog(new JFrame("Select FTCal calibration settings"), "Select FTCal calibration settings");
+        configFrame.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
         configFrame.setSize(900, 1000);
         //configFrame.setSize(1000, 600); // vnc size
         configFrame.setLocationRelativeTo(mainPanel);
