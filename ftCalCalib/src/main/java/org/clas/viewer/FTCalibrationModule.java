@@ -495,7 +495,6 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     }
     
     public void savePreviousConstants(String name) {
-        System.out.println("old constants");
         this.saveConstants(name, prevCalib);
     }
     
@@ -521,7 +520,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
                 outputBw.newLine();
             }
             outputBw.close();
-            System.out.println(this.getName() + "constants save to'" + filename);
+            System.out.println(this.getName() + " constants saved to'" + filename);
         } catch (IOException ex) {
             System.out.println(
                     "Error writing file '"

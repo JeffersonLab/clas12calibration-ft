@@ -386,12 +386,20 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     }
 
     public void addIteration(String toLoad, String toSave) {
-        String[] l = toLoad.split(":");
-        String[] s = toSave.split(":");
-        if(l.length>0)
-            this.loadConstants.add(Arrays.asList(l));
-        if(s.length>0)
-            this.saveConstants.add(Arrays.asList(s));          
+        this.loadConstants.add(this.arrayToList(toLoad));
+        this.saveConstants.add(this.arrayToList(toSave));    
+    }
+    
+    private List<String> arrayToList(String s) {
+        String[] ms = s.split(":");
+        List<String> ls = new ArrayList<>();
+        if(ms.length>0) {
+            for(String name : ms) {
+                if(this.modules.containsKey(name))
+                    ls.add(name);
+            }
+        }
+        return ls;
     }
     
     public void configureFrame() {
@@ -492,15 +500,19 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     @Override
     public void dataEventAction(DataEvent de) {
         
-        if(de!=null && this.getRunNumber(de)>0) 
-            this.runNumber = this.getRunNumber(de);
-        
-        if(runNumber>0) {
-            for(String name : this.modules.keySet()) {
-                this.modules.get(name).loadConstants(runNumber);
+        if(de!=null && this.getRunNumber(de)>0) {
+            int run = this.getRunNumber(de);
+            if(runNumber!=run) {
+                runNumber = run;
+                for(String name : this.modules.keySet()) {
+                    this.modules.get(name).loadConstants(runNumber);
+                }
+                dataProvider.loadConstants(globalCalib);
             }
-            dataProvider.loadConstants(globalCalib);
         }
+        
+        if (de.getType()==DataEventType.EVENT_START)
+            System.out.println("\nStarting iteration " + currentIteration);
         
         if (de.getType()==DataEventType.EVENT_START ||
             de.getType()==DataEventType.EVENT_ACCUMULATE ||
@@ -520,9 +532,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 this.modules.get(name).processShape(detectorView.getDefaultShape());
             }
             this.detectorView.repaint(); 
-System.out.println(this.saveConstants.get(currentIteration).size());
+
             for(String name : saveConstants.get(currentIteration)) {
-                System.out.println(name);
                 this.modules.get(name).updatePreviousConstants();
             }
             this.saveAll();
@@ -740,8 +751,8 @@ System.out.println(this.saveConstants.get(currentIteration).size());
             for(int i=0; i<nIterations; i++) {
                 viewer.addIteration("EnergyCalibration", "EnergyCalibration");
             }
-            viewer.addIteration("EnergyCalibration", "TimeCalibration");
-            viewer.addIteration("EnergyCalibration:TimeCalibration", "TimeWalk");
+            viewer.addIteration("EnergyCalibration:TimeCalibration", "TimeCalibration");
+            viewer.addIteration("EnergyCalibration:TimeCalibration:TimeWalk", "TimeWalk");
             viewer.addIteration("EnergyCalibration:TimeCalibration:TimeWalk", "TimeCalibration");
             viewer.addIteration("EnergyCalibration:TimeCalibration:TimeWalk", "");
         }
