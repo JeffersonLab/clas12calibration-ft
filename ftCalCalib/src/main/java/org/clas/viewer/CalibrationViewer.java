@@ -542,6 +542,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             if(currentIteration<loadConstants.size()) {
                 System.out.println("\nResetting for iteration " + currentIteration);
                 this.dataProvider.loadConstants(globalCalib);
+                wait(5000);
                 this.processorPane.setHipo4File(this.processorPane.getDataFile());
             }
             else if(this.quitWhenDone)  {
@@ -745,6 +746,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         boolean openWindow     = parser.getOption("-w").intValue()==1;
         
         DefaultLogger.initialize();
+        if(!openWindow) System.setProperty("java.awt.headless", "true");
         
         CalibrationViewer viewer = new CalibrationViewer(quitWhenDone, targetPosition, vertexMode);
         if(calibrate) {
