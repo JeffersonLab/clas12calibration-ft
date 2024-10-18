@@ -44,6 +44,7 @@ public class FTCalCosmicModule extends FTModule {
     int    cosmicMult  = 4;  // Horizonthal selection // number of crystals above threshold in a column for cosmics selection
     int    cosmicRange = 5;
     double singleChThr = 7;// Single channel selection
+    int    cosmicMax = 0;
     
     public FTCalCosmicModule(FTDetector d)  {
         super(d);
@@ -289,7 +290,8 @@ public class FTCalCosmicModule extends FTModule {
                     }
                     double charge = counter.getADCData(0).getADC()*LSB*nsPerSample/50;
                     hcharge.fill(charge);
-                    hampli.fill((counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB);     
+                    hampli.fill((counter.getADCData(0).getHeight()-counter.getADCData(0).getPedestal())*LSB); 
+                    if(hcharge.getEntries()>cosmicMax) cosmicMax = (int) hcharge.getEntries();
                 }  
             }
          }
@@ -303,8 +305,8 @@ public class FTCalCosmicModule extends FTModule {
             switch (parameterName) {
                 case "Occupancy":
                 {
-                    if(this.getNumberOfEvents()>0) {
-                        this.getParameter("Occupancy").setLimit(this.getNumberOfEvents()/15);
+                    if(this.cosmicMax>0) {
+                        this.getParameter("Occupancy").setLimit(cosmicMax*1.2);
                     }
                     else {
                         this.getParameter("Occupancy").setLimit(20000);
@@ -405,7 +407,7 @@ public class FTCalCosmicModule extends FTModule {
             if (!threshold.getText().isEmpty()) {
                 this.singleChThr = Double.parseDouble(threshold.getText());
             } 
-            System.out.println("Cosmic analysis paramters");
+            System.out.println("Cosmic analysis parameters");
             System.out.println("\n\tCrystal multiplicity for cosmic ray selection: " + this.cosmicMult);
             System.out.println("\n\tRange of crystals in a column: +/-" + this.cosmicRange);
             System.out.println("\n\tSingle channel threshold: " + this.singleChThr);
