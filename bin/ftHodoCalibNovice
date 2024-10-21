@@ -1,4 +1,4 @@
-#!/bin/bash
+y#!/bin/bash
 
 SCRIPT_DIR=`dirname $0`
 DISTRO_DIR=$SCRIPT_DIR/.. ; export DISTRO_DIR

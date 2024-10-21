@@ -11,6 +11,6 @@ echo
 
 echo "INSTALLATION DIRECTORY = " $DISTRO_DIR
 
-LIB=`ls $DISTRO_DIR/FTCalLedAndCosmics/target/FTCalLedAndCosmics-*-jar-with-dependencies.jar`; export LIB
+LIB=`ls $DISTRO_DIR/ftCalLedAndCosmics/target/FTCalLedAndCosmics-*-jar-with-dependencies.jar`; export LIB
 
 java -Dsun.java2d.pmoffscreen=false -Xmx2048m -Xms1024m -cp $LIB org.clas.ftcal.led.FTCalLedViewer $*
