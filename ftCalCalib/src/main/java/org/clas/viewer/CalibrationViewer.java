@@ -760,7 +760,9 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             viewer.addIteration("EnergyCalibration:TimeCalibration:TimeWalk", "");
         }
         else if(!loadConstants.isBlank() || !saveConstants.isBlank()) {
-            viewer.addIteration(loadConstants, saveConstants);
+            for(int i=0; i<nIterations; i++) {
+                viewer.addIteration(loadConstants, saveConstants);
+            }
         }
         
         if(openWindow) {
