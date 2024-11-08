@@ -78,7 +78,7 @@ public class FTCalEvent {
     }
     
     public void addTruesToADCs(List<FTCalTrue> trues) {
-        if(trues.size()==this.ADCs.size()) {
+        if(trues.size()<=this.ADCs.size()) {
             for(int i=0; i<this.ADCs.size(); i++)
                 this.ADCs.get(i).addTrue(trues.get(i));
         }
@@ -121,7 +121,7 @@ public class FTCalEvent {
 
     public void seHitsToTrue() {
         for(FTCalHit h : hits) {
-            h.setToTrue(ADCs.get(h.adcIndex()).trueInfo());
+                h.setToTrue(ADCs.get(h.adcIndex()).trueInfo());
         }
     }
 

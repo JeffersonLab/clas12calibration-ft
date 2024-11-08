@@ -55,8 +55,8 @@ public class FTCalDataProvider {
             
             if(event.hasBank("FTCAL::adc")) {
                 ftEvent.setADCs(this.readADCs(event.getBank("FTCAL::adc")));
-                if(event.hasBank("MC::true"))
-                    ftEvent.addTruesToADCs(this.readMCTrueInfo(event.getBank("MC::true")));
+                if(event.hasBank("MC::True"))
+                    ftEvent.addTruesToADCs(this.readMCTrueInfo(event.getBank("MC::True")));
             }
             
             if(event.hasBank("FTCAL::hits"))
@@ -159,16 +159,16 @@ public class FTCalDataProvider {
         List<FTCalTrue> trues = new ArrayList<>();
         
         for(int i=0; i<bank.rows(); i++) {
-            if(bank.getShort("detector", i)!=DetectorType.FTCAL.getDetectorId())
+            if(bank.getByte("detector", i)!=DetectorType.FTCAL.getDetectorId())
                 continue;
             FTCalTrue t = new FTCalTrue(bank.getFloat("avgT", i),
-                                        bank.getFloat("edep", i),
-                                        new Vector3D(bank.getFloat("px", i),
-                                                     bank.getFloat("py", i),
-                                                     bank.getFloat("pz", i)),
-                                        new Point3D(bank.getFloat("avgX", i),
-                                                    bank.getFloat("avgY", i),
-                                                    bank.getFloat("avgZ", i)));
+                                        bank.getFloat("totEdep", i)/1000,
+                                        new Vector3D(bank.getFloat("px", i)/1000,
+                                                     bank.getFloat("py", i)/1000,
+                                                     bank.getFloat("pz", i)/1000),
+                                        new Point3D(bank.getFloat("avgX", i)/10,
+                                                    bank.getFloat("avgY", i)/10,
+                                                    bank.getFloat("avgZ", i)/10));
             trues.add(t);
         }
         return trues;

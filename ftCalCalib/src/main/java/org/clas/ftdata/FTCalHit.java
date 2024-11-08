@@ -142,9 +142,16 @@ public class FTCalHit implements Comparable<FTCalHit> {
     }
 
     public void setToTrue(FTCalTrue t) {
-        this.energy   = t.energy();
-        this.time     = t.time();
-        this.position = t.position();
+        if(t!=null) {
+//            System.out.println(energy + " " + t.energy());
+//            System.out.println(time + " " + t.time());
+            this.energy   = t.energy();
+            this.time     = t.time();
+            this.position = t.position();
+        }
+        else {
+            this.energy = 0;
+        }
     }
     
     @Override
