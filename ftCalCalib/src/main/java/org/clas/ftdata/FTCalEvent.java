@@ -77,6 +77,13 @@ public class FTCalEvent {
         this.clusters = clusters;
     }
     
+    public void addTruesToADCs(List<FTCalTrue> trues) {
+        if(trues.size()==this.ADCs.size()) {
+            for(int i=0; i<this.ADCs.size(); i++)
+                this.ADCs.get(i).addTrue(trues.get(i));
+        }
+    }
+    
     public void linkHitsToADCs() {
 
         if(ADCs.isEmpty() || hits.isEmpty())
@@ -109,6 +116,12 @@ public class FTCalEvent {
 //            System.out.println(h.toString());
             h.update(charge2energy, timeoffsets, timewalk);
 //            System.out.println(h.toString());
+        }
+    }
+
+    public void seHitsToTrue() {
+        for(FTCalHit h : hits) {
+            h.setToTrue(ADCs.get(h.adcIndex()).truth());
         }
     }
 

@@ -99,7 +99,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     public static Logger LOGGER = Logger.getLogger(CalibrationViewer.class.getName());
     
-    public CalibrationViewer(boolean quitWhenDone, double target, boolean vertex) {
+    public CalibrationViewer(boolean quitWhenDone, double target, boolean vertex, boolean mctruth) {
        
         LOGGER.setLevel(Level.INFO);
         
@@ -211,7 +211,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         this.modules.get(moduleSelect).processShape(detectorView.getDefaultShape());
         this.detectorView.repaint();
         
-        dataProvider = new FTCalDataProvider(detectorView);
+        dataProvider = new FTCalDataProvider(detectorView, mctruth);
         
         // create split panel to host detector view and canvas+constants view
         splitPanel = new JSplitPane();
@@ -715,11 +715,12 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     public static void main(String[] args){
         
-        OptionParser parser = new OptionParser();
+        OptionParser parser = new OptionParser("ftCalCalib");
         
-        parser.addOption("-c", "",   "calibrate (0/1)");
+        parser.addOption("-c", "0",  "calibrate (0/1)");
         parser.addOption("-d", "",   "path to previous calibration constants folder");
         parser.addOption("-l", "",   "colon-separated list of modules that should load constants from text files");
+        parser.addOption("-m", "0",  "use MC true information");
         parser.addOption("-n", "1",  "number of iterations");
         parser.addOption("-q", "0",  "quit when completed (0=false; 1=true)");
         parser.addOption("-s", "",   "colon-separated list of modules that should save constants to text files");
@@ -737,6 +738,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         boolean calibrate      = parser.getOption("-c").intValue()!=0;
         String  constantsDir   = parser.getOption("-d").stringValue();
         String  loadConstants  = parser.getOption("-l").stringValue();
+        boolean useMCTruth     = parser.getOption("-m").intValue()!=0;
         int     nIterations    = parser.getOption("-n").intValue();
         boolean quitWhenDone   = parser.getOption("-q").intValue()!=0;
         String  saveConstants  = parser.getOption("-s").stringValue();
@@ -747,7 +749,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         DefaultLogger.initialize();
         if(!openWindow) System.setProperty("java.awt.headless", "true");
         
-        CalibrationViewer viewer = new CalibrationViewer(quitWhenDone, targetPosition, vertexMode);
+        CalibrationViewer viewer = new CalibrationViewer(quitWhenDone, targetPosition, vertexMode, useMCTruth);
         if(calibrate) {
             for(int i=0; i<nIterations; i++) {
                 viewer.addIteration("EnergyCalibration", "EnergyCalibration");

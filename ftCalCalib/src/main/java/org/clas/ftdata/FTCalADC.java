@@ -13,7 +13,8 @@ public class FTCalADC {
     private double charge;
     private double time;
     private int    pedestal;
-
+    private FTCalTrue trueInfo;
+    
     public FTCalADC(int component, int ADC, double time, int pedestal) {
         this.component = component;
         this.ADC = ADC;
@@ -42,5 +43,11 @@ public class FTCalADC {
         return pedestal;
     }
     
-   
+    public FTCalTrue truth() {
+        return trueInfo;
+    }
+    
+    public void addTrue(FTCalTrue t) {
+        this.trueInfo = t;
+    }
 }

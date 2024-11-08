@@ -141,6 +141,12 @@ public class FTCalHit implements Comparable<FTCalHit> {
         this.updateTime(timeoffsets, timewalk);
     }
 
+    public void setToTrue(FTCalTrue t) {
+        this.energy   = t.energy();
+        this.time     = t.time();
+        this.position = t.position();
+    }
+    
     @Override
     public String toString() {
         String s = String.format("Hit component: %d  energy: %7.3f  charge: %7.3f  time: %7.3f  rawtime: %7.3f  toffset: %7.3f  twalk: %7.3f  path: %7.3f  adcIndex: %d  clusterId: %d",

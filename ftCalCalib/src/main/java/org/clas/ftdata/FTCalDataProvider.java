@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Map;
 import org.clas.viewer.FTCalDetector;
 import org.jlab.clas.physics.Particle;
+import org.jlab.detector.base.DetectorType;
 import org.jlab.detector.calib.utils.CalibrationConstants;
+import org.jlab.geom.prim.Point3D;
+import org.jlab.geom.prim.Vector3D;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 
@@ -22,10 +25,12 @@ public class FTCalDataProvider {
     private CalibrationConstants timeoffsets   = null;
     private CalibrationConstants timewalk      = null;
     
+    private boolean useMCTruth = false;
     
-    public FTCalDataProvider(FTCalDetector detector) {
+    public FTCalDataProvider(FTCalDetector detector, boolean mcTruth) {
         
-        this.detector = detector;
+        this.detector    = detector;
+        this.useMCTruth  = mcTruth;
     }
     
     public void loadConstants(Map<String, CalibrationConstants> constants) {
@@ -48,8 +53,11 @@ public class FTCalDataProvider {
             
             FTCalEvent ftEvent = new FTCalEvent(run);
             
-            if(event.hasBank("FTCAL::adc"))
+            if(event.hasBank("FTCAL::adc")) {
                 ftEvent.setADCs(this.readADCs(event.getBank("FTCAL::adc")));
+                if(event.hasBank("MC::true"))
+                    ftEvent.addTruesToADCs(this.readTruth(event.getBank("MC::true")));
+            }
             
             if(event.hasBank("FTCAL::hits"))
                 ftEvent.setHits(this.readHits(event.getBank("FTCAL::hits")));
@@ -59,7 +67,8 @@ public class FTCalDataProvider {
             
             ftEvent.linkHitsToADCs();
             ftEvent.updateHits(charge2energy, timeoffsets, timewalk);
-            
+            if(this.useMCTruth) ftEvent.seHitsToTrue();
+                
             ftEvent.linkHitsToClusters();
             ftEvent.updateClusters(energycorr);
     
@@ -143,6 +152,26 @@ public class FTCalDataProvider {
             clusters.add(cluster);
         }
         return clusters;
+    }
+    
+    private List<FTCalTrue> readTruth(DataBank bank) {
+           
+        List<FTCalTrue> trues = new ArrayList<>();
+        
+        for(int i=0; i<bank.rows(); i++) {
+            if(bank.getShort("detector", i)!=DetectorType.FTCAL.getDetectorId())
+                continue;
+            FTCalTrue t = new FTCalTrue(bank.getFloat("avgT", i),
+                                        bank.getFloat("edep", i),
+                                        new Vector3D(bank.getFloat("px", i),
+                                                     bank.getFloat("py", i),
+                                                     bank.getFloat("pz", i)),
+                                        new Point3D(bank.getFloat("avgX", i),
+                                                    bank.getFloat("avgY", i),
+                                                    bank.getFloat("avgZ", i)));
+            trues.add(t);
+        }
+        return trues;
     }
     
 }
