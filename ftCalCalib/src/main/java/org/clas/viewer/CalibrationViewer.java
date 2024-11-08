@@ -99,7 +99,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     public static Logger LOGGER = Logger.getLogger(CalibrationViewer.class.getName());
     
-    public CalibrationViewer(boolean quitWhenDone, double target, boolean vertex, boolean mctruth) {
+    public CalibrationViewer(boolean quitWhenDone, double target, boolean vertex, boolean mctrue) {
        
         LOGGER.setLevel(Level.INFO);
         
@@ -211,7 +211,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         this.modules.get(moduleSelect).processShape(detectorView.getDefaultShape());
         this.detectorView.repaint();
         
-        dataProvider = new FTCalDataProvider(detectorView, mctruth);
+        dataProvider = new FTCalDataProvider(detectorView, mctrue);
         
         // create split panel to host detector view and canvas+constants view
         splitPanel = new JSplitPane();
@@ -738,7 +738,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         boolean calibrate      = parser.getOption("-c").intValue()!=0;
         String  constantsDir   = parser.getOption("-d").stringValue();
         String  loadConstants  = parser.getOption("-l").stringValue();
-        boolean useMCTruth     = parser.getOption("-m").intValue()!=0;
+        boolean useMCTrueInfo  = parser.getOption("-m").intValue()!=0;
         int     nIterations    = parser.getOption("-n").intValue();
         boolean quitWhenDone   = parser.getOption("-q").intValue()!=0;
         String  saveConstants  = parser.getOption("-s").stringValue();
@@ -749,7 +749,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         DefaultLogger.initialize();
         if(!openWindow) System.setProperty("java.awt.headless", "true");
         
-        CalibrationViewer viewer = new CalibrationViewer(quitWhenDone, targetPosition, vertexMode, useMCTruth);
+        CalibrationViewer viewer = new CalibrationViewer(quitWhenDone, targetPosition, vertexMode, useMCTrueInfo);
         if(calibrate) {
             for(int i=0; i<nIterations; i++) {
                 viewer.addIteration("EnergyCalibration", "EnergyCalibration");

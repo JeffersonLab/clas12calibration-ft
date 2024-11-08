@@ -43,7 +43,7 @@ public class FTCalADC {
         return pedestal;
     }
     
-    public FTCalTrue truth() {
+    public FTCalTrue trueInfo() {
         return trueInfo;
     }
     

@@ -25,12 +25,12 @@ public class FTCalDataProvider {
     private CalibrationConstants timeoffsets   = null;
     private CalibrationConstants timewalk      = null;
     
-    private boolean useMCTruth = false;
+    private boolean useMCTrue = false;
     
-    public FTCalDataProvider(FTCalDetector detector, boolean mcTruth) {
+    public FTCalDataProvider(FTCalDetector detector, boolean mcTrue) {
         
-        this.detector    = detector;
-        this.useMCTruth  = mcTruth;
+        this.detector   = detector;
+        this.useMCTrue  = mcTrue;
     }
     
     public void loadConstants(Map<String, CalibrationConstants> constants) {
@@ -56,7 +56,7 @@ public class FTCalDataProvider {
             if(event.hasBank("FTCAL::adc")) {
                 ftEvent.setADCs(this.readADCs(event.getBank("FTCAL::adc")));
                 if(event.hasBank("MC::true"))
-                    ftEvent.addTruesToADCs(this.readTruth(event.getBank("MC::true")));
+                    ftEvent.addTruesToADCs(this.readMCTrueInfo(event.getBank("MC::true")));
             }
             
             if(event.hasBank("FTCAL::hits"))
@@ -67,7 +67,7 @@ public class FTCalDataProvider {
             
             ftEvent.linkHitsToADCs();
             ftEvent.updateHits(charge2energy, timeoffsets, timewalk);
-            if(this.useMCTruth) ftEvent.seHitsToTrue();
+            if(this.useMCTrue) ftEvent.seHitsToTrue();
                 
             ftEvent.linkHitsToClusters();
             ftEvent.updateClusters(energycorr);
@@ -154,7 +154,7 @@ public class FTCalDataProvider {
         return clusters;
     }
     
-    private List<FTCalTrue> readTruth(DataBank bank) {
+    private List<FTCalTrue> readMCTrueInfo(DataBank bank) {
            
         List<FTCalTrue> trues = new ArrayList<>();
         

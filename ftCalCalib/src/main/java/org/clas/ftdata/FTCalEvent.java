@@ -121,7 +121,7 @@ public class FTCalEvent {
 
     public void seHitsToTrue() {
         for(FTCalHit h : hits) {
-            h.setToTrue(ADCs.get(h.adcIndex()).truth());
+            h.setToTrue(ADCs.get(h.adcIndex()).trueInfo());
         }
     }
 
