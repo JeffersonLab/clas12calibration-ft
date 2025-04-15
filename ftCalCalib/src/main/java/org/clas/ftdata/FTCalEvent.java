@@ -1,8 +1,10 @@
 package org.clas.ftdata;
 
 import java.util.List;
+import org.clas.viewer.FTCalConstants;
 import org.jlab.clas.physics.Particle;
 import org.jlab.detector.calib.utils.CalibrationConstants;
+import org.jlab.geom.prim.Point3D;
 
 /**
  *
@@ -11,13 +13,16 @@ import org.jlab.detector.calib.utils.CalibrationConstants;
 public class FTCalEvent {
     
     private int run = 0;
-
+    private long trigger = 0;
+    private double torus = 0;
+    
     private List<FTCalADC> ADCs = null;
     private List<FTCalHit> hits = null;
     private List<FTCalCluster> clusters = null;
 
     private double startTime = 0;
-    private double triggerPID = 0;
+    private int    triggerPID = 0;
+    private double triggerZ = FTCalConstants.Z0;
     
     private Particle generated;
     
@@ -27,6 +32,23 @@ public class FTCalEvent {
 
     public int getRun() {
         return run;
+    }
+
+    public boolean isTriggerBitSet(int bit) {
+        long mask = (1L << bit);
+        return (this.trigger & mask) != 0L;
+    }
+
+    public long getTrigger() {
+        return trigger;
+    }
+
+    public void setTrigger(long trigger) {
+        this.trigger = trigger;
+    }
+
+    public void setTorus(double torus) {
+        this.torus = torus;
     }
 
     public List<FTCalADC> getADCs() {
@@ -41,14 +63,27 @@ public class FTCalEvent {
         this.startTime = startTime;
     }
 
-    public double getTriggerPID() {
+    public int getTriggerPID() {
         return triggerPID;
     }
 
-    public void setTriggerPID(double triggerPID) {
+    public void setTriggerPID(int triggerPID) {
         this.triggerPID = triggerPID;
     }
 
+    public void setTriggerZ(double z) {
+        this.triggerZ = z;
+    }
+
+    public Point3D getVertex() {
+        return FTCalConstants.VERTEXMODE ? new Point3D(0,0,triggerZ) : FTCalConstants.TARGET;
+    }
+
+    public boolean isGoodTriggerParticle() {
+        return Math.abs(triggerZ-FTCalConstants.TARGET.z())<FTCalConstants.ZLENGTH &&
+               (triggerPID*Math.signum(torus)==-11 || triggerPID*Math.signum(torus)==-211);
+    }
+    
     public Particle getGenerated() {
         return generated;
     }

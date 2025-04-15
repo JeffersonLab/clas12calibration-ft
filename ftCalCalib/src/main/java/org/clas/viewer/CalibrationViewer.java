@@ -233,8 +233,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         this.setCanvasUpdate(canvasUpdateTime);
         
         this.quitWhenDone  = quitWhenDone;
-        FTCalConstants.setVertex(target);
-     
+        FTCalConstants.setTargetZ(target);
+        FTCalConstants.setVertexMode(vertex);
     }
     
     @Override
@@ -279,7 +279,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             if(fileName != null) this.loadHistosFromFile(fileName);
         }        
         if("Print histograms to file...".equals(e.getActionCommand())) {
-            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
+            DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
             String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
@@ -293,7 +293,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             this.savePictures(dirName);
         }
         if("Save histograms...".equals(e.getActionCommand())) {
-            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
+            DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
             String fileName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date()) + ".hipo";
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir + "/FTCalCalib-histos");
@@ -329,7 +329,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             this.loadConstants(filePath);
         }
         if("Save...".equals(e.getActionCommand())) {
-            DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
+            DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
             String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
@@ -582,7 +582,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     }
     
     public void saveAll() {
-        DateFormat df = new SimpleDateFormat("MM-dd-yyyy_HH.mm.ss");
+        DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
         String dirName = String.format("%s/ftCalCalib_%06d", this.workDir, this.runNumber);
         String saveDir =  dirName + "_" + df.format(new Date());
         this.saveConstants(saveDir);

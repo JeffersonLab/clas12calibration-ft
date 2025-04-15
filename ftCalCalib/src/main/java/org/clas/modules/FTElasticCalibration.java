@@ -203,10 +203,10 @@ public class FTElasticCalibration extends FTCalibrationModule {
                 
                 if(c.charge()==-1 && c.size()>FTCalConstants.CLUSTERSIZE) {
                         
-                    Particle electron0 = c.toParticle(false);
+                    Particle electron0 = c.toParticle(false, event.getVertex());
                     electron0.setProperty("energySeed", c.get(0).energy(false));
                     
-                    Particle electron  = c.toParticle(true);
+                    Particle electron  = c.toParticle(true, event.getVertex());
                     electron.setProperty("energySeed", c.get(0).energy(true));
                 
                     double ratio = this.seedTotRatio;

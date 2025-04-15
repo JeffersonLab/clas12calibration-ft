@@ -14,7 +14,6 @@ public class FTCalHit implements Comparable<FTCalHit> {
     private double  charge;
     private double  rawTime;
     private Point3D position;
-    private double  path;
     private int     adcId;
     private int     clusterId;
 
@@ -39,7 +38,6 @@ public class FTCalHit implements Comparable<FTCalHit> {
         this.energy    = energy;
         this.time      = time;
         this.position  = new Point3D(x, y, z);
-        this.path      = this.position.distance(FTCalConstants.VERTEX);
         this.adcId     = adcId;
         this.clusterId = clusterId;
     }
@@ -72,8 +70,8 @@ public class FTCalHit implements Comparable<FTCalHit> {
         return position;
     }
 
-    public double path() {
-        return path;
+    public double path(Point3D vertex) {
+        return this.position.distance(vertex);
     }
 
     public int adcIndex() {
@@ -156,8 +154,8 @@ public class FTCalHit implements Comparable<FTCalHit> {
     
     @Override
     public String toString() {
-        String s = String.format("Hit component: %d  energy: %7.3f  charge: %7.3f  time: %7.3f  rawtime: %7.3f  toffset: %7.3f  twalk: %7.3f  path: %7.3f  adcIndex: %d  clusterId: %d",
-                   this.component(), this.energy(true), this.charge(), this.time(true), this.rawTime(), this.tOffset, this.tWalk, this.path(), this.adcIndex(), this.clusterIndex());
+        String s = String.format("Hit component: %d  energy: %7.3f  charge: %7.3f  time: %7.3f  rawtime: %7.3f  toffset: %7.3f  twalk: %7.3f  adcIndex: %d  clusterId: %d",
+                   this.component(), this.energy(true), this.charge(), this.time(true), this.rawTime(), this.tOffset, this.tWalk, this.adcIndex(), this.clusterIndex());
         return s;
     }
     

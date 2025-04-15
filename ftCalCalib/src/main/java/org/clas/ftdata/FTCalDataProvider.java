@@ -50,8 +50,12 @@ public class FTCalDataProvider {
     public FTCalEvent getEvent(DataEvent event) {    
         if(event.hasBank("RUN::config")) {
             int run = event.getBank("RUN::config").getInt("run", 0);            
+            long trigger = event.getBank("RUN::config").getLong("trigger", 0);
+            double torus = event.getBank("RUN::config").getFloat("torus", 0);
             
             FTCalEvent ftEvent = new FTCalEvent(run);
+            ftEvent.setTrigger(trigger);
+            ftEvent.setTorus(torus);
             
             if(event.hasBank("FTCAL::adc")) {
                 ftEvent.setADCs(this.readADCs(event.getBank("FTCAL::adc")));
@@ -76,8 +80,10 @@ public class FTCalDataProvider {
                 DataBank recEvent = event.getBank("REC::Event");
                 DataBank recPart  = event.getBank("REC::Particle");
                 ftEvent.setStartTime(recEvent.getFloat("startTime", 0));
-                if(recPart.getShort("status", 0)<-2000) 
+                if(recPart.getShort("status", 0)<-2000) {
                     ftEvent.setTriggerPID(recPart.getInt("pid",0));
+                    ftEvent.setTriggerZ(recPart.getFloat("vz",0));
+                }
             }
                 
             if (event.hasBank("MC::Particle")) {

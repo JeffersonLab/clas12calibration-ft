@@ -206,18 +206,20 @@ public class FTTimeCalibration extends FTCalibrationModule {
                             offset = this.getPreviousCalibrationTable().getDoubleValue("offset", 1, 1, component);
                         }
 
-                        double time0 = h.getZeroOffsetTime(false) - event.getStartTime() - h.path()/PhysicsConstants.speedOfLight();
-                        double timec = h.getZeroOffsetTime(true)  - event.getStartTime() - h.path()/PhysicsConstants.speedOfLight();
+                        double time0 = h.getZeroOffsetTime(false) - event.getStartTime() - h.path(event.getVertex())/PhysicsConstants.speedOfLight();
+                        double timec = h.getZeroOffsetTime(true)  - event.getStartTime() - h.path(event.getVertex())/PhysicsConstants.speedOfLight();
                         this.getDataGroup().getItem(1,1,component).getH1F("htsum").fill(time0);
                         this.getDataGroup().getItem(1,1,component).getH1F("htime_"+component).fill(time0);
                         this.getDataGroup().getItem(1,1,component).getH1F("htsum_calib").fill(timec-offset);
                         this.getDataGroup().getItem(1,1,component).getH1F("htime_calib_"+component).fill(timec-offset); 
                     }
                     if(theta>2.5 && theta<4.5) {
-                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htsum_cluster0").fill(c.vertexTime(false)-event.getStartTime());
-                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htsum_cluster").fill(c.vertexTime(true)-event.getStartTime());
-                        this.getDataGroup().getItem(1,1,c.seed()).getH2F("h2d_cluster").fill(c.energy(true),c.vertexTime(true)-event.getStartTime());
-                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htcluster_"+c.seed()).fill(c.vertexTime(true)-event.getStartTime());                                
+                        double delta0 = c.vertexTime(false, event.getVertex())-event.getStartTime();
+                        double delta  = c.vertexTime(true, event.getVertex())-event.getStartTime();
+                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htsum_cluster0").fill(delta0);
+                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htsum_cluster").fill(delta);
+                        this.getDataGroup().getItem(1,1,c.seed()).getH2F("h2d_cluster").fill(c.energy(true),delta);
+                        this.getDataGroup().getItem(1,1,c.seed()).getH1F("htcluster_"+c.seed()).fill(delta);                                
                   //                System.out.println(time + " " + clusterTime);
                     }
                 }

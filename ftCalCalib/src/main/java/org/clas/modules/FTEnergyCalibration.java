@@ -100,6 +100,13 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         heconstants.setLineColor(23);
         heconstants.setOptStat("1111");
 
+        H1F trigger = new H1F("trigger", 65, 0., 65.0);
+        trigger.setTitleX("Trigger Bits");
+        trigger.setTitleY("Counts");
+        trigger.setFillColor(43);
+        trigger.setLineColor(23);
+        trigger.setOptStat("1111");
+
         for (int key : this.getDetector().getDetectorComponents()) {
             // initialize data group
             H1F hpi0 = new H1F("hpi0_" + key, 100,50., 200.);
@@ -144,7 +151,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             dg.addDataSet(hmassangle,    1);
             dg.addDataSet(hemass,        2);
             dg.addDataSet(homass,        2);
-             dg.addDataSet(hefactors,     3);
+            dg.addDataSet(hefactors,     3);
 //            dg.addDataSet(ffactor,       3);
             dg.addDataSet(hpi0,          4);
             dg.addDataSet(hpi0_calib,    4);          
@@ -153,6 +160,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             dg.addDataSet(fcal2d,        5);
             dg.addDataSet(hcal,          6);
             dg.addDataSet(fcal,          6);
+            dg.addDataSet(trigger,       7);
             dg.addDataSet(heconstants,   7);
             this.getDataGroup().add(dg, 1, 1, key);
 
@@ -187,7 +195,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     public void processEvent(FTCalEvent event) {
         // get current calibration constants
         int run = event.getRun();
-        if(run<=0) {
+        if(run<=0 || (FTCalConstants.VERTEXMODE && !event.isGoodTriggerParticle())) {
             return;
         }
         
@@ -203,14 +211,15 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                 if(c.charge()==0 && c.size()>FTCalConstants.CLUSTERSIZE) {
                         
                     if(c.energyR(true)*1000>FTCalConstants.CLUSTERTHR)  {
-                        photons.add(c.toParticle(true));
-                        photons0.add(c.toParticle(false));
+                        photons.add(c.toParticle(true, event.getVertex()));
+                        photons0.add(c.toParticle(false, event.getVertex()));
                     }
                     
                 }
             }
                 
             if(photons.size()>=2) {
+                boolean isGood = false;
                 for (int i1 = 0; i1 < photons.size(); i1++) {
                     for (int i2 = i1 + 1; i2 < photons.size(); i2++) {
 
@@ -253,6 +262,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_calib_" + key1).fill(invmass);
                                 this.getDataGroup().getItem(1, 1, key1).getH2F("hcal2d_" + key1).fill(ecal1,gamma1.p()*1E3);
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hcal_" + key1).fill(Math.sqrt(ecal1/gamma1.p()/1E3));
+                                isGood = true;
                             }
                             if(ecal2>0 && 
                                theta1>FTCalConstants.THETAMIN && 
@@ -261,10 +271,20 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                                 this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_calib_" + key2).fill(invmass);
                                 this.getDataGroup().getItem(1, 1, key2).getH2F("hcal2d_" + key2).fill(ecal2,gamma2.p());
                                 this.getDataGroup().getItem(1, 1, key2).getH1F("hcal_" + key2).fill(Math.sqrt(ecal2/gamma2.p()));
+                                isGood = true;
                             }
                         }
                     }
                 }
+                if(isGood) {
+                        
+                                          this.getDataGroup().getItem(1, 1, 245).getH1F("trigger").fill(64);
+                      for(int i=0; i<64; i++) {
+                                if(event.isTriggerBitSet(i))
+                                    this.getDataGroup().getItem(1, 1, 245).getH1F("trigger").fill(i);
+                            }
+
+                    }
             }
         }
     }

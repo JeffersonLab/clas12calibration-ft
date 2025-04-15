@@ -24,18 +24,14 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
     private double  energyR0;
     private double  time0;
     private Point3D position0;
-    private double  path0;
-    private double  vertexTime0;
    
     // calibrated values
     private double  energy;
     private double  energyR;
     private double  time;
     private Point3D position;
-    private double  path;
-    private double  vertexTime;
+  
     
-
     public FTCalCluster(int id, int charge, double energy, double energyR, double time, double x, double y, double z) {
         this.id = id;
         this.charge      = charge;
@@ -43,14 +39,10 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
         this.energyR0    = energyR;
         this.time0       = time;
         this.position0   = new Point3D(x, y, z);
-        this.path0       = this.position0.distance(FTCalConstants.VERTEX);
-        this.vertexTime0 = this.time0 -this.path0/PhysicsConstants.speedOfLight();
         this.energy      = energy;
         this.energyR     = energyR;
         this.time        = time;
         this.position    = new Point3D(x, y, z);
-        this.path        = this.position.distance(FTCalConstants.VERTEX);
-        this.vertexTime  = this.time -this.path/PhysicsConstants.speedOfLight();
     }
 
     public int id() {
@@ -86,11 +78,11 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
             return position0;
     }
 
-    public double path(boolean calib) {
+    public double path(boolean calib, Point3D vertex) {
         if(calib)
-            return path;
+            return position.distance(vertex);
         else
-            return path0;
+            return position0.distance(vertex);
     }
 
     public double time(boolean calib) {
@@ -100,11 +92,8 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
             return time0;
     }
     
-    public double vertexTime(boolean calib) {
-        if(calib)
-            return vertexTime;
-        else
-            return vertexTime0;
+    public double vertexTime(boolean calib, Point3D vertex) {
+        return time(calib)-path(calib, vertex)/PhysicsConstants.speedOfLight();
     }
     
     public int pid() {
@@ -114,14 +103,13 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
             return 11;
     }
     
-    private Vector3D momentum(boolean calib) {
-        return position(calib).vectorFrom(FTCalConstants.VERTEX).asUnit().multiply(this.energy(calib));
+    private Vector3D momentum(boolean calib, Point3D vertex) {
+        return position(calib).vectorFrom(vertex).asUnit().multiply(this.energy(calib));
     }
     
-    public Particle toParticle(boolean calib) {
-        Vector3D p = this.momentum(calib);
-        Point3D  v = FTCalConstants.VERTEX;
-        Particle particle = new Particle(this.pid(), p.x(), p.y(), p.z(), v.x(), v.y(), v.z());
+    public Particle toParticle(boolean calib, Point3D vertex) {
+        Vector3D p = this.momentum(calib, vertex);
+        Particle particle = new Particle(this.pid(), p.x(), p.y(), p.z(), vertex.x(), vertex.y(), vertex.z());
         particle.setProperty("seed", this.seed());
         return particle;
     }
@@ -133,8 +121,6 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
             this.position   = this.getCentroid();
             this.time       = this.getTime();
             this.energy     = this.getEnergyCorr(energyCorrection);
-            this.path       = this.getPath();
-            this.vertexTime = this.time -this.path/PhysicsConstants.speedOfLight();
         }
     }
     
@@ -160,10 +146,6 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
             return energy;
     }
     
-    private double getPath() {
-        return this.position.distance(FTCalConstants.VERTEX);
-    }
-
     private int getSeed() {
         if(!this.isEmpty()){
             Collections.sort(this);
@@ -218,7 +200,6 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
         str.append(String.format("\tE: %7.3f",       this.energy(true))); 
         str.append(String.format("\tERec: %7.3f",    this.energyR(true))); 
         str.append(String.format("\tTime: %7.3f",    this.time(true))); 
-        str.append(String.format("\tPath: %7.3f",    this.path(true))); 
         str.append(String.format("\tx: %7.3f",       this.position(true).x())); 
         str.append(String.format("\ty: %7.3f",       this.position(true).y())); 
         str.append(String.format("\tz: %7.3f\n",     this.position(true).z())); 

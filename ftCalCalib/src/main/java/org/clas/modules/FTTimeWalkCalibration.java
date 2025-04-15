@@ -181,7 +181,7 @@ public class FTTimeWalkCalibration extends FTCalibrationModule {
                         
                         int component = h.component();
     
-                        double timec = h.getZeroTwTime(true) - event.getStartTime() - h.path()/PhysicsConstants.speedOfLight();
+                        double timec = h.getZeroTwTime(true) - event.getStartTime() - h.path(event.getVertex())/PhysicsConstants.speedOfLight();
                         if(h.charge()>FTCalConstants.CHARGETHR && h.time(false)>0) {
                             this.getDataGroup().getItem(1,1,component).getH2F("htsum").fill(h.charge(), timec);
                             this.getDataGroup().getItem(1,1,component).getH2F("htime_"+component).fill(h.charge(),timec);
