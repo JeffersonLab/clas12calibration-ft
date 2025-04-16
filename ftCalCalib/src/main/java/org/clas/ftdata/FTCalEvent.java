@@ -71,6 +71,10 @@ public class FTCalEvent {
         this.triggerPID = triggerPID;
     }
 
+    public double getTriggerZ() {
+        return triggerZ;
+    }
+
     public void setTriggerZ(double z) {
         this.triggerZ = z;
     }

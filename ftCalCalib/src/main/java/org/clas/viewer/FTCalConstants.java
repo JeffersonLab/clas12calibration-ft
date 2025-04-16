@@ -35,7 +35,7 @@ public class FTCalConstants {
     
     // target position
     public static double Z0 = -3.0; // cm
-    public static double ZLENGTH = 25.0; // cm
+    public static double ZLENGTH = 28.0; // cm
     public static Point3D TARGET = new Point3D(0, 0, Z0);
 
     // vertex

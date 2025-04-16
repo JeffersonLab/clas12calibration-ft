@@ -107,6 +107,13 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         trigger.setLineColor(23);
         trigger.setOptStat("1111");
 
+        H1F vertex = new H1F("vertex", 100, FTCalConstants.Z0-1.2*FTCalConstants.ZLENGTH, FTCalConstants.Z0+1.2*FTCalConstants.ZLENGTH);
+        vertex.setTitleX("Trigger Bits");
+        vertex.setTitleY("Counts");
+        vertex.setFillColor(43);
+        vertex.setLineColor(23);
+        vertex.setOptStat("1111");
+
         for (int key : this.getDetector().getDetectorComponents()) {
             // initialize data group
             H1F hpi0 = new H1F("hpi0_" + key, 100,50., 200.);
@@ -143,7 +150,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             fcal.setLineColor(24);
             fcal.setLineWidth(2);
             fcal.setOptStat("1111");
-            DataGroup dg = new DataGroup(4, 2);
+            DataGroup dg = new DataGroup(5, 2);
             dg.addDataSet(hpi0sum      , 0);
             dg.addDataSet(hpi0sum_calib, 0);
             dg.addDataSet(fpi0sum_calib, 0);
@@ -152,16 +159,16 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             dg.addDataSet(hemass,        2);
             dg.addDataSet(homass,        2);
             dg.addDataSet(hefactors,     3);
-//            dg.addDataSet(ffactor,       3);
-            dg.addDataSet(hpi0,          4);
-            dg.addDataSet(hpi0_calib,    4);          
-            dg.addDataSet(fpi0_calib,    4);
-            dg.addDataSet(hcal2d,        5);
-            dg.addDataSet(fcal2d,        5);
-            dg.addDataSet(hcal,          6);
-            dg.addDataSet(fcal,          6);
-            dg.addDataSet(trigger,       7);
-            dg.addDataSet(heconstants,   7);
+            dg.addDataSet(vertex,       4);
+            dg.addDataSet(hpi0,          5);
+            dg.addDataSet(hpi0_calib,    5);          
+            dg.addDataSet(fpi0_calib,    5);
+            dg.addDataSet(hcal2d,        6);
+            dg.addDataSet(fcal2d,        6);
+            dg.addDataSet(hcal,          7);
+            dg.addDataSet(fcal,          7);
+            dg.addDataSet(heconstants,   8);
+            dg.addDataSet(trigger,       9);
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
@@ -199,6 +206,9 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             return;
         }
         
+        if(event.getTriggerPID()!=0)
+            this.getDataGroup().getItem(1, 1, 245).getH1F("vertex").fill(event.getTriggerZ());
+
         // loop over FTCAL reconstructed cluster
         if (!event.getClusters().isEmpty()) {
             

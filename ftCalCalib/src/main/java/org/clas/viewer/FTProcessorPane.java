@@ -18,6 +18,7 @@ import javax.swing.JPanel;
 import javax.swing.border.SoftBevelBorder;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.base.DataEventType;
+import org.jlab.io.base.DataSource;
 import org.jlab.io.evio.EvioETSource;
 import org.jlab.io.evio.EvioSource;
 import org.jlab.io.hipo3.Hipo3DataSource;
@@ -222,6 +223,33 @@ public class FTProcessorPane extends JPanel implements ActionListener {
         return mediaPane;
     }
     
+    public void connectAndRun(String ip,String port,String file) {
+        this.stopProcessorTimer();
+        EvioETSource source = new EvioETSource(ip,port);
+        source.open(file);
+        this.dataProcessor.setSource(source);
+        this.setDataFile(null);
+        mediaPlay.setEnabled(false);
+        mediaPause.setEnabled(true);
+        mediaNext.setEnabled(true);
+        mediaPrev.setEnabled(true);
+        this.startProcessorTimer();
+    }
+
+    public void openAndRun(String filename) {
+        this.stopProcessorTimer();
+        DataSource source = filename.endsWith(".hipo") ?
+            new HipoDataSource() : new EvioSource();
+        source.open(filename);
+        this.dataProcessor.setSource(source);
+        statusLabel.setText(dataProcessor.getStatusString());
+        mediaPlay.setEnabled(false);
+        mediaPause.setEnabled(true);
+        mediaNext.setEnabled(true);
+        mediaPrev.setEnabled(true);
+        this.startProcessorTimer();
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         System.out.println("[action] --> " + e.getActionCommand());
@@ -244,14 +272,15 @@ public class FTProcessorPane extends JPanel implements ActionListener {
         if(e.getActionCommand().compareTo("PlayNext")==0){
             this.dataProcessor.processNextEvent();
         }
+
         if(e.getActionCommand().compareTo("OpenFileET")==0){
+            this.stopProcessorTimer();
             ConnectionDialog dialog = new ConnectionDialog(this.defaultHost, this.defaultIp);
             dialog.setVisible(true);
             if(dialog.reason()==DialogUtilities.OK_RESPONSE){
                 String ip   = dialog.getIpAddress();
                 String file = dialog.getFileName();
                 Integer port = dialog.getPort();
-                
                 EvioETSource source = new EvioETSource(ip,port);
                 source.open(file);
                 this.dataProcessor.setSource(source);
@@ -263,16 +292,10 @@ public class FTProcessorPane extends JPanel implements ActionListener {
         }
         
         if(e.getActionCommand().compareTo("OpenFile")==0){
-
-            if(this.processTimer!=null){
-                this.processTimer.cancel();
-                this.processTimer = null;
-            }
-            
+            this.stopProcessorTimer();
             JFileChooser fc = new JFileChooser();
             fc.setCurrentDirectory(null);
             int returnVal = fc.showOpenDialog(this);
-            
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 String fileName = fc.getSelectedFile().getAbsolutePath();
                 System.out.println("file -> " + fileName);
@@ -284,11 +307,8 @@ public class FTProcessorPane extends JPanel implements ActionListener {
                 mediaPrev.setEnabled(true);
                 mediaPlay.setEnabled(true);
                 this.setDataFile(fileName);
-            } else {
-                
             }
         }
-        
         
         if(e.getActionCommand().compareTo("ResetListeners")==0){
             System.out.println("\n   >>>> resetting all listeners");
@@ -300,9 +320,10 @@ public class FTProcessorPane extends JPanel implements ActionListener {
                 }
             }
         }
+
         if(e.getActionCommand().compareTo("OpenFileRing")==0){
+            this.stopProcessorTimer();
             HipoRingSource source = HipoRingSource.createSource();
-            
             this.dataProcessor.setSource(source);
             statusLabel.setText(dataProcessor.getStatusString());
             mediaNext.setEnabled(true);
@@ -312,15 +333,11 @@ public class FTProcessorPane extends JPanel implements ActionListener {
         }
         
         if(e.getActionCommand().compareTo("OpenFileHipo3")==0){
-            if(this.processTimer!=null){
-                this.processTimer.cancel();
-                this.processTimer = null;
-            }
+            this.stopProcessorTimer();
             isHipo3Event = true;
             JFileChooser fc = new JFileChooser();
             fc.setCurrentDirectory(null);
             int returnVal = fc.showOpenDialog(this);
-            
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 String fileName = fc.getSelectedFile().getAbsolutePath();
                 System.out.println("file -> " + fileName);
@@ -338,21 +355,16 @@ public class FTProcessorPane extends JPanel implements ActionListener {
         }
         
         if(e.getActionCommand().compareTo("OpenFileHipo4")==0){
-            if(this.processTimer!=null){
-                this.processTimer.cancel();
-                this.processTimer = null;
-            }
+            this.stopProcessorTimer();
             isHipo3Event = false;
             JFileChooser fc = new JFileChooser();
             fc.setCurrentDirectory(null);
             int returnVal = fc.showOpenDialog(this);
-            
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 String fileName = fc.getSelectedFile().getAbsolutePath();
                 System.out.println("file -> " + fileName);
                 HipoDataSource source = new HipoDataSource();
                 source.open(fileName);
-
                 //This is where a real application would open the file.
                 this.dataProcessor.setSource(source);
                 statusLabel.setText(dataProcessor.getStatusString());
@@ -365,17 +377,17 @@ public class FTProcessorPane extends JPanel implements ActionListener {
         
     }
     
+    private void stopProcessorTimer() {
+        if(this.processTimer!=null){
+            this.processTimer.cancel();
+            this.processTimer = null;
+        }
+    }
+
     private void startProcessorTimer(){
-        //System.out.println(" starting timer ");
         class CrunchifyReminder extends TimerTask {
             boolean hasFinished = false;
             public void run() {
-                //dataProcessor.processNextEvent(0, DataEventType.EVENT_START);
-                /*if(hasFinished==true){
-                    dataProcessor.processNextEvent(0, DataEventType.EVENT_STOP);
-                    return;
-                }*/
-                //System.out.println("running");
                 for (int i=1 ; i<=50 ; i++) {
                     boolean status = dataProcessor.processNextEvent(eventDelay,DataEventType.EVENT_ACCUMULATE);
                     if(status==false&&hasFinished==false){

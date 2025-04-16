@@ -87,6 +87,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     private int      canvasUpdateTime   = 2000;
     private int      analysisUpdateTime = 2000000;
     private int      runNumber          = 0;
+    private List<String> inputFiles = null;
+    private int          currentFile = 0;
     private List<List<String>> loadConstants = new ArrayList<>();
     private List<List<String>> saveConstants = new ArrayList<>();
     private String   constantsDir       = null;
@@ -532,20 +534,27 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             }
             this.detectorView.repaint(); 
 
-            for(String name : saveConstants.get(currentIteration)) {
-                this.modules.get(name).updatePreviousConstants();
+            if(this.currentFile<this.inputFiles.size()-1) {
+                this.currentFile++;
+                this.processorPane.openAndRun(inputFiles.get(this.currentFile));
             }
-            this.saveAll();
+            else {
+                for(String name : saveConstants.get(currentIteration)) {
+                    this.modules.get(name).updatePreviousConstants();
+                }
+                this.saveAll();
 
-            currentIteration++;
-            if(currentIteration<loadConstants.size()) {
-                System.out.println("\nResetting for iteration " + currentIteration);
-                this.dataProvider.loadConstants(globalCalib);
-                wait(5000);
-                this.processorPane.setHipo4File(this.processorPane.getDataFile());
-            }
-            else if(this.quitWhenDone)  {
-                System.exit(0);
+                currentIteration++;
+                if(currentIteration<loadConstants.size()) {
+                    System.out.println("\nResetting for iteration " + currentIteration);
+                    this.dataProvider.loadConstants(globalCalib);
+                    wait(5000);
+                    this.currentFile++;
+                    this.processorPane.openAndRun(inputFiles.get(this.currentFile));
+                }
+                else if(this.quitWhenDone)  {
+                    System.exit(0);
+                }
             }
         }
     }
@@ -581,6 +590,14 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         this.detectorView.repaint();
     }
     
+    public void processFiles(List<String> filenames) {
+        this.inputFiles = filenames;
+        if(this.inputFiles!=null && !inputFiles.isEmpty()) {
+            this.currentFile = 0;
+            this.processorPane.openAndRun(inputFiles.get(0));
+        }
+    }
+
     public void saveAll() {
         DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
         String dirName = String.format("%s/ftCalCalib_%06d", this.workDir, this.runNumber);
@@ -779,7 +796,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         else 
             viewer.loadConstants(constantsDir);
 
-        viewer.processorPane.setHipo4File(parser.getInputList().get(0));
+        viewer.processFiles(parser.getInputList());
     }
 
 
