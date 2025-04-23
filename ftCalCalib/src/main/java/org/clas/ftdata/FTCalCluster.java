@@ -110,7 +110,9 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
     public Particle toParticle(boolean calib, Point3D vertex) {
         Vector3D p = this.momentum(calib, vertex);
         Particle particle = new Particle(this.pid(), p.x(), p.y(), p.z(), vertex.x(), vertex.y(), vertex.z());
+        particle.setProperty("clusterID", this.id());
         particle.setProperty("seed", this.seed());
+        particle.setProperty("time", this.getTime());
         return particle;
     }
 

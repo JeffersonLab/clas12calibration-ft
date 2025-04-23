@@ -549,7 +549,8 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                     System.out.println("\nResetting for iteration " + currentIteration);
                     this.dataProvider.loadConstants(globalCalib);
                     wait(5000);
-                    this.currentFile++;
+                    this.currentFile=0;
+                    this.resetEventListener();
                     this.processorPane.openAndRun(inputFiles.get(this.currentFile));
                 }
                 else if(this.quitWhenDone)  {

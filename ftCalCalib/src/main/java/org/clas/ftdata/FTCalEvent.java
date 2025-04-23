@@ -85,7 +85,7 @@ public class FTCalEvent {
 
     public boolean isGoodTriggerParticle() {
         return Math.abs(triggerZ-FTCalConstants.TARGET.z())<FTCalConstants.ZLENGTH &&
-               (triggerPID*Math.signum(torus)==-11 || triggerPID*Math.signum(torus)==211);
+               (triggerPID*Math.signum(torus)==-11 || triggerPID*Math.signum(torus)==211  || triggerPID*Math.signum(torus)==-211);
     }
     
     public Particle getGenerated() {

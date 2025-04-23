@@ -80,7 +80,7 @@ public class FTCalDataProvider {
                 DataBank recEvent = event.getBank("REC::Event");
                 DataBank recPart  = event.getBank("REC::Particle");
                 ftEvent.setStartTime(recEvent.getFloat("startTime", 0));
-                if(recPart.getShort("status", 0)<-2000 && Math.abs(recPart.getShort("status", 0))%100>=20) {
+                if(recPart.getShort("status", 0)<-2000 && Math.abs(recPart.getShort("status", 0))%100>=0) {
                     Particle part = new Particle(
                             recPart.getInt("pid", 0),
                             recPart.getFloat("px", 0),

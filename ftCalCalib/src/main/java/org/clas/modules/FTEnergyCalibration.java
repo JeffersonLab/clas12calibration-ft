@@ -8,6 +8,7 @@ import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTAdjustFit;
 import org.clas.viewer.FTCalConstants;
+import org.clas.viewer.FTCalDetector;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.clas.physics.Particle;
@@ -31,7 +32,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     public FTEnergyCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "pi0mass:pi0mass_error:factor:factor_error:mips_charge:",3, ccdb, gConstants);
         this.setCCDBTable("/calibration/ft/ftcal/charge_to_energy");
-        this.setCols(PhysicsConstants.massPionNeutral()*1E3*0.95, PhysicsConstants.massPionNeutral()*1E3*1.05);
+        this.setCols(PhysicsConstants.massPionNeutral()*1E3*0.8, PhysicsConstants.massPionNeutral()*1E3*1.2);
         this.setReference(PhysicsConstants.massPionNeutral()*1E3);
         this.getCalibrationTable().addConstraint(3, this.getReference()-0.8, this.getReference()+0.8);
     }
@@ -244,39 +245,32 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                         pi0.combine(gamma2, +1);
                         double invmass = pi0.mass()*1E3;
                         double angle = Math.toDegrees(Math.acos(gamma1.cosTheta(gamma2)));
+                        double deltaT = Math.abs(gamma1.getProperty("time")-gamma2.getProperty("time"));
                         
                         Particle pi0Org = new Particle();
                         pi0Org.copy(photons0.get(i1));
                         pi0Org.combine(photons0.get(i2), +1);
                         double invmassOrg = pi0Org.mass()*1E3;
                                 
-                        if(angle>FTCalConstants.PI0MINANGLE) {
+                        this.getDataGroup().getItem(1, 1, key1).getH2F("hmassangle").fill(invmass, angle);
+                        this.getDataGroup().getItem(1, 1, key2).getH2F("hmassangle").fill(invmass, angle);
+
+                        if(angle>FTCalConstants.PI0MINANGLE && deltaT<10) {
                             this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum").fill(invmassOrg);
                             this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum").fill(invmassOrg);
                             this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum_calib").fill(invmass);
                             this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum_calib").fill(invmass);
-                        }
-                        this.getDataGroup().getItem(1, 1, key1).getH2F("hmassangle").fill(invmass, angle);
-                        this.getDataGroup().getItem(1, 1, key2).getH2F("hmassangle").fill(invmass, angle);
 
-                        if(angle>FTCalConstants.PI0MINANGLE) {
                             double ecal1 = Math.pow(this.getReference(),2)/(2*gamma2.p()*1E3*(1-Math.cos(Math.toRadians(angle))));
                             double ecal2 = Math.pow(this.getReference(),2)/(2*gamma1.p()*1E3*(1-Math.cos(Math.toRadians(angle))));
-                            double theta1 = Math.toDegrees(gamma1.theta());
-                            double theta2 = Math.toDegrees(gamma2.theta());
-
-                            if(ecal1>0 && 
-                               theta2>FTCalConstants.THETAMIN && 
-                               theta2<FTCalConstants.THETAMAX) {
+                            if(ecal1>0 && !((FTCalDetector) this.getDetector()).isThisCrystalOnTheEdge(key2)) {
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_" + key1).fill(invmassOrg);
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_calib_" + key1).fill(invmass);
                                 this.getDataGroup().getItem(1, 1, key1).getH2F("hcal2d_" + key1).fill(ecal1,gamma1.p()*1E3);
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hcal_" + key1).fill(Math.sqrt(ecal1/gamma1.p()/1E3));
                                 isGood = true;
                             }
-                            if(ecal2>0 && 
-                               theta1>FTCalConstants.THETAMIN && 
-                               theta1<FTCalConstants.THETAMAX) {
+                            if(ecal2>0  && !((FTCalDetector) this.getDetector()).isThisCrystalOnTheEdge(key1)) {
                                 this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_" + key2).fill(invmassOrg);
                                 this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_calib_" + key2).fill(invmass);
                                 this.getDataGroup().getItem(1, 1, key2).getH2F("hcal2d_" + key2).fill(ecal2,gamma2.p());
@@ -287,14 +281,12 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                     }
                 }
                 if(isGood) {
-                        
-                                          this.getDataGroup().getItem(1, 1, 245).getH1F("trigger").fill(64);
-                      for(int i=0; i<64; i++) {
-                                if(event.isTriggerBitSet(i))
-                                    this.getDataGroup().getItem(1, 1, 245).getH1F("trigger").fill(i);
-                            }
-
+                    this.getDataGroup().getItem(1, 1, 245).getH1F("trigger").fill(64);
+                    for(int i=0; i<64; i++) {
+                        if(event.isTriggerBitSet(i))
+                            this.getDataGroup().getItem(1, 1, 245).getH1F("trigger").fill(i);
                     }
+                }
             }
         }
     }
@@ -323,7 +315,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
 
             H1F hcalib = this.getDataGroup().getItem(1,1,key).getH1F("hcal_" + key);
             F1D fcalib = this.getDataGroup().getItem(1,1,key).getF1D("fcal_" + key);
-            this.initCalibGaussFitPar(fcalib,hcalib,-1);
+            this.initCalibGaussFitPar(fcalib,hcalib,1);
             DataFitter.fit(fcalib,hcalib,"LQ");
             hcalib.setFunction(null);
         }
