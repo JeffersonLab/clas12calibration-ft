@@ -213,17 +213,15 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         // loop over FTCAL reconstructed cluster
         if (!event.getClusters().isEmpty()) {
             
-            List<Particle> photons0 = new ArrayList<>();
-            List<Particle> photons  = new ArrayList<>();
+            List<FTCalCluster> photons  = new ArrayList<>();
 
             // start from clusters
             for (FTCalCluster c : event.getClusters()) {
                 
                 if(c.charge()==0 && c.size()>FTCalConstants.CLUSTERSIZE) {
                         
-                    if(c.energyR(true)*1000>FTCalConstants.CLUSTERTHR)  {
-                        photons.add(c.toParticle(true, event.getVertex()));
-                        photons0.add(c.toParticle(false, event.getVertex()));
+                    if(c.energy(true)*1000>FTCalConstants.CLUSTERTHR)  {
+                        photons.add(c);
                     }
                     
                 }
@@ -234,28 +232,27 @@ public class FTEnergyCalibration extends FTCalibrationModule {
                 for (int i1 = 0; i1 < photons.size(); i1++) {
                     for (int i2 = i1 + 1; i2 < photons.size(); i2++) {
 
-                        int key1 = (int) photons.get(i1).getProperty("seed");
-                        int key2 = (int) photons.get(i2).getProperty("seed");
+                        int key1 = (int) photons.get(i1).seed();
+                        int key2 = (int) photons.get(i2).seed();
 
                         // get calibrated mass
-                        Particle gamma1 = photons.get(i1);
-                        Particle gamma2 = photons.get(i2);
+                        Particle gamma1 = photons.get(i1).toParticle(true, event.getVertex());
+                        Particle gamma2 = photons.get(i2).toParticle(true, event.getVertex());
                         Particle pi0 = new Particle();
                         pi0.copy(gamma1);
                         pi0.combine(gamma2, +1);
                         double invmass = pi0.mass()*1E3;
                         double angle = Math.toDegrees(Math.acos(gamma1.cosTheta(gamma2)));
-                        double deltaT = Math.abs(gamma1.getProperty("time")-gamma2.getProperty("time"));
+                        double deltaT = Math.abs(photons.get(i1).time(true)-photons.get(i2).time(true));
                         
-                        Particle pi0Org = new Particle();
-                        pi0Org.copy(photons0.get(i1));
-                        pi0Org.combine(photons0.get(i2), +1);
+                        Particle pi0Org = photons.get(i1).toParticle(false, event.getVertex());
+                        pi0Org.combine(photons.get(i2).toParticle(false, event.getVertex()), +1);
                         double invmassOrg = pi0Org.mass()*1E3;
                                 
                         this.getDataGroup().getItem(1, 1, key1).getH2F("hmassangle").fill(invmass, angle);
                         this.getDataGroup().getItem(1, 1, key2).getH2F("hmassangle").fill(invmass, angle);
 
-                        if(angle>FTCalConstants.PI0MINANGLE && deltaT<10) {
+                        if(angle>FTCalConstants.PI0MINANGLE && deltaT<FTCalConstants.DELTAT) {
                             this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum").fill(invmassOrg);
                             this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum").fill(invmassOrg);
                             this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum_calib").fill(invmass);
@@ -263,14 +260,14 @@ public class FTEnergyCalibration extends FTCalibrationModule {
 
                             double ecal1 = Math.pow(this.getReference(),2)/(2*gamma2.p()*1E3*(1-Math.cos(Math.toRadians(angle))));
                             double ecal2 = Math.pow(this.getReference(),2)/(2*gamma1.p()*1E3*(1-Math.cos(Math.toRadians(angle))));
-                            if(ecal1>0 && !((FTCalDetector) this.getDetector()).isThisCrystalOnTheEdge(key2)) {
+                            if(ecal1>0 && photons.get(i2).isInFiducial()) {
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_" + key1).fill(invmassOrg);
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_calib_" + key1).fill(invmass);
                                 this.getDataGroup().getItem(1, 1, key1).getH2F("hcal2d_" + key1).fill(ecal1,gamma1.p()*1E3);
                                 this.getDataGroup().getItem(1, 1, key1).getH1F("hcal_" + key1).fill(Math.sqrt(ecal1/gamma1.p()/1E3));
                                 isGood = true;
                             }
-                            if(ecal2>0  && !((FTCalDetector) this.getDetector()).isThisCrystalOnTheEdge(key1)) {
+                            if(ecal2>0  && photons.get(i1).isInFiducial()) {
                                 this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_" + key2).fill(invmassOrg);
                                 this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_calib_" + key2).fill(invmass);
                                 this.getDataGroup().getItem(1, 1, key2).getH2F("hcal2d_" + key2).fill(ecal2,gamma2.p());

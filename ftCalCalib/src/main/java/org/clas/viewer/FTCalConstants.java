@@ -30,6 +30,7 @@ public class FTCalConstants {
     public final static double CLUSTERTHR  = 500; // Vertical selection
     public final static int    CLUSTERSIZE = 3;   // Vertical selection
     public final static double PI0MINANGLE = 2.5; // minimum opening angle of two photons in pi0 analysis
+    public final static double DELTAT      = 10;  // max time difference between the two photons in pi0 analysis
     public final static double THETAMIN    = 2.5; // minimum angle for FT acceptance
     public final static double THETAMAX    = 4.5; // maximum angle for FT acceptance
     
