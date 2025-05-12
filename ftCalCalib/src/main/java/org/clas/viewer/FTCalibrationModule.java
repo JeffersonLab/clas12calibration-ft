@@ -99,7 +99,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     }    
 
     public void adjustFit() {
-        System.out.println("Option not implemented in current module");
+        this.printErr("option not implemented in current module\n");
     }
     
     @Override
@@ -118,7 +118,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
         if(group.hasItem(sector,layer,component)==true){
             this.drawDataGroup(sector, layer, component);
         } else {
-            System.out.println(" ERROR: can not find the data group");
+            this.printErr("ERROR: can not find the data group\n");
         }
         this.selectedKey = component;
     }
@@ -314,7 +314,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
             this.loadConstants(this.prevCalFilename);
         }
         else {
-            System.out.println(this.getName() + " set to default");            
+            this.printOut("constants set to default\n");            
         }
         if(this.prevCalib.getRowCount()!=0)
             copyConstants(prevCalib, calib);
@@ -326,7 +326,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     
     public void loadConstants(int run) {
         if(prevCalib.getRowCount()==0 && ccdb!=null && ccdbTableName!=null) {
-            System.out.println(this.getName() + " module constants will be read  from " + ccdbTableName + " with run number " + run);
+            this.printOut("module constants will be read  from " + ccdbTableName + " with run number " + run + "\n");
             this.loadConstants(ccdb.getConstants(run, ccdbTableName));
             if(prevCalib.getRowCount()!=0) {
                 this.getGlobalCalibration().put(moduleName, prevCalib);
@@ -336,7 +336,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     }
     
     public void loadConstants(String fileName) {     
-	System.out.println(this.getName() + " module constants will be read from file: " + fileName);
+	this.printOut("module constants will be read from file: " + fileName + "\n");
         // read in the left right values from the text file			
         String line = null;
         try {
@@ -354,7 +354,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
                 lineValues = line.split(" ");
 
                 if(lineValues.length!=prevCalib.getColumnCount()) {
-                    System.out.println("Wrong constants file format");
+                    this.printErr("wrong constants file format\n");
                 }
                 else {
                     int sector = Integer.parseInt(lineValues[0]);
@@ -375,14 +375,10 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
             bufferedReader.close();
             this.getGlobalCalibration().put(moduleName, prevCalib);
         } catch (FileNotFoundException ex) {
-            System.out.println(
-                    "Unable to open file '"
-                    + fileName + "'");
+            this.printErr("unable to open file '" + fileName + "'\n");
             return;
         } catch (IOException ex) {
-            System.out.println(
-                    "Error reading file '"
-                    + fileName + "'");
+            this.printErr("error reading file '" + fileName + "'\n");
             ex.printStackTrace();
             return;
         }
@@ -431,6 +427,14 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     
     }
     
+    public void printOut(String s) {
+        System.out.print("\t["+ this.getName() + "] " + s);
+    }
+    
+    public void printErr(String s) {
+        System.err.print("\t["+ this.getName() + "] " + s);
+    }
+    
     public void processShape(DetectorShape2D dsd) {
         // plot histos for the specific component
         int sector = dsd.getDescriptor().getSector();
@@ -442,14 +446,14 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
         if(group.hasItem(sector,layer,paddle)==true){
             this.drawDataGroup(sector, layer, paddle);
         } else {
-            System.out.println(" ERROR: can not find the data group");
+            this.printErr("ERROR: can not find the data group\n");
         }       
         this.selectedKey = paddle;
     }
   
     public void readDataGroup(TDirectory dir) {
         String folder = this.getName() + "/";
-        System.out.println("Reading from: " + folder);
+        this.printOut("reading from: " + folder + "\n");
         Map<Long, DataGroup> map = this.getDataGroup().getMap();
         for( Map.Entry<Long, DataGroup> entry : map.entrySet()) {
             Long key = entry.getKey();
@@ -470,7 +474,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
             }
             map.replace(key, newGroup);
         }
-        System.out.println("Histogram loading completed for module " + this.getName());
+        this.printOut("histogram loading completed\n");
         this.analyze();
     }   
 
@@ -520,11 +524,9 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
                 outputBw.newLine();
             }
             outputBw.close();
-            System.out.println(this.getName() + " constants saved to'" + filename);
+            this.printOut("constants saved to'" + filename + "'\n");
         } catch (IOException ex) {
-            System.out.println(
-                    "Error writing file '"
-                    + filename + "'");
+            this.printErr("error writing file '" + filename + "'\n");
             // Or we could just do this: 
             ex.printStackTrace();
         }
@@ -558,7 +560,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
 
     public void setCCDBTable(String table) {
         this.ccdbTableName = table;
-        System.out.println(this.getName() + " module calibration table set to " + this.ccdbTableName);
+        this.printOut("module calibration table set to " + this.ccdbTableName + "\n");
     }
     
     public void setDrawOptions() {
@@ -572,26 +574,26 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     public final void setRange(double min, double max) {
         this.range[0]=min;
         this.range[1]=max;
-        System.out.println(this.getName() + " module histogram range set to: " + String.format("%.3f:%.3f", this.range[0], this.range[1]));
+        this.printOut("module histogram range set to: " + String.format("%.3f:%.3f", this.range[0], this.range[1]) + "\n");
     }
     
     public final void setCols(double min, double max) {
         this.cols = new double[2];
         this.cols[0]=min;
         this.cols[1]=max;
-        System.out.println(this.getName() + " module color range et to: " + String.format("%.3f:%.3f", this.cols[0], this.cols[1]));
+        this.printOut("module color range et to: " + String.format("%.3f:%.3f", this.cols[0], this.cols[1]) + "\n");
     }
     
     public final void setReference(double value) {
         this.reference=value;
-        System.out.println(this.getName() + " module reference calibration value set to: " + String.format("%.3f", this.reference));
+        this.printOut("module reference calibration value set to: " + String.format("%.3f", this.reference) + "\n");
         this.resetEventListener();
     }
     
     public final void setScaleShift(double scale, double shift) {
         this.scaleshift[0]=scale;
         this.scaleshift[1]=shift;
-        System.out.println(this.getName() + " module constant scale/shift set to: " + String.format("%.3f/%.3f", this.scaleshift[0], this.scaleshift[1]));
+        this.printOut("module constant scale/shift set to: " + String.format("%.3f/%.3f", this.scaleshift[0], this.scaleshift[1]) + "\n");
         this.resetEventListener();
     }
 
@@ -709,7 +711,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
             frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         }
         else {
-        System.out.println("Function not implemented in current module");            
+        this.printErr("function not implemented in current module\n");            
         }
     }
     
@@ -720,7 +722,7 @@ public class FTCalibrationModule implements CalibrationConstantsListener {
     
     public void updatePreviousConstants() {
 //        if(this.calDBSource == FTCalibrationModule.CAL_FILE) {
-            System.out.println(this.getName() + " updating constants for next iteration");
+            this.printOut("updating constants for next iteration\n");
             copyConstants(calib, prevCalib);
 //        }
     }

@@ -281,7 +281,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             if(fileName != null) this.loadHistosFromFile(fileName);
         }        
         if("Print histograms to file...".equals(e.getActionCommand())) {
-            DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
             String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
@@ -295,7 +295,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             this.savePictures(dirName);
         }
         if("Save histograms...".equals(e.getActionCommand())) {
-            DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
             String fileName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date()) + ".hipo";
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir + "/FTCalCalib-histos");
@@ -331,7 +331,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
             this.loadConstants(filePath);
         }
         if("Save...".equals(e.getActionCommand())) {
-            DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
             String dirName = "ftCalCalib_" + this.runNumber + "_" + df.format(new Date());
             JFileChooser fc = new JFileChooser();
             File workingDirectory = new File(this.workDir);
@@ -513,7 +513,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
         
         if (de.getType()==DataEventType.EVENT_START)
-            System.out.println("\nStarting iteration " + currentIteration);
+            System.out.println("\n[Calibration] Starting iteration " + currentIteration);
         
         if (de.getType()==DataEventType.EVENT_START ||
             de.getType()==DataEventType.EVENT_ACCUMULATE ||
@@ -546,7 +546,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
                 currentIteration++;
                 if(currentIteration<loadConstants.size()) {
-                    System.out.println("\nResetting for iteration " + currentIteration);
+                    System.out.println("\n[Calibration] Resetting for iteration " + currentIteration);
                     this.dataProvider.loadConstants(globalCalib);
                     wait(5000);
                     this.currentFile=0;
@@ -600,7 +600,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     }
 
     public void saveAll() {
-        DateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH.mm.ss");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
         String dirName = String.format("%s/ftCalCalib_%06d", this.workDir, this.runNumber);
         String saveDir =  dirName + "_" + df.format(new Date());
         this.saveConstants(saveDir);
@@ -625,7 +625,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 //handle it
             }        
             if(result) {    
-                System.out.println("Created directory: " + dirName);
+                System.out.println("[Calibration] Created directory: " + dirName);
             }
         }        
         for(String name : loadConstants.get(currentIteration)) {
@@ -646,7 +646,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
                 //handle it
             }        
             if(result) {    
-                System.out.println("Created directory: " + dirName);
+                System.out.println("[Calibration] Created directory: " + dirName);
             }
         }
         for(String name : this.modules.keySet()) {
@@ -668,7 +668,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     @Override
     public void resetEventListener() {
-        System.out.println("Resetting modules");
+        System.out.println("[Calibration] Resetting modules");
 	for(String name : this.modules.keySet()) {
             this.modules.get(name).resetEventListener();
         }
@@ -704,7 +704,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
     }
             
     public void setCanvasUpdate(int time) {
-        System.out.println("Setting " + time + " ms update interval");
+        System.out.println("[Calibration] setting " + time + " ms update interval");
         this.canvasUpdateTime = time;
         for(String name : this.modules.keySet()) {
             this.modules.get(name).setCanvasUpdate(time);
@@ -733,18 +733,23 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
 
     public static void main(String[] args){
         
+        int xsize = 2000;
+        int ysize = 900;
+        String fsize = xsize + "x" +ysize;
+        
         OptionParser parser = new OptionParser("ftCalCalib");
         
-        parser.addOption("-c", "0",  "calibrate (0/1)");
-        parser.addOption("-d", "",   "path to previous calibration constants folder");
-        parser.addOption("-l", "",   "colon-separated list of modules that should load constants from text files");
-        parser.addOption("-m", "0",  "use MC true information");
-        parser.addOption("-n", "1",  "number of iterations");
-        parser.addOption("-q", "0",  "quit when completed (0=false; 1=true)");
-        parser.addOption("-s", "",   "colon-separated list of modules that should save constants to text files");
-        parser.addOption("-t", "-3", "target position in cm");
-        parser.addOption("-v", "0",  "use target center (0) or trigger particle vertex to set the FT particle vertex");
-        parser.addOption("-w", "1",  "open GUI window (0=false; 1=true)");
+        parser.addOption("-c",   "0", "calibrate (0/1)");
+        parser.addOption("-d",    "", "path to previous calibration constants folder");
+        parser.addOption("-g", fsize, "frame size");
+        parser.addOption("-l",    "", "colon-separated list of modules that should load constants from text files");
+        parser.addOption("-m",   "0", "use MC true information");
+        parser.addOption("-n",   "1", "number of iterations");
+        parser.addOption("-q",   "0", "quit when completed (0=false; 1=true)");
+        parser.addOption("-s",    "", "colon-separated list of modules that should save constants to text files");
+        parser.addOption("-t",  "-3", "target position in cm");
+        parser.addOption("-v",   "0", "use target center (0) or trigger particle vertex to set the FT particle vertex");
+        parser.addOption("-w",   "1", "open GUI window (0=false; 1=true)");
         
         parser.parse(args);
         
@@ -755,6 +760,7 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         
         boolean calibrate      = parser.getOption("-c").intValue()!=0;
         String  constantsDir   = parser.getOption("-d").stringValue();
+        String  frameSize      = parser.getOption("-g").stringValue();
         String  loadConstants  = parser.getOption("-l").stringValue();
         boolean useMCTrueInfo  = parser.getOption("-m").intValue()!=0;
         int     nIterations    = parser.getOption("-n").intValue();
@@ -784,11 +790,15 @@ public final class CalibrationViewer implements IDataEventListener, ActionListen
         }
         
         if(openWindow) {
+            if(frameSize.split("x").length==2) {
+                xsize = Integer.parseInt(frameSize.split("x")[0].trim());
+                ysize = Integer.parseInt(frameSize.split("x")[1].trim());
+            }
             JFrame frame = new JFrame(parser.getInputList().get(0));
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(viewer.mainPanel);
             frame.setJMenuBar(viewer.menuBar);
-            frame.setSize(1600, 900);
+            frame.setSize(xsize, ysize);
             frame.setVisible(true);
         }
         

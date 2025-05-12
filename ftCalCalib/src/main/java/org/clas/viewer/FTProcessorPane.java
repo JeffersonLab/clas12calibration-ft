@@ -410,22 +410,6 @@ public class FTProcessorPane extends JPanel implements ActionListener {
         this.dataFile = dataFile;
     }
 
-    public void setHipo4File(String filename) {
-        if(this.processTimer!=null){
-                this.processTimer.cancel();
-                this.processTimer = null;
-        }
-        this.dataProcessor.resetListeners();
-        HipoDataSource source = new HipoDataSource();
-        source.open(filename);
-
-        //This is where a real application would open the file.
-        this.dataProcessor.setSource(source);
-        statusLabel.setText(dataProcessor.getStatusString());
-        this.setDataFile(filename);
-        this.startProcessorTimer();
-    }
-    
     public int getProgress() {
         return this.dataProcessor.getProgress();
     }

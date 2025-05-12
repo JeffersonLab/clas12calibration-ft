@@ -8,7 +8,6 @@ import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTAdjustFit;
 import org.clas.viewer.FTCalConstants;
-import org.clas.viewer.FTCalDetector;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.clas.physics.Particle;
@@ -32,7 +31,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     public FTEnergyCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "pi0mass:pi0mass_error:factor:factor_error:mips_charge:",3, ccdb, gConstants);
         this.setCCDBTable("/calibration/ft/ftcal/charge_to_energy");
-        this.setCols(PhysicsConstants.massPionNeutral()*1E3*0.8, PhysicsConstants.massPionNeutral()*1E3*1.2);
+        this.setCols(PhysicsConstants.massPionNeutral()*1E3*0.95, PhysicsConstants.massPionNeutral()*1E3*1.05);
         this.setReference(PhysicsConstants.massPionNeutral()*1E3);
         this.getCalibrationTable().addConstraint(3, this.getReference()-0.8, this.getReference()+0.8);
     }
@@ -109,7 +108,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         trigger.setOptStat("1111");
 
         H1F vertex = new H1F("vertex", 100, FTCalConstants.Z0-1.2*FTCalConstants.ZLENGTH, FTCalConstants.Z0+1.2*FTCalConstants.ZLENGTH);
-        vertex.setTitleX("Trigger Bits");
+        vertex.setTitleX("Vertex (cm)");
         vertex.setTitleY("Counts");
         vertex.setFillColor(43);
         vertex.setLineColor(23);
@@ -320,7 +319,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
 
     @Override
     public void adjustFit() {
-        System.out.println("Adjusting fit for component " + this.getSelectedKey());
+        this.printOut("adjusting fit for component " + this.getSelectedKey() + "\n");
         H1F hcal = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hcal_" + this.getSelectedKey());
         F1D fcal = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getF1D("fcal_" + this.getSelectedKey());
         FTAdjustFit cfit = new FTAdjustFit(hcal, fcal, "LRQ");
@@ -413,8 +412,9 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             getCalibrationTable().setDoubleValue(cmips,       "mips_charge",    1, 1, key);
         }
         getCalibrationTable().fireTableDataChanged();
-        System.out.println(this.getName() + " QA = " + this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getEntries() + "/" +
-                                                       this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getMean()+ "/" +
-                                                       this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getRMS() );
+        this.printOut(String.format("QA: ncrystals = %d, mass = %.2f, sigma = %.2f\n",
+                                    this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getEntries(),
+                                    this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getMean(),
+                                    this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getRMS()));
     }
 }

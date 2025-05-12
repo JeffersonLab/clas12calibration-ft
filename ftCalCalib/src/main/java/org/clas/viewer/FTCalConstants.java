@@ -43,17 +43,17 @@ public class FTCalConstants {
     public static boolean VERTEXMODE = false; // use target if false or trigger particle vertex if true
     
     public FTCalConstants() {
-        System.out.println("Constants loaded");
+
     }
 
     public static void setVertexMode(boolean mode) {
         VERTEXMODE = mode;
-        System.out.println("Vertex mode set to = " + VERTEXMODE + ", FT particle vertex will be set based on " + (VERTEXMODE ? "trigger particle" : "target position"));
+        System.out.println("[Constants] vertex mode set to = " + VERTEXMODE + ", FT particle vertex will be set based on " + (VERTEXMODE ? "trigger particle" : "target position"));
     }
 
     public static void setTargetZ(double z) {
         Z0 = z;
         TARGET = new Point3D(0, 0, Z0);
-        System.out.println("Target position set to Z0 = " + Z0 + " (cm)");
+        System.out.println("[Constants] target position set to Z0 = " + Z0 + " (cm)");
     }
 }

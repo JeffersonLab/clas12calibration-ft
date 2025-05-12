@@ -186,7 +186,7 @@ public class FTElasticCalibration extends FTCalibrationModule {
         }
         if(ebeamRCDB!=ebeam && ebeamRCDB!=0) {
             ebeam=ebeamRCDB;
-            System.out.println("Setting beam energy to: " + ebeam + " MeV");
+            this.printOut("setting beam energy to: " + ebeam + " MeV\n");
             this.initRange(ebeam*0.2, ebeam*1.5);
             this.setCols(ebeam*0.9, ebeam*1.1);
             this.setReference(ebeam);
