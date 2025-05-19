@@ -80,7 +80,7 @@ public class FTCalDataProvider {
                 DataBank recEvent = event.getBank("REC::Event");
                 DataBank recPart  = event.getBank("REC::Particle");
                 ftEvent.setStartTime(recEvent.getFloat("startTime", 0));
-                if(recPart.getShort("status", 0)<-2000 && Math.abs(recPart.getShort("status", 0))%100>=0) {
+                if(recPart.getShort("status", 0)<-2000) {
                     Particle part = new Particle(
                             recPart.getInt("pid", 0),
                             recPart.getFloat("px", 0),
@@ -89,7 +89,7 @@ public class FTCalDataProvider {
                             recPart.getFloat("vx", 0),
                             recPart.getFloat("vy", 0),
                             recPart.getFloat("vz", 0));
-                    if(part.p()>0*1) {
+                    if(part.p()>0) {
                         ftEvent.setTriggerPID(recPart.getInt("pid",0));
                         ftEvent.setTriggerZ(recPart.getFloat("vz",0));}
                     
