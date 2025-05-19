@@ -110,7 +110,6 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
     public Particle toParticle(boolean calib, Point3D vertex) {
         Vector3D p = this.momentum(calib, vertex);
         Particle particle = new Particle(this.pid(), p.x(), p.y(), p.z(), vertex.x(), vertex.y(), vertex.z());
-        particle.setProperty("seed", this.seed());
         return particle;
     }
 
@@ -191,6 +190,11 @@ public class FTCalCluster extends ArrayList<FTCalHit> {
         return centroid;            
     }    
 
+    public boolean isInFiducial() {
+        double theta = Math.toDegrees(this.getCentroid().vectorFrom(0, 0, FTCalConstants.Z0).theta());
+        return theta>FTCalConstants.THETAMIN && theta<FTCalConstants.THETAMAX;
+    }
+    
     @Override
     public String  toString(){
         StringBuilder str = new StringBuilder();

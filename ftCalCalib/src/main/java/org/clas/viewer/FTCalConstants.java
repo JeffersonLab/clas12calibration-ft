@@ -30,29 +30,30 @@ public class FTCalConstants {
     public final static double CLUSTERTHR  = 500; // Vertical selection
     public final static int    CLUSTERSIZE = 3;   // Vertical selection
     public final static double PI0MINANGLE = 2.5; // minimum opening angle of two photons in pi0 analysis
+    public final static double DELTAT      = 10;  // max time difference between the two photons in pi0 analysis
     public final static double THETAMIN    = 2.5; // minimum angle for FT acceptance
     public final static double THETAMAX    = 4.5; // maximum angle for FT acceptance
     
     // target position
     public static double Z0 = -3.0; // cm
-    public static double ZLENGTH = 28.0; // cm
+    public static double ZLENGTH = 35.0; // cm
     public static Point3D TARGET = new Point3D(0, 0, Z0);
 
     // vertex
     public static boolean VERTEXMODE = false; // use target if false or trigger particle vertex if true
     
     public FTCalConstants() {
-        System.out.println("Constants loaded");
+
     }
 
     public static void setVertexMode(boolean mode) {
         VERTEXMODE = mode;
-        System.out.println("Vertex mode set to = " + VERTEXMODE + ", FT particle vertex will be set based on " + (VERTEXMODE ? "trigger particle" : "target position"));
+        System.out.println("[Constants] vertex mode set to = " + VERTEXMODE + ", FT particle vertex will be set based on " + (VERTEXMODE ? "trigger particle" : "target position"));
     }
 
     public static void setTargetZ(double z) {
         Z0 = z;
         TARGET = new Point3D(0, 0, Z0);
-        System.out.println("Target position set to Z0 = " + Z0 + " (cm)");
+        System.out.println("[Constants] target position set to Z0 = " + Z0 + " (cm)");
     }
 }

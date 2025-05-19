@@ -173,7 +173,7 @@ public class FTEnergyCorrection extends FTCalibrationModule {
     public void analyze() {
         
         this.loadConstantsToFunctions();
-        System.out.print("Analysis of energy correction data ");
+        this.printOut("analysis of energy correction data...");
         for (int key : this.getDetector().getDetectorComponents()) {
             
             if(this.getDataGroup().getItem(1, 1, key).getH1F("hi_de_" + key).getIntegral()>minNumberOfEvents) {
