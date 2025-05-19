@@ -129,7 +129,7 @@ public class FTCalEventModule extends FTModule {
                 gpulse.addPoint(pul_i2 + 0.5, counter.getADCData(0).getPulseValue(pul_i2), 0, 0);
                 H_WMAX.fill(key, counter.getADCData(0).getHeight() - counter.getADCData(0).getPedestal());
                 H_TCROSS.fill(key, counter.getADCData(0).getTimeCourse());
-                H_WIDTH.fill(key, counter.getADCData(0).getFWHM());
+                H_WIDTH.fill(key, counter.getADCData(0).getPosition()-counter.getADCData(0).getThresholdCrossing());
                 if (counter.getADCData(0).getHeight() - counter.getADCData(0).getPedestal() > this.getDetector().getThresholds().get(1, 1, key)) {
                     gpulse.addPoint(counter.getADCData(0).getThresholdCrossing() + 0.5, counter.getADCData(0).getPulseValue(counter.getADCData(0).getThresholdCrossing()), 0, 0);
                     gpulse.addPoint(counter.getADCData(0).getTime() / nsPerSample + 0.5, (counter.getADCData(0).getHeight() + counter.getADCData(0).getPedestal()) / 2, 0, 0);
@@ -143,10 +143,11 @@ public class FTCalEventModule extends FTModule {
     public Color getColor(int key, String parameterName) {
         Color col = new Color(100, 100, 100);
         if (H_WMAX.getBinContent(key) > this.getDetector().getThresholds().get(1, 1, key)) {
-            if (H_TCROSS.getBinContent(key) > 0) {
-                col = new Color(140, 0, 200);
-            } else {
+            if (H_TCROSS.getBinContent(key) > 0 &&
+                H_WIDTH.getBinContent(key)  > 0 ) {
                 col = new Color(200, 0, 200);
+            } else {
+                col = new Color(140, 0, 200);
             }
         }
         return col;

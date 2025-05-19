@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.viewer;
 
 import java.util.Set;
@@ -27,8 +22,8 @@ public class FTCalDetector extends FTDetector {
     private double x0=0;
     private double y0=0;
     
-    private DetectorCollection<ShapePoint> points = new DetectorCollection<ShapePoint>();
-    DetectorCollection<Double> thresholds = new DetectorCollection<Double>();
+    private DetectorCollection<ShapePoint> points = new DetectorCollection<>();
+    DetectorCollection<Double> thresholds = new DetectorCollection<>();
         
 
     public FTCalDetector(String name) {
@@ -87,6 +82,9 @@ public class FTCalDetector extends FTDetector {
         this.getView().addShape(this.getName(),paddle);
     }
     
+    public DetectorShape2D getDefaultShape() {
+        return new DetectorShape2D(DetectorType.FTCAL, 1, 1, 245);
+    }
     
     public void setThresholds(double threshold) {
         for (int component : this.getDetectorComponents()) {
@@ -212,14 +210,19 @@ public class FTCalDetector extends FTDetector {
     
     public boolean isThisCrystalOnTheEdge(int id) {
 
-        boolean crystalEdge=false;
         int iy = id / nCrystalX;
         int ix = id - iy * nCrystalX;
 
         double xcrystal = crystal_size * (nCrystalX - ix - 0.5);
         double ycrystal = crystal_size * (nCrystalY - iy - 0.5);
-        double rcrystal = Math.sqrt(Math.pow(xcrystal - crystal_size * 11, 2.0) + Math.pow(ycrystal - crystal_size * 11, 2.0));
-        if (rcrystal < crystal_size * 4.8 || rcrystal >crystal_size * 10.11) {
+        return this.isThisOnTheEdge(xcrystal - crystal_size * 11, ycrystal - crystal_size * 11);
+    }
+
+    public boolean isThisOnTheEdge(double x, double y) {
+
+        boolean crystalEdge=false;
+        double r = Math.sqrt(Math.pow(x, 2.0) + Math.pow(y, 2.0));
+        if (r < crystal_size * 4.8 || r >crystal_size * 10.11) {
             crystalEdge=true;
         }
         return crystalEdge;

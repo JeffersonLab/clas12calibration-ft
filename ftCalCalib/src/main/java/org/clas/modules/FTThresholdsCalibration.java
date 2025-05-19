@@ -1,17 +1,16 @@
 package org.clas.modules;
 
-import java.util.Arrays;
-import java.util.List;
+import org.clas.ftdata.FTCalADC;
+import org.clas.ftdata.FTCalEvent;
 import java.util.Map;
 import org.clas.view.DetectorShape2D;
+import org.clas.viewer.FTCalConstants;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
-import org.jlab.io.base.DataBank;
-import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
@@ -60,9 +59,6 @@ public class FTThresholdsCalibration extends FTCalibrationModule {
         hthresholds.setFillColor(44);
         hthresholds.setLineColor(24);
         for (int key : this.getDetector().getDetectorComponents()) {
-            // initializa calibration constant table
-            this.getCalibrationTable().addEntry(1, 1, key);
-
             // initialize data group
             H1F hthrs = new H1F("hthrs_" + key, 100, 0.0, 100.0);
             hthrs.setTitleX("Threshold (MeV)");
@@ -85,13 +81,8 @@ public class FTThresholdsCalibration extends FTCalibrationModule {
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
-        getCalibrationTable().fireTableDataChanged();
     }
 
-    @Override
-    public List<CalibrationConstants> getCalibrationConstants() {
-        return Arrays.asList(getCalibrationTable());
-    }
 
     @Override
     public int getNEvents(DetectorShape2D dsd) {
@@ -114,39 +105,31 @@ public class FTThresholdsCalibration extends FTCalibrationModule {
     }
 
     @Override
-    public void processEvent(DataEvent event) {
+    public void processEvent(FTCalEvent event) {
         // loop over FTCAL reconstructed cluster
-        int run = 0;
-        if(event.hasBank("RUN::config")) {
-            run = event.getBank("RUN::config").getInt("run", 0);            
-        }
-        else {
+        int run = event.getRun();
+        if(run<=0) {
             return;
         }
         if(this.getConstantsManager()!=null) charge2energy = this.getConstantsManager().getConstants(run, "/calibration/ft/ftcal/charge_to_energy");
-        if (event.hasBank("FTCAL::adc")) {
-            DataBank adcFTCAL = event.getBank("FTCAL::adc");
-            for (int loop = 0; loop < adcFTCAL.rows(); loop++) {
-                int    component    = adcFTCAL.getInt("component", loop);
-                int    adc          = adcFTCAL.getInt("ADC", loop);
-                double ped          = adcFTCAL.getShort("ped", loop);                
+        if (!event.getADCs().isEmpty()) {
+            for (FTCalADC hit : event.getADCs()) {
+                int    component = hit.component();
+                int    adc       = hit.adc();
+                double ped       = hit.pedestal();                
                 if(adc>0) {
-                    double c2e        = (this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
+                    double c2e        = (FTCalConstants.LSB*FTCalConstants.NSPERSAMPLE/50)*FTCalConstants.EMIPS/FTCalConstants.CHARGEMIPS;
                     if(this.getConstantsManager()!=null) c2e = 1*charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
 						                *charge2energy.getDoubleValue("mips_energy", 1,1,component)
 						                /charge2energy.getDoubleValue("mips_charge", 1,1,component);
-                    if(this.getPreviousCalibrationTable().hasEntry(1,1,component)) {
+                    if(this.getGlobalCalibration().containsKey("EvergyCalibration") &&
+                       this.getGlobalCalibration().get("EvergyCalibration").hasEntry(1,1,component)) {
                         c2e = charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
 			     *charge2energy.getDoubleValue("mips_energy", 1,1,component)
-			     /this.getPreviousCalibrationTable().getDoubleValue("charge2energy", 1, 1, component);
+			     /this.getGlobalCalibration().get("EvergyCalibration").getDoubleValue("charge2energy", 1, 1, component);
                     }
                     this.getDataGroup().getItem(1,1,component).getH1F("htsum").fill(adc*c2e);
                     this.getDataGroup().getItem(1,1,component).getH1F("hthrs_"+component).fill(adc*c2e);
-//                    if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
-//                        double offset = this.getPreviousCalibrationTable().getDoubleValue("pedestal", 1, 1, key);
-//                        this.getDataGroup().getItem(1,1,key).getH1F("hpsum_calib").fill(ped+200-offset);
-//                        this.getDataGroup().getItem(1,1,key).getH1F("hped_calib_"+key).fill(ped+200-offset);
-//                    }                            
                 } 
             }
         }

@@ -1,8 +1,8 @@
 package org.clas.modules;
 
+import org.clas.ftdata.FTCalCluster;
+import org.clas.ftdata.FTCalEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTCalibrationModule;
@@ -14,11 +14,10 @@ import org.jlab.geom.prim.Vector3D;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.data.H2F;
 import org.jlab.groot.group.DataGroup;
-import org.jlab.io.base.DataBank;
-import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.data.GraphErrors;
+import org.jlab.utils.groups.IndexedTable;
 
 /**
  *
@@ -26,12 +25,11 @@ import org.jlab.groot.data.GraphErrors;
  */
 public class FTEnergyCorrection extends FTCalibrationModule {
 
-    private int minNumberOfEvents =100;
-    public double theta[] = new double[500];
-    public double phi[] = new double[500];
+    private final int minNumberOfEvents =100;
     
     public FTEnergyCorrection(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
         super(d, name, "c0:c1:c2:c3:c4",7, ccdb, gConstants);
+        this.setCCDBTable("/calibration/ft/ftcal/energycorr");
         this.setCols(0, 0.5);
     }
 
@@ -57,13 +55,6 @@ public class FTEnergyCorrection extends FTCalibrationModule {
         hi_de_phi_calib.setTitleY("#DeltaEcal (GeV)");
         hi_de_phi_calib.setTitle("Component ");
         for (int key : this.getDetector().getDetectorComponents()) {
-            // initializa calibration constant table
-            this.getCalibrationTable().addEntry(1, 1, key);
-            getCalibrationTable().setDoubleValue(0., "c0", 1, 1, key);
-            getCalibrationTable().setDoubleValue(0., "c1", 1, 1, key);
-            getCalibrationTable().setDoubleValue(0., "c2", 1, 1, key);
-            getCalibrationTable().setDoubleValue(0., "c3", 1, 1, key);
-            getCalibrationTable().setDoubleValue(0., "c4", 1, 1, key);
             // initializa data group
             H1F hi_de = new H1F("hi_de_" + key, 100, -1., 1.);
             hi_de.setTitleX("#DeltaE (GeV)");
@@ -131,12 +122,6 @@ public class FTEnergyCorrection extends FTCalibrationModule {
            
 
         }
-        getCalibrationTable().fireTableDataChanged();
-    }
-
-    @Override
-    public List<CalibrationConstants> getCalibrationConstants() {
-        return Arrays.asList(getCalibrationTable());
     }
 
     @Override
@@ -148,40 +133,20 @@ public class FTEnergyCorrection extends FTCalibrationModule {
     }
 
     @Override
-    public void processEvent(DataEvent event) {
-        Particle partGen = null;
-        // get generated particle information
-        if (event.hasBank("MC::Particle")) {
-            DataBank genBank = event.getBank("MC::Particle");
-            for (int loop = 0; loop < genBank.rows(); loop++) {
-                Particle genPart = new Particle(
-                        genBank.getInt("pid", loop),
-                        genBank.getFloat("px", loop),
-                        genBank.getFloat("py", loop),
-                        genBank.getFloat("pz", loop),
-                        genBank.getFloat("vx", loop),
-                        genBank.getFloat("vy", loop),
-                        genBank.getFloat("vz", loop));
-                if (genPart.pid() == 22 || genPart.pid() == 11) {//Sia per i fotoni che per gli elettroni
-                    if (partGen == null) {
-                        partGen = genPart;
-                    }
-                }
-            }
-        }
+    public void processEvent(FTCalEvent event) {
+        
         // loop over FTCAL reconstructed cluster
-        if (event.hasBank("FTCAL::clusters") && partGen != null) {
-            DataBank recFTCAL = event.getBank("FTCAL::clusters");
-            for (int loop = 0; loop < recFTCAL.rows(); loop++) {
-                int key = getDetector().getComponent(recFTCAL.getFloat("x", loop), recFTCAL.getFloat("y", loop));
-                //if(recFTCAL.rows()>1)System.out.println(" recFTCAL.rows() "+recFTCAL.getFloat("x",loop)+" "+recFTCAL.getFloat("y",loop));//Only seed is included
-                double energy  = recFTCAL.getFloat("energy", loop);
-                double energyR = recFTCAL.getFloat("recEnergy", loop);
+        if (event.getGenerated() != null && !event.getClusters().isEmpty()) {
+
+            for (FTCalCluster c : event.getClusters()) {
+                
+                int key = c.seed();
+                double energy  = c.energy(true);
+                double energyR = c.energyR(true);
                 double energyR_corr=0;
-                Vector3D cluster = new Vector3D(recFTCAL.getFloat("x", loop), recFTCAL.getFloat("y", loop), recFTCAL.getFloat("z", loop));
-                theta[key]=Math.toDegrees(cluster.theta());//if(theta[key]<1)System.out.println(key + " theta= "+theta[key]);
-                phi[key]=Math.toDegrees(cluster.phi());
-    //            this.getDataGroup().getItem(1, 1, key).getH1F("h1_" + key).fill(energy);
+                Vector3D cluster = c.position(true).toVector3D();
+                Particle partGen = event.getGenerated();
+                
                 this.getDataGroup().getItem(1, 1, key).getH1F("hi_de_sum").fill(energy - partGen.p());
                 this.getDataGroup().getItem(1, 1, key).getH1F("hi_de_" + key).fill(energy - partGen.p());
                 this.getDataGroup().getItem(1, 1, key).getH1F("hi_dtheta_" + key).fill(Math.toDegrees(cluster.theta() - partGen.theta()));
@@ -208,7 +173,7 @@ public class FTEnergyCorrection extends FTCalibrationModule {
     public void analyze() {
         
         this.loadConstantsToFunctions();
-        System.out.print("Analysis of energy correction data ");
+        this.printOut("analysis of energy correction data...");
         for (int key : this.getDetector().getDetectorComponents()) {
             
             if(this.getDataGroup().getItem(1, 1, key).getH1F("hi_de_" + key).getIntegral()>minNumberOfEvents) {
@@ -265,6 +230,23 @@ public class FTEnergyCorrection extends FTCalibrationModule {
     }
 
     @Override
+    public void loadConstants(IndexedTable table) {
+        for(int i=0; i<table.getRowCount(); i++) {
+            int sector = Integer.valueOf((String)table.getValueAt(i, 0));
+            int layer  = Integer.valueOf((String)table.getValueAt(i, 1));
+            int comp   = Integer.valueOf((String)table.getValueAt(i, 2));
+            this.getPreviousCalibrationTable().addEntry(sector, layer, comp);
+            for(int j=3; j<this.getPreviousCalibrationTable().getColumnCount(); j++) {
+                String colname = (String)this.getPreviousCalibrationTable().getColumnName(j);
+                this.getPreviousCalibrationTable().setDoubleValue(table.getDoubleValue(colname, sector, layer, comp), 
+                                                                  colname, 
+                                                                  sector, layer, comp);
+            }
+        }
+        this.getPreviousCalibrationTable().fireTableDataChanged();    
+    }
+
+    @Override
     public void loadConstantsToFunctions() {
         if(this.getPreviousCalibrationTable().hasEntry(1,1,8)) {
             for (int key : this.getDetector().getDetectorComponents()) {
@@ -297,4 +279,7 @@ public class FTEnergyCorrection extends FTCalibrationModule {
 //        this.getCanvas().draw(f2limit,"same");
     }
 
+    @Override
+    public void timerUpdate() {
+    }
 }

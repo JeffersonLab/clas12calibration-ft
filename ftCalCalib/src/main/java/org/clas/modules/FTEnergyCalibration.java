@@ -1,11 +1,13 @@
 package org.clas.modules;
 
+import org.clas.ftdata.FTCalCluster;
+import org.clas.ftdata.FTCalEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.clas.view.DetectorShape2D;
 import org.clas.viewer.FTAdjustFit;
+import org.clas.viewer.FTCalConstants;
 import org.clas.viewer.FTCalibrationModule;
 import org.clas.viewer.FTDetector;
 import org.jlab.clas.physics.Particle;
@@ -13,8 +15,6 @@ import org.jlab.detector.calib.utils.CalibrationConstants;
 import org.jlab.detector.calib.utils.ConstantsManager;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.group.DataGroup;
-import org.jlab.io.base.DataBank;
-import org.jlab.io.base.DataEvent;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.data.H2F;
 import org.jlab.groot.fitter.DataFitter;
@@ -27,14 +27,13 @@ import org.jlab.utils.groups.IndexedTable;
  * @author devita
  */
 public class FTEnergyCalibration extends FTCalibrationModule {
-
-    IndexedTable charge2energy = null;
-    IndexedTable energycorr = null;
     
     public FTEnergyCalibration(FTDetector d, String name, ConstantsManager ccdb, Map<String,CalibrationConstants> gConstants) {
-        super(d, name, "pi0mass:pi0mass_error:factor:factor_error:charge2energy:",3, ccdb, gConstants);
+        super(d, name, "pi0mass:pi0mass_error:factor:factor_error:mips_charge:",3, ccdb, gConstants);
+        this.setCCDBTable("/calibration/ft/ftcal/charge_to_energy");
         this.setCols(PhysicsConstants.massPionNeutral()*1E3*0.95, PhysicsConstants.massPionNeutral()*1E3*1.05);
         this.setReference(PhysicsConstants.massPionNeutral()*1E3);
+        this.getCalibrationTable().addConstraint(3, this.getReference()-0.8, this.getReference()+0.8);
     }
 
     @Override
@@ -69,14 +68,19 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         gefactors.setMarkerSize(4);  // size in points on the screen
         gefactors.addPoint(0., 0., 0., 0.);
         gefactors.addPoint(1., 1., 0., 0.);
-        H1F hemass = new H1F("hemass", 100, this.getReference()-1, this.getReference()+1); 
+        H1F homass = new H1F("homass", 400, this.getReference()-4, this.getReference()+4); 
+        homass.setTitle("2#gamma invariant mass");
+        homass.setTitleX("M (MeV)");
+        homass.setTitleY("Counts");
+        homass.setOptStat("1111");
+        H1F hemass = new H1F("hemass", 400, this.getReference()-4, this.getReference()+4); 
         hemass.setTitle("2#gamma invariant mass");
         hemass.setTitleX("M (MeV)");
         hemass.setTitleY("Counts");
         hemass.setFillColor(44);
         hemass.setLineColor(24);
         hemass.setOptStat("1111");
-        H1F hefactors = new H1F("hefactors", 100, 0.8, 1.2);
+        H1F hefactors = new H1F("hefactors", 100, 0.9, 1.1);
         hefactors.setTitleX("Correction Factor");
         hefactors.setTitleY("Counts");
         hefactors.setFillColor(42);
@@ -96,16 +100,27 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         heconstants.setLineColor(23);
         heconstants.setOptStat("1111");
 
-        for (int key : this.getDetector().getDetectorComponents()) {
-            // initializa calibration constant table
-            this.getCalibrationTable().addEntry(1, 1, key);
+        H1F trigger = new H1F("trigger", 65, 0., 65.0);
+        trigger.setTitleX("Trigger Bits");
+        trigger.setTitleY("Counts");
+        trigger.setFillColor(43);
+        trigger.setLineColor(23);
+        trigger.setOptStat("1111");
 
+        H1F vertex = new H1F("vertex", 100, FTCalConstants.Z0-1.2*FTCalConstants.ZLENGTH, FTCalConstants.Z0+1.2*FTCalConstants.ZLENGTH);
+        vertex.setTitleX("Vertex (cm)");
+        vertex.setTitleY("Counts");
+        vertex.setFillColor(43);
+        vertex.setLineColor(23);
+        vertex.setOptStat("1111");
+
+        for (int key : this.getDetector().getDetectorComponents()) {
             // initialize data group
             H1F hpi0 = new H1F("hpi0_" + key, 100,50., 200.);
             hpi0.setTitleX("M (MeV)");
             hpi0.setTitleY("Counts");
             hpi0.setTitle("Component " + key);
-            H1F hpi0_calib = new H1F("hpi0_calib_" + key, 100,50., 200.);
+            H1F hpi0_calib = new H1F("hpi0_calib_" + key, 75, 50., 200.);
             hpi0_calib.setTitleX("M (MeV)");
             hpi0_calib.setTitleY("Counts");
             hpi0_calib.setTitle("Component " + key);
@@ -124,44 +139,39 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             F1D fcal2d = new F1D("fcal2d_" + key, "x", 500., 4500.);
             fcal2d.setLineColor(2);
             fcal2d.setLineWidth(1);
-            H1F hcal = new H1F("hcal_" + key, 100, 0, 2);
+            H1F hcal = new H1F("hcal_" + key, 60, 0.5, 1.5);
             hcal.setTitleX("Correction Factor");
             hcal.setTitleY("Counts");
             hcal.setTitle("Component " + key);
-            F1D fcal = new F1D("fcal_" + key, "[amp]*gaus(x,[mean],[sigma])+[p0]+[p1]*x", 100., 170.);
+            F1D fcal = new F1D("fcal_" + key, "[amp]*gaus(x,[mean],[sigma])+[p0]+[p1]*x", 0.9, 1.1);
             fcal.setParameter(0, 0.0);
             fcal.setParameter(1, 1.0);
             fcal.setParameter(2, 2.0);
             fcal.setLineColor(24);
             fcal.setLineWidth(2);
             fcal.setOptStat("1111");
-            DataGroup dg = new DataGroup(4, 2);
+            DataGroup dg = new DataGroup(5, 2);
             dg.addDataSet(hpi0sum      , 0);
             dg.addDataSet(hpi0sum_calib, 0);
             dg.addDataSet(fpi0sum_calib, 0);
             dg.addDataSet(hmassangle,    1);
             dg.addDataSet(hmassangle,    1);
             dg.addDataSet(hemass,        2);
+            dg.addDataSet(homass,        2);
             dg.addDataSet(hefactors,     3);
-//            dg.addDataSet(ffactor,       3);
-            dg.addDataSet(hpi0,          4);
-            dg.addDataSet(hpi0_calib,    4);          
-            dg.addDataSet(fpi0_calib,    4);
-            dg.addDataSet(hcal2d,        5);
-            dg.addDataSet(fcal2d,        5);
-            dg.addDataSet(hcal,          6);
-            dg.addDataSet(fcal,          6);
-            dg.addDataSet(heconstants,   7);
+            dg.addDataSet(vertex,       4);
+            dg.addDataSet(hpi0,          5);
+            dg.addDataSet(hpi0_calib,    5);          
+            dg.addDataSet(fpi0_calib,    5);
+            dg.addDataSet(hcal2d,        6);
+            dg.addDataSet(fcal2d,        6);
+            dg.addDataSet(hcal,          7);
+            dg.addDataSet(fcal,          7);
+            dg.addDataSet(heconstants,   8);
+            dg.addDataSet(trigger,       9);
             this.getDataGroup().add(dg, 1, 1, key);
 
         }
-        this.getCalibrationTable().addConstraint(3, this.getReference()-0.8, this.getReference()+0.8);
-        this.getCalibrationTable().fireTableDataChanged();
-    }
-
-    @Override
-    public List<CalibrationConstants> getCalibrationConstants() {
-        return Arrays.asList(getCalibrationTable());
     }
 
     @Override
@@ -173,136 +183,104 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     }
 
     @Override
-    public void processEvent(DataEvent event) {
-        // get current calibration constants
-        int run = 0;
-        if(event.hasBank("RUN::config")) {
-            run = event.getBank("RUN::config").getInt("run", 0);            
+    public void loadConstants(IndexedTable table) {
+        for(int i=0; i<table.getRowCount(); i++) {
+            int sector = Integer.valueOf((String)table.getValueAt(i, 0));
+            int layer  = Integer.valueOf((String)table.getValueAt(i, 1));
+            int comp   = Integer.valueOf((String)table.getValueAt(i, 2));
+            double cmips = table.getDoubleValue("mips_charge", sector, layer, comp);
+            this.getPreviousCalibrationTable().addEntry(sector, layer, comp);
+            for(int j=3; j<this.getPreviousCalibrationTable().getColumnCount(); j++) {
+                this.getPreviousCalibrationTable().setDoubleValue(0.0, this.getPreviousCalibrationTable().getColumnName(j), sector, layer, comp);
+            }                
+            this.getPreviousCalibrationTable().setDoubleValue(cmips, "mips_charge", sector, layer, comp);
         }
-        else {
+        this.getPreviousCalibrationTable().fireTableDataChanged();    
+    }
+    
+    @Override
+    public void processEvent(FTCalEvent event) {
+        // get current calibration constants
+        int run = event.getRun();
+        if(run<=0 || (FTCalConstants.VERTEXMODE && !event.isGoodTriggerParticle())) {
             return;
         }
-        if(this.getConstantsManager()!=null) charge2energy = this.getConstantsManager().getConstants(run, "/calibration/ft/ftcal/charge_to_energy");
-        if(this.getConstantsManager()!=null) energycorr    = this.getConstantsManager().getConstants(run, "/calibration/ft/ftcal/energycorr");
         
+        if(event.getTriggerPID()!=0)
+            this.getDataGroup().getItem(1, 1, 245).getH1F("vertex").fill(event.getTriggerZ());
+
         // loop over FTCAL reconstructed cluster
-        if (event.hasBank("FT::particles") && event.hasBank("FTCAL::clusters") && event.hasBank("FTCAL::hits") && event.hasBank("FTCAL::adc")) {
-            ArrayList<Particle> ftParticles = new ArrayList();
-            DataBank particlesFT  = event.getBank("FT::particles");
-            DataBank clusterFTCAL = event.getBank("FTCAL::clusters");
-            DataBank hitFTCAL     = event.getBank("FTCAL::hits");
-            DataBank adcFTCAL     = event.getBank("FTCAL::adc");
+        if (!event.getClusters().isEmpty()) {
+            
+            List<FTCalCluster> photons  = new ArrayList<>();
+
             // start from clusters
-            for (int loop = 0; loop < clusterFTCAL.rows(); loop++) {
-                int    cluster = getDetector().getComponent(clusterFTCAL.getFloat("x", loop), clusterFTCAL.getFloat("y", loop));
-                int    id      = clusterFTCAL.getShort("id", loop);
-                int    size    = clusterFTCAL.getShort("size", loop);
-                int    charge  = particlesFT.getByte("charge", loop);
-                double x       = clusterFTCAL.getFloat("x", loop);
-                double y       = clusterFTCAL.getFloat("y", loop);
-                double z       = this.getConstants().crystal_distance+this.getConstants().shower_depth;//clusterFTCAL.getFloat("z", loop);
-                double energy  = 1e3 * clusterFTCAL.getFloat("energy", loop);
-                double energyR = 1e3 * clusterFTCAL.getFloat("recEnergy", loop);
-                double path    = Math.sqrt(x*x+y*y+(z-this.getConstants().z0)*(z-this.getConstants().z0));
-                int    key = 0;
-                double energySeed=0;
-                double energyCalib=0;
-                // find hits associated to clusters
-                ArrayList<Integer> crystals = new ArrayList();
-                for(int k=0; k<hitFTCAL.rows(); k++) {
-                    int clusterID  = hitFTCAL.getShort("clusterID", k);
-                    // select hits that belong to cluster 
-                    if(clusterID == id) { 
-                        int hitID = hitFTCAL.getShort("hitID", k);
-                        crystals.add(hitID);
-                    }                            
-                }
-                // go to adc value to get reclibrated energy
-                for(int k : crystals) {
-                    int    component  = adcFTCAL.getInt("component",k);
-                    double adc        = (double) adcFTCAL.getInt("ADC",k);
-                    // start with nominal value, then use CCDB, then use previous iteration
-                    double c2e        = (this.getConstants().LSB*this.getConstants().nsPerSample/50)*this.getConstants().eMips/this.getConstants().chargeMips;
-                    if(this.getConstantsManager()!=null) c2e = 1*charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
-						                *charge2energy.getDoubleValue("mips_energy", 1,1,component)
-						                /charge2energy.getDoubleValue("mips_charge", 1,1,component);
-                    if(this.getPreviousCalibrationTable().hasEntry(1,1,component)) {
-                        c2e = charge2energy.getDoubleValue("fadc_to_charge", 1,1,component)
-			     *charge2energy.getDoubleValue("mips_energy", 1,1,component)
-			     /this.getPreviousCalibrationTable().getDoubleValue("charge2energy", 1, 1, component);
-                    }                      
-                    c2e=c2e*this.getConstantScale();
-                    double energyK = adc*c2e;
-                    if(energyK>energySeed) {
-                        key = component;
-                        energySeed = energyK;
-                    }                    
-                    energyCalib += energyK;
-//                    System.out.println(key + " " + energyK + " " + c2e + " " + energySeed + " " + energy);
-                }
-                double eR = energyCalib/1000;
-                double  energyCorr = (energycorr.getDoubleValue("c0",1,1,key)
-                                   +  energycorr.getDoubleValue("c1",1,1,key)*eR
-                                   +  energycorr.getDoubleValue("c2",1,1,key)*eR*eR
-                                   +  energycorr.getDoubleValue("c3",1,1,key)*eR*eR*eR
-                                   +  energycorr.getDoubleValue("c4",1,1,key)*eR*eR*eR*eR
-                    );
-//                System.out.println(energyCorr + " " + (energy-energyR));
-//                energyCalib = energyCalib+energy-energyR;
-                energyCalib = energyCalib+energyCorr;
+            for (FTCalCluster c : event.getClusters()) {
+                
+                if(c.charge()==0 && c.size()>FTCalConstants.CLUSTERSIZE) {
                         
-                Particle recParticle = new Particle(22, energy*x/path, energy*y/path, energy*(z-this.getConstants().z0)/path, 0,0,0);
-                recParticle.setProperty("key",(double) key);
-                recParticle.setProperty("energySeed", energySeed);
-                recParticle.setProperty("energyCalib",energyCalib);
-                recParticle.setProperty("theta",Math.toDegrees(Math.acos((z-this.getConstants().z0)/path)));
-                if(energyR>this.getConstants().clusterThr && size>this.getConstants().clusterSize && charge==0) ftParticles.add(recParticle);
+                    if(c.energy(true)*1000>FTCalConstants.CLUSTERTHR)  {
+                        photons.add(c);
+                    }
+                    
+                }
             }
-            if(ftParticles.size()>=2) {
-                for (int i1 = 0; i1 < ftParticles.size(); i1++) {
-                    for (int i2 = i1 + 1; i2 < ftParticles.size(); i2++) {
-                        int key1 = (int) ftParticles.get(i1).getProperty("key");
-                        int key2 = (int) ftParticles.get(i2).getProperty("key");
-                        // get original mass
-                        Particle partGamma1 = ftParticles.get(i1);
-                        Particle partGamma2 = ftParticles.get(i2);
-                        Particle partPi0 = new Particle();
-                        partPi0.copy(partGamma1);
-                        partPi0.combine(partGamma2, +1);
-                        double invmass = Math.sqrt(partPi0.mass2());
-                        double x = (partGamma1.p() - partGamma2.p()) / (partGamma1.p() + partGamma2.p());
-                        double angle = Math.toDegrees(Math.acos(partGamma1.cosTheta(partGamma2)));
-                        double invmassCalib = Math.pow(2*partGamma1.getProperty("energyCalib")*partGamma2.getProperty("energyCalib")*(1-Math.cos(Math.toRadians(angle))),0.5);
-                        if(angle>this.getConstants().pi0MinAngle) {
-                            this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum").fill(invmass);
-                            this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum").fill(invmass);
-                            this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum_calib").fill(invmassCalib);
-                            this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum_calib").fill(invmassCalib);
-                        }
-                        this.getDataGroup().getItem(1, 1, key1).getH2F("hmassangle").fill(invmassCalib, angle);
-                        this.getDataGroup().getItem(1, 1, key2).getH2F("hmassangle").fill(invmassCalib, angle);
-                        if(angle>this.getConstants().pi0MinAngle) {
-                            double ecal1 = Math.pow(this.getReference(),2)/(2*partGamma2.getProperty("energyCalib")*(1-Math.cos(Math.toRadians(angle))));
-                            double ecal2 = Math.pow(this.getReference(),2)/(2*partGamma1.getProperty("energyCalib")*(1-Math.cos(Math.toRadians(angle))));
-  //                          ecal1=Math.pow(PhysicsConstants.massPionNeutral()*1.0E3,2)/(2*partGamma1.p()*partGamma2.p()*(1-Math.cos(Math.toRadians(angle))));
-//                            System.out.println(PhysicsConstants.massPionNeutral() + " " + ecal1 + " " + partGamma1.p()+ " " + partGamma1.getProperty("energySeed"));
-                            if(ecal1>0 && 
-                               partGamma2.getProperty("theta")>this.getConstants().thetaMin && 
-                               partGamma2.getProperty("theta")<this.getConstants().thetaMax) {
-                                this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_" + key1).fill(invmass);
-                                this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_calib_" + key1).fill(invmassCalib);
-                                this.getDataGroup().getItem(1, 1, key1).getH2F("hcal2d_" + key1).fill(ecal1,partGamma1.getProperty("energyCalib"));
-                                this.getDataGroup().getItem(1, 1, key1).getH1F("hcal_" + key1).fill(ecal1/partGamma1.getProperty("energyCalib"));
+                
+            if(photons.size()>=2) {
+                boolean isGood = false;
+                for (int i1 = 0; i1 < photons.size(); i1++) {
+                    for (int i2 = i1 + 1; i2 < photons.size(); i2++) {
+
+                        int key1 = (int) photons.get(i1).seed();
+                        int key2 = (int) photons.get(i2).seed();
+
+                        // get calibrated mass
+                        Particle gamma1 = photons.get(i1).toParticle(true, event.getVertex());
+                        Particle gamma2 = photons.get(i2).toParticle(true, event.getVertex());
+                        Particle pi0 = new Particle();
+                        pi0.copy(gamma1);
+                        pi0.combine(gamma2, +1);
+                        double invmass = pi0.mass()*1E3;
+                        double angle = Math.toDegrees(Math.acos(gamma1.cosTheta(gamma2)));
+                        double deltaT = Math.abs(photons.get(i1).time(true)-photons.get(i2).time(true));
+                        
+                        Particle pi0Org = photons.get(i1).toParticle(false, event.getVertex());
+                        pi0Org.combine(photons.get(i2).toParticle(false, event.getVertex()), +1);
+                        double invmassOrg = pi0Org.mass()*1E3;
+                                
+                        this.getDataGroup().getItem(1, 1, key1).getH2F("hmassangle").fill(invmass, angle);
+                        this.getDataGroup().getItem(1, 1, key2).getH2F("hmassangle").fill(invmass, angle);
+
+                        if(angle>FTCalConstants.PI0MINANGLE && deltaT<FTCalConstants.DELTAT) {
+                            this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum").fill(invmassOrg);
+                            this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum").fill(invmassOrg);
+                            this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0sum_calib").fill(invmass);
+                            this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0sum_calib").fill(invmass);
+
+                            double ecal1 = Math.pow(this.getReference(),2)/(2*gamma2.p()*1E3*(1-Math.cos(Math.toRadians(angle))));
+                            double ecal2 = Math.pow(this.getReference(),2)/(2*gamma1.p()*1E3*(1-Math.cos(Math.toRadians(angle))));
+                            if(ecal1>0 && photons.get(i2).isInFiducial()) {
+                                this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_" + key1).fill(invmassOrg);
+                                this.getDataGroup().getItem(1, 1, key1).getH1F("hpi0_calib_" + key1).fill(invmass);
+                                this.getDataGroup().getItem(1, 1, key1).getH2F("hcal2d_" + key1).fill(ecal1,gamma1.p()*1E3);
+                                this.getDataGroup().getItem(1, 1, key1).getH1F("hcal_" + key1).fill(Math.sqrt(ecal1/gamma1.p()/1E3));
+                                isGood = true;
                             }
-                            if(ecal2>0 && 
-                               partGamma1.getProperty("theta")>this.getConstants().thetaMin && 
-                               partGamma1.getProperty("theta")<this.getConstants().thetaMax) {
-                                this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_" + key2).fill(invmass);
-                                this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_calib_" + key2).fill(invmassCalib);
-                                this.getDataGroup().getItem(1, 1, key2).getH2F("hcal2d_" + key2).fill(ecal2,partGamma2.getProperty("energyCalib"));
-                                this.getDataGroup().getItem(1, 1, key2).getH1F("hcal_" + key2).fill(ecal2/partGamma2.getProperty("energyCalib"));
+                            if(ecal2>0  && photons.get(i1).isInFiducial()) {
+                                this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_" + key2).fill(invmassOrg);
+                                this.getDataGroup().getItem(1, 1, key2).getH1F("hpi0_calib_" + key2).fill(invmass);
+                                this.getDataGroup().getItem(1, 1, key2).getH2F("hcal2d_" + key2).fill(ecal2,gamma2.p());
+                                this.getDataGroup().getItem(1, 1, key2).getH1F("hcal_" + key2).fill(Math.sqrt(ecal2/gamma2.p()));
+                                isGood = true;
                             }
                         }
+                    }
+                }
+                if(isGood) {
+                    this.getDataGroup().getItem(1, 1, 245).getH1F("trigger").fill(64);
+                    for(int i=0; i<64; i++) {
+                        if(event.isTriggerBitSet(i))
+                            this.getDataGroup().getItem(1, 1, 245).getH1F("trigger").fill(i);
                     }
                 }
             }
@@ -312,6 +290,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     @Override
     public void analyze() {
         for (int key : this.getDetector().getDetectorComponents()) {
+            this.getDataGroup().getItem(1,1,key).getH1F("homass").reset();
             this.getDataGroup().getItem(1,1,key).getH1F("hemass").reset();
             this.getDataGroup().getItem(1,1,key).getH1F("hefactors").reset();
             this.getDataGroup().getItem(1,1,key).getH1F("heconstants").reset();
@@ -332,7 +311,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
 
             H1F hcalib = this.getDataGroup().getItem(1,1,key).getH1F("hcal_" + key);
             F1D fcalib = this.getDataGroup().getItem(1,1,key).getF1D("fcal_" + key);
-            this.initCalibGaussFitPar(fcalib,hcalib,-1);
+            this.initCalibGaussFitPar(fcalib,hcalib,1);
             DataFitter.fit(fcalib,hcalib,"LQ");
             hcalib.setFunction(null);
         }
@@ -340,7 +319,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
 
     @Override
     public void adjustFit() {
-        System.out.println("Adjusting fit for component " + this.getSelectedKey());
+        this.printOut("adjusting fit for component " + this.getSelectedKey() + "\n");
         H1F hcal = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hcal_" + this.getSelectedKey());
         F1D fcal = this.getDataGroup().getItem(1,1,this.getSelectedKey()).getF1D("fcal_" + this.getSelectedKey());
         FTAdjustFit cfit = new FTAdjustFit(hcal, fcal, "LRQ");
@@ -352,8 +331,8 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         double hMean = 1;
         if(mode>=0) hMean = htime.getAxis().getBinCenter(htime.getMaximumBin());
         double hRMS  = htime.getRMS();
-        double rangeMin = (hMean - (1.0*hRMS)); 
-        double rangeMax = (hMean + (1.0*hRMS));  
+        double rangeMin = (hMean - (2.0*hRMS)); 
+        double rangeMax = (hMean + (1.5*hRMS));  
         double pm = (hMean*20.)/100.0;
         ftime.setRange(rangeMin, rangeMax);
         ftime.setParameter(0, hAmp);
@@ -368,12 +347,14 @@ public class FTEnergyCalibration extends FTCalibrationModule {
     @Override
     public double getValue(DetectorShape2D dsd) {
         // show summary
-        int sector = dsd.getDescriptor().getSector();
-        int layer = dsd.getDescriptor().getLayer();
         int key = dsd.getDescriptor().getComponent();
         if (this.getDetector().hasComponent(key)) {
-            F1D fpi0 = this.getDataGroup().getItem(1,1,key).getF1D("fpi0_calib_" + key);
-            return fpi0.getParameter(1);
+            if(this.getCalibrationTable().hasEntry(1, 1, key)) 
+                return this.getCalibrationTable().getDoubleValue("pi0mass", 1, 1, key);
+            else {
+                F1D fpi0 = this.getDataGroup().getItem(1,1,key).getF1D("fpi0_calib_" + key);
+                return fpi0.getParameter(1);
+            }
        }
         return 0;
     }
@@ -389,6 +370,7 @@ public class FTEnergyCalibration extends FTCalibrationModule {
         this.getCanvas().getPad(1).getAxisZ().setLog(true);
     }
 
+    @Override
     public void updateTable() {
         
         for (int key : this.getDetector().getDetectorComponents()) {
@@ -400,12 +382,11 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             double pi0Mass_err = 0;
             double factorE     = 0;
             double factorE_err = 0;
-            double c2e         = this.getConstants().chargeMips;
-            if(this.getConstantsManager()!=null) c2e = charge2energy.getDoubleValue("mips_charge", 1,1,key);
+            double cmips       = FTCalConstants.CHARGEMIPS;
             if(this.getPreviousCalibrationTable().hasEntry(1,1,key)) {
-                c2e = this.getPreviousCalibrationTable().getDoubleValue("charge2energy", 1, 1, key);
+                cmips = this.getPreviousCalibrationTable().getDoubleValue("mips_charge", 1, 1, key);
             }                        
-            c2e=c2e/this.getConstantScale();
+            cmips=cmips/this.getConstantScale();
             
             pi0Mass     = fpi0.getParameter(1);
             pi0Mass_err = fpi0.parameter(1).error();
@@ -413,32 +394,27 @@ public class FTEnergyCalibration extends FTCalibrationModule {
             factorE_err = fcalib.parameter(1).error();
 
             // update charge2energy only if max bin content is >= threshold
-            if(hcalib.getMax()>=3) c2e = c2e/factorE;
-            else                   c2e = this.getConstants().defaultC2E;
+            if(hcalib.getMax()>=3) cmips = cmips/factorE;
+            else                   cmips = FTCalConstants.DEFAULTEMIPS;
 
+            double pi0OldMassDiff = this.getPreviousCalibrationTable().getDoubleValue("pi0mass", 1, 1, key) - this.getReference();
             double pi0MassDiff = pi0Mass - this.getReference();
-            if(Math.abs(pi0MassDiff)<1) this.getDataGroup().getItem(1,1,key).getH1F("hemass").fill(pi0Mass);
+            if(Math.abs(pi0OldMassDiff)<4) this.getDataGroup().getItem(1,1,key).getH1F("homass").fill(this.getPreviousCalibrationTable().getDoubleValue("pi0mass", 1, 1, key));
+            if(Math.abs(pi0MassDiff)<4) this.getDataGroup().getItem(1,1,key).getH1F("hemass").fill(pi0Mass);
+            
             if(factorE>0) this.getDataGroup().getItem(1,1,key).getH1F("hefactors").fill(factorE);
-            this.getDataGroup().getItem(1,1,key).getH1F("heconstants").fill(c2e);
-//            H1F hefactors = this.getDataGroup().getItem(1,1,key).getH1F("hefactors");
-//            F1D ffactor   = this.getDataGroup().getItem(1,1,key).getF1D("ffactor");
-//            this.initCalibGaussFitPar(ffactor,hefactors);
-//            DataFitter.fit(ffactor,hefactors,"LQ");
-//            hefactors.setFunction(null);
+            this.getDataGroup().getItem(1,1,key).getH1F("heconstants").fill(cmips);
 
             getCalibrationTable().setDoubleValue(pi0Mass,     "pi0mass",        1, 1, key);
             getCalibrationTable().setDoubleValue(pi0Mass_err, "pi0mass_error",  1, 1, key);
             getCalibrationTable().setDoubleValue(factorE,     "factor",         1, 1, key);
             getCalibrationTable().setDoubleValue(factorE_err, "factor_error",   1, 1, key);
-            getCalibrationTable().setDoubleValue(c2e,         "charge2energy",  1, 1, key);
+            getCalibrationTable().setDoubleValue(cmips,       "mips_charge",    1, 1, key);
         }
         getCalibrationTable().fireTableDataChanged();
-
-    }
-
-    @Override
-    public void timerUpdate() {
-        this.analyze();            
-        this.updateTable();
+        this.printOut(String.format("QA: ncrystals = %d, mass = %.2f, sigma = %.2f\n",
+                                    this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getEntries(),
+                                    this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getMean(),
+                                    this.getDataGroup().getItem(1,1,this.getSelectedKey()).getH1F("hemass").getRMS()));
     }
 }

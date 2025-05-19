@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.clas.viewer;
 
 import java.awt.Color;
@@ -26,9 +21,9 @@ public class FTApplication implements ActionListener {
     private String             appName    = null;
     private FTDetector         detector   = null;
     private FTDataSet          dataSet    = null;
-    private List<EmbeddedCanvas> canvases   = new ArrayList<EmbeddedCanvas>();
+    private List<EmbeddedCanvas> canvases   = new ArrayList<>();
     private JPanel             radioPane  = new JPanel();
-    private List<String>       fields     = new ArrayList<String>();
+    private List<String>       fields     = new ArrayList<>();
     private String             buttonSelect;
     private int                buttonIndex;
     private String             canvasSelect;

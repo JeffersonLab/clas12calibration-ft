@@ -80,7 +80,7 @@ private int sector = 3;
                 gToffsetsCal.addPoint(0., 20., 0., 0.);
                 gToffsetsCal.addPoint(1., 60., 0., 0.);
 
-                H2F htime_calSect = new H2F("htime_calSect_" + ssec + "_" + llay, 50, -12., 12., numcomp+1, 0, numcomp+1);
+                H2F htime_calSect = new H2F("htime_calSect_" + ssec + "_" + llay, 120, -12., 12., numcomp+1, 0, numcomp+1);
                 htime_calSect.setTitleX("Time [ns]");
                 htime_calSect.setTitleY("Component");
                 htime_calSect.setTitle("Calibrated Sector: " + ssec + " Layer: " + llay );
@@ -105,7 +105,7 @@ private int sector = 3;
                     htime.setTitleY("Counts");
                     htime.setTitle("Sector: " + ssec + " Layer: " + llay + " Component: "+ key);
                     htime.setFillColor(3);
-                    
+                     
                     
                     //F1D ftime = new F1D("ftime_" + ssec + "_" + llay + "_" + key, "[amp]*gaus(x,[mean],[sigma])", -10., 10.);
                     F1D ftime = new F1D("ftime_" + ssec + "_" + llay + "_" + key, "[amp]*gaus(x,[mean],[sigma])", 30., 45.);
@@ -334,9 +334,9 @@ private int sector = 3;
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH1F("htime_" + sector + "_" + 2 + "_" + component));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getF1D("ftime_" + sector + "_" + 2 + "_" + component),"same");
             this.getCanvas().cd(2);
-            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH2F("htime_calSect_" + sector + "_" + 1));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH2F("htime_calSect_" + sector + "_" + 1).projectionX());
             this.getCanvas().cd(6);
-            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH2F("htime_calSect_" + sector + "_" + 2));
+            this.getCanvas().draw(this.getDataGroup().getItem(sector,2,component).getH2F("htime_calSect_" + sector + "_" + 2).projectionX());
             this.getCanvas().cd(3);
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getH1F("hgToffsets_"+ sector + "_" + 1));
             this.getCanvas().draw(this.getDataGroup().getItem(sector,1,component).getGraph("gToffsets_"+ sector + "_" + 1),"same");
